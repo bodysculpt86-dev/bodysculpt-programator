@@ -48,8 +48,12 @@ class EA_Security extends CI_Security
      */
     public function csrf_verify()
     {
-        // If it's not a POST request we will set the CSRF cookie
-        if (strtoupper($_SERVER['REQUEST_METHOD']) !== 'POST') {
+        // Safe, read-only request methods do not require CSRF validation.
+        // All state-changing methods (POST, PUT, PATCH, DELETE, etc.) must
+        // provide a valid CSRF token to prevent cross-site request forgery.
+        $request_method = strtoupper($_SERVER['REQUEST_METHOD']);
+
+        if (in_array($request_method, ['GET', 'HEAD', 'OPTIONS'], true)) {
             return $this->csrf_set_cookie();
         }
 
