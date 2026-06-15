@@ -4,5 +4,10 @@ FROM alextselegidis/easyappointments:1.5.2
 # The base image serves the app from /var/www/html.
 COPY ./application/ /var/www/html/application/
 
-# The base image already provides the Apache/PHP entrypoint and runtime configuration,
-# so we keep CMD/ENTRYPOINT unchanged.
+# Copy the Railway wrapper entrypoint that fixes the Apache MPM conflict
+# while preserving the upstream image's config templating and startup.
+COPY ./docker-entrypoint-railway.sh /usr/local/bin/docker-entrypoint-railway.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint-railway.sh
+
+# Use the wrapper as the container entrypoint.
+ENTRYPOINT ["docker-entrypoint-railway.sh"]
