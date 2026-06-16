@@ -260,7 +260,9 @@
     }
 
     .form-control:disabled,
-    .form-control[readonly] {
+    .form-control[readonly],
+    .backend-page .form-control:disabled,
+    .backend-page .form-control[readonly] {
         background-color: #0e0e10;
         color: #A1A1AA;
     }
@@ -450,6 +452,41 @@
         background-image: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
         border-color: transparent;
         opacity: 0.65;
+    }
+
+    /* -------------------------------------------------------------------------
+     * Nav pills / tabs (provider/customer details tabs use Bootstrap pills)
+     * ------------------------------------------------------------------------- */
+    .nav-pills {
+        --bs-nav-pills-link-active-color: #FAFAFA;
+        --bs-nav-pills-link-active-bg: #6366F1;
+    }
+
+    .nav-pills .nav-link:not(.active) {
+        color: #E4E4E7;
+    }
+
+    .nav-pills .nav-link:not(.active):hover,
+    .nav-pills .nav-link:not(.active):focus {
+        color: #FAFAFA;
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-tabs {
+        --bs-nav-tabs-link-active-color: #FAFAFA;
+        --bs-nav-tabs-link-active-bg: #1F1F23;
+        --bs-nav-tabs-link-active-border-color: rgba(255, 255, 255, 0.16);
+        border-bottom-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .nav-tabs .nav-link {
+        color: #E4E4E7;
+    }
+
+    .nav-tabs .nav-link:hover,
+    .nav-tabs .nav-link:focus {
+        color: #FAFAFA;
+        border-color: rgba(255, 255, 255, 0.16);
     }
 
     .btn-outline-primary {
