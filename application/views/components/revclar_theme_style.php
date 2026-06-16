@@ -593,70 +593,171 @@
             display: none;
         }
 
-        /* Calendar toolbar: stack controls vertically */
+        /* Hide footer on mobile to keep calendar fully visible */
+        #footer {
+            display: none !important;
+        }
+
+        /* Calendar toolbar: compact on mobile */
+        #calendar-toolbar {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 0.5rem !important;
+            align-items: center !important;
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+        }
+
+        #calendar-toolbar > * {
+            width: auto !important;
+        }
+
+        #calendar-toolbar #select-filter-item,
+        #calendar-toolbar .btn {
+            min-height: 32px !important;
+            height: 32px !important;
+            font-size: 0.8rem !important;
+        }
+
         #calendar-toolbar .calendar-header,
         #calendar .calendar-header {
-            flex-direction: column !important;
-            gap: 0.5rem;
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            gap: 0.25rem !important;
+            padding: 0.25rem !important;
         }
 
-        #calendar-toolbar .calendar-header > *,
         #calendar .calendar-header > * {
-            width: 100% !important;
-            max-width: 100% !important;
+            width: auto !important;
+            max-width: none !important;
         }
 
-        #calendar-toolbar .input-group,
+        #calendar .calendar-header .filter-group {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.25rem !important;
+        }
+
+        #calendar .calendar-header .filter-group label {
+            display: block !important;
+            font-size: 0.7rem !important;
+            white-space: nowrap !important;
+            margin-bottom: 0 !important;
+        }
+
         #calendar-toolbar .form-select,
-        #calendar-toolbar .btn,
+        #calendar .calendar-header .form-select,
         #calendar .calendar-header .btn,
-        #calendar .calendar-header .form-select {
-            width: 100% !important;
+        #calendar .calendar-header .select-date {
+            min-height: 32px !important;
+            height: 32px !important;
+            padding-top: 0.25rem !important;
+            padding-bottom: 0.25rem !important;
+            font-size: 0.8rem !important;
         }
 
-        /* Calendar: no horizontal scroll and full-width provider columns on mobile */
+        #calendar .calendar-header .form-select,
+        #calendar .calendar-header .flatpickr-wrapper,
+        #calendar .calendar-header .select2-container,
+        #calendar .calendar-header .select2-selection {
+            width: 80px !important;
+            max-width: 80px !important;
+        }
+
+        #calendar .calendar-header .select-date,
+        #calendar .calendar-header .flatpickr-wrapper {
+            width: 110px !important;
+            max-width: 110px !important;
+        }
+
+        #calendar .calendar-header .btn {
+            width: 36px !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        #calendar .calendar-view .provider-column h6 {
+            font-size: 0.8rem !important;
+            margin: 0 !important;
+            padding: 0.25rem !important;
+        }
+
+        /* Calendar: horizontal scroll with side-by-side provider columns on mobile */
         #calendar .calendar-view {
-            overflow-x: hidden !important;
-            width: 100% !important;
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+            width: auto !important;
         }
 
         #calendar .calendar-view > div {
+            display: flex !important;
             min-width: auto !important;
-            width: 100% !important;
-            display: block !important;
         }
 
         #calendar .calendar-view .date-column {
-            width: 100% !important;
-            min-width: 100% !important;
-            flex-direction: column !important;
-        }
-
-        #calendar .calendar-view .date-column .provider-column {
-            width: 100% !important;
-            min-width: 100% !important;
-            max-width: 100% !important;
-            border-right: none !important;
-            margin-bottom: 1rem;
+            flex-direction: row !important;
+            width: auto !important;
+            min-width: auto !important;
         }
 
         #calendar .calendar-view .date-column-title {
             display: none !important;
         }
 
-        /* Hide the desktop provider multi-select on mobile; use the mobile selector instead */
-        .calendar-header .filter-group:has(#filter-provider) {
-            display: none !important;
+        #calendar .calendar-view .date-column .provider-column {
+            width: 280px !important;
+            min-width: 280px !important;
+            max-width: 280px !important;
+            border-right: 1px solid #3F3F46 !important;
+            margin-bottom: 0 !important;
         }
 
-        #mobile-provider-selector {
-            background-color: #1F1F23;
-            color: #E4E4E7;
-            border: 1px solid #3F3F46;
-            border-radius: 0.5rem;
-            margin: 0.75rem 1rem 0.5rem;
-            min-height: 44px;
-            width: calc(100% - 2rem);
+        /* Compact time-grid so the full day fits vertically without scroll */
+        #calendar .calendar-wrapper {
+            height: auto !important;
+        }
+
+        #calendar .fc-timegrid-slot {
+            height: 6px !important;
+            line-height: 6px !important;
+            padding: 0 !important;
+        }
+
+        #calendar .fc-timegrid-slot-label-cushion,
+        #calendar .fc-timegrid-axis-cushion {
+            font-size: 0.5rem;
+            line-height: 6px;
+            padding: 0 0.1rem;
+        }
+
+        #calendar .fc-timegrid-slot-label[data-time$=":00:00"] .fc-timegrid-slot-label-cushion {
+            font-weight: 600;
+        }
+
+        #calendar .fc-timegrid-slot-label:not([data-time$=":00:00"]) .fc-timegrid-slot-label-cushion {
+            font-weight: 300;
+            opacity: 0.8;
+        }
+
+        #calendar .fc-event-main,
+        #calendar .fc-event-main-frame,
+        #calendar .fc-event-time,
+        #calendar .fc-event-title-container,
+        #calendar .fc-event-title {
+            font-size: 0.5rem !important;
+            line-height: 1.1 !important;
+        }
+
+        #calendar .fc-event-title-container,
+        #calendar .fc-event-title {
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            display: block !important;
+        }
+
+        #calendar .calendar-header .select2-selection__placeholder {
+            color: #A1A1AA !important;
         }
 
         /* Backend forms: single column on mobile */

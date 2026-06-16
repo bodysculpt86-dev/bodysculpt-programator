@@ -73,24 +73,6 @@ App.Utils.CalendarTableView = (function () {
         return Math.max(height, isMobile() ? 500 : 700);
     }
 
-    /**
-     * Get the calendar height for mobile, accounting for the provider selector.
-     *
-     * @returns {number} Calendar height in pixels (minimum 500px).
-     */
-    function getMobileCalendarHeight() {
-        const selectorHeight = $('#mobile-provider-selector').outerHeight() || 0;
-        const offset =
-            $footer.outerHeight() +
-            $header.outerHeight() +
-            $calendarToolbar.outerHeight() +
-            $('.calendar-header').outerHeight() +
-            selectorHeight +
-            65;
-        const height = window.innerHeight - offset;
-
-        return Math.max(height, 500);
-    }
 
     /**
      * Close the current popover if open.
@@ -1341,8 +1323,6 @@ App.Utils.CalendarTableView = (function () {
                     .changeView(isMobile() ? 'timeGridDay' : (providerView[providerId] || 'timeGridDay'));
             });
 
-            setupMobileProviderSelector();
-
             // Activate calendar navigation
 
             $('#calendar .calendar-header .btn').removeClass('disabled').prop('disabled', false);
@@ -1429,7 +1409,7 @@ App.Utils.CalendarTableView = (function () {
             locale: vars('language_code'),
             initialView: 'timeGridDay',
             nowIndicator: true,
-            height: mobileView ? getMobileCalendarHeight() : getCalendarHeight(),
+            height: mobileView ? 'auto' : getCalendarHeight(),
             editable: true,
             firstDay: firstWeekdayNumber,
             slotDuration: '00:15:00',
@@ -1442,7 +1422,9 @@ App.Utils.CalendarTableView = (function () {
             eventTextColor: '#333',
             eventColor: EVENT_COLORS.default,
             slotLabelFormat: {hour: '2-digit', minute: '2-digit', hour12: false},
+            allDaySlot: !mobileView,
             allDayContent: lang('all_day'),
+            dayHeaders: !mobileView,
             dayHeaderFormat: columnFormat,
             selectable: true,
             selectHelper: true,
@@ -1476,82 +1458,6 @@ App.Utils.CalendarTableView = (function () {
     }
 
     /**
-     * On mobile, add a provider selector and show only the selected provider column.
-     */
-    function setupMobileProviderSelector() {
-        const $calendar = $('#calendar');
-        $calendar.find('#mobile-provider-selector').remove();
-
-        if (!isMobile()) {
-            $calendar.find('.provider-column').show();
-            return;
-        }
-
-        const $providerColumns = $calendar.find('.provider-column');
-
-        if ($providerColumns.length <= 1) {
-            return;
-        }
-
-        const $selector = $('<select/>', {
-            id: 'mobile-provider-selector',
-            class: 'form-select form-select-sm',
-        });
-
-        $providerColumns.each((index, providerColumn) => {
-            const provider = $(providerColumn).data('provider');
-            if (!provider) {
-                return;
-            }
-            $selector.append(
-                $('<option/>', {
-                    value: provider.id,
-                    text: provider.first_name + ' ' + provider.last_name,
-                }),
-            );
-        });
-
-        const userId = vars('user_id') ? Number(vars('user_id')) : null;
-        let selectedProviderId = null;
-
-        $providerColumns.each((index, providerColumn) => {
-            const provider = $(providerColumn).data('provider');
-            if (userId && Number(provider.id) === userId) {
-                selectedProviderId = provider.id;
-            }
-        });
-
-        if (!selectedProviderId) {
-            selectedProviderId = $providerColumns.first().data('provider').id;
-        }
-
-        $selector.val(selectedProviderId);
-
-        $selector.on('change', () => {
-            const selectedId = Number($selector.val());
-
-            $providerColumns.each((index, providerColumn) => {
-                const provider = $(providerColumn).data('provider');
-                if (Number(provider.id) === selectedId) {
-                    $(providerColumn).show();
-                } else {
-                    $(providerColumn).hide();
-                }
-            });
-
-            $providerColumns.filter(':visible').find('.calendar-wrapper').each((index, wrapper) => {
-                const fullCalendar = $(wrapper).data('fullCalendar');
-                if (fullCalendar) {
-                    fullCalendar.updateSize();
-                }
-            });
-        });
-
-        $calendar.prepend($selector);
-        $selector.trigger('change');
-    }
-
-    /**
      * Set calendar view size to fit the page.
      */
     function setCalendarViewSize() {
@@ -1559,24 +1465,14 @@ App.Utils.CalendarTableView = (function () {
 
         const $calendarViewDiv = $('.calendar-view > div');
 
-        if (isMobile()) {
-            $calendarViewDiv.css('min-width', '');
-            $('.calendar-wrapper').each((index, wrapper) => {
-                const fullCalendar = $(wrapper).data('fullCalendar');
-                if (fullCalendar) {
-                    fullCalendar.updateSize();
-                }
-            });
-        } else {
-            $calendarViewDiv.css('min-width', '1000%');
-            let width = 0;
-            $dateColumn.each((index, dateColumn) => {
-                width += $(dateColumn).outerWidth();
-            });
-            $calendarViewDiv.css('min-width', width + 200);
-        }
+        $calendarViewDiv.css('min-width', '1000%');
+        let width = 0;
+        $dateColumn.each((index, dateColumn) => {
+            width += $(dateColumn).outerWidth();
+        });
+        $calendarViewDiv.css('min-width', width + 200);
 
-        const height = isMobile() ? getMobileCalendarHeight() : getCalendarHeight();
+        const height = isMobile() ? 'auto' : getCalendarHeight();
 
         $('.calendar-wrapper').each((index, wrapper) => {
             const fullCalendar = $(wrapper).data('fullCalendar');
@@ -1584,6 +1480,13 @@ App.Utils.CalendarTableView = (function () {
                 fullCalendar.setOption('height', height);
             }
             $(wrapper).height(height);
+        });
+
+        $('.calendar-wrapper').each((index, wrapper) => {
+            const fullCalendar = $(wrapper).data('fullCalendar');
+            if (fullCalendar) {
+                fullCalendar.updateSize();
+            }
         });
     }
 
