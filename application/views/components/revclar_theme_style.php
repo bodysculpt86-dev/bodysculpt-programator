@@ -292,6 +292,54 @@
         color: #FAFAFA !important;
     }
 
+    /* Table view column layout (makes sure providers are side-by-side) */
+    #calendar .calendar-view {
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    #calendar .calendar-view > div {
+        display: flex;
+        flex-wrap: nowrap;
+        width: max-content;
+        min-width: 100%;
+    }
+
+    #calendar .calendar-view .date-column {
+        display: flex;
+        flex-wrap: nowrap;
+        flex-shrink: 0;
+    }
+
+    #calendar .calendar-view .date-column .date-column-title {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        transform: rotate(180deg);
+        padding: 10px 5px;
+        margin: 0;
+        background: #18181B;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        white-space: nowrap;
+    }
+
+    #calendar .calendar-view .date-column .provider-column {
+        flex-shrink: 0;
+        width: 350px;
+        min-width: 350px;
+        max-width: 350px;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    #calendar .calendar-view .date-column .provider-column h6 {
+        padding: 8px 10px;
+        margin: 0;
+        background: #18181B;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     /* -------------------------------------------------------------------------
      * Buttons
      * ------------------------------------------------------------------------- */
