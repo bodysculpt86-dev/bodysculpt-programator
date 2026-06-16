@@ -1,14 +1,35 @@
+# -----------------------------------------------------------------------------
+# Stage 1: Build the compiled CSS from SCSS.
+#
+# The repository ignores the generated .css/.min.css files in assets/css/, but
+# the backend/frontend layouts reference them directly. We compile them here so
+# the final Railway image contains the exact same stylesheets that work locally.
+# -----------------------------------------------------------------------------
+FROM node:20-slim AS assets-builder
+
+WORKDIR /build
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY gulpfile.js ./
+COPY assets/css ./assets/css
+RUN npx gulp styles
+
+# -----------------------------------------------------------------------------
+# Stage 2: Final Easy!Appointments image.
+# -----------------------------------------------------------------------------
 FROM alextselegidis/easyappointments:1.5.2
 
 # Copy local application changes (including security patches) over the upstream code.
 # The base image serves the app from /var/www/html.
 COPY ./application/ /var/www/html/application/
 
-# Local CSS files are referenced by our views as backend.css / frontend.css / general.css
-# but the upstream 1.5.2 image only keeps layouts/ and pages/ subdirectories. Copy our
-# local stylesheets and themes so the backend/frontend layouts render correctly on Railway.
-COPY ./assets/css/backend.css ./assets/css/backend.min.css ./assets/css/frontend.css ./assets/css/frontend.min.css ./assets/css/general.css ./assets/css/general.min.css /var/www/html/assets/css/
-COPY ./assets/css/themes/ /var/www/html/assets/css/themes/
+# Copy the freshly compiled stylesheets and themes. The upstream 1.5.2 image only
+# keeps assets/css/layouts/ and assets/css/pages/, so these root CSS files must be
+# supplied by the build stage above.
+COPY --from=assets-builder /build/assets/css/backend.css /build/assets/css/backend.min.css /build/assets/css/frontend.css /build/assets/css/frontend.min.css /build/assets/css/general.css /build/assets/css/general.min.css /var/www/html/assets/css/
+COPY --from=assets-builder /build/assets/css/themes/ /var/www/html/assets/css/themes/
 
 # White-label JS strings (the base image would otherwise keep "Easy!Appointments").
 COPY ./assets/js/app.js /var/www/html/assets/js/app.js
