@@ -16,10 +16,11 @@ mkdir -p "$DUMP_DIR"
 echo "Creating local database dump: $DUMP_FILE"
 docker compose exec -T mysql mysqldump \
     --single-transaction \
+    --no-tablespaces \
     --routines \
     --triggers \
     -u user \
-    -p password \
+    -ppassword \
     easyappointments > "$DUMP_FILE"
 
 echo "Done. Dump size: $(du -h "$DUMP_FILE" | cut -f1)"
