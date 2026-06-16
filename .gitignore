@@ -31,4 +31,6 @@
 /vendor/
 /metafile
 .DS_Store
-task_bodysculpt.txt 
+task_bodysculpt.txt
+/cls
+/git

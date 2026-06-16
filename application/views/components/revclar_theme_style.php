@@ -121,13 +121,92 @@
     }
 
     .dropdown-item:hover,
-    .dropdown-item:focus {
-        background-color: rgba(99, 102, 241, 0.12);
+    .dropdown-item:focus,
+    .dropdown-item.active,
+    .dropdown-item:active {
+        background-color: #6366F1;
         color: #FAFAFA;
     }
 
     .dropdown-divider {
         border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    /* -------------------------------------------------------------------------
+     * Native selects and Select2 autocomplete dropdowns
+     * ------------------------------------------------------------------------- */
+    select option,
+    select optgroup,
+    .form-select option,
+    .form-select optgroup {
+        background-color: #18181B;
+        color: #FAFAFA;
+    }
+
+    select option:hover,
+    select option:focus,
+    select option:checked,
+    select option:active,
+    .form-select option:hover,
+    .form-select option:focus,
+    .form-select option:checked,
+    .form-select option:active {
+        background-color: #6366F1;
+        color: #FAFAFA;
+    }
+
+    .select2-dropdown {
+        background-color: #18181B;
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .select2-container--default .select2-selection--single,
+    .select2-container--default .select2-selection--multiple {
+        background-color: #18181B;
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered,
+    .select2-container--default .select2-selection--single .select2-selection__placeholder,
+    .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        color: #FAFAFA;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        border-color: #FAFAFA transparent transparent transparent;
+    }
+
+    .select2-container--default .select2-results__option {
+        color: #FAFAFA;
+    }
+
+    .select2-container--default .select2-results__option--highlighted,
+    .select2-container--default .select2-results__option--selected,
+    .select2-container--default .select2-results__option[aria-selected="true"] {
+        background-color: #6366F1;
+        color: #FAFAFA;
+    }
+
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+        background-color: #18181B;
+        border-color: rgba(255, 255, 255, 0.08);
+        color: #FAFAFA;
+    }
+
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        background-color: #6366F1;
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: #FAFAFA;
+    }
+
+    .select2-container--default.select2-container--focus .select2-selection--multiple,
+    .select2-container--default.select2-container--open .select2-selection--single,
+    .select2-container--default.select2-container--open .select2-selection--multiple {
+        border-color: #6366F1;
     }
 
     /* -------------------------------------------------------------------------
