@@ -44,6 +44,10 @@ App.Utils.CalendarTableView = (function () {
 
     const moment = window.moment;
 
+    function isMobile() {
+        return window.innerWidth < 768;
+    }
+
     let $filterProvider;
     let $filterService;
     let $selectDate;
@@ -66,7 +70,7 @@ App.Utils.CalendarTableView = (function () {
             65;
         const height = window.innerHeight - offset;
 
-        return Math.max(height, 700);
+        return Math.max(height, isMobile() ? 500 : 700);
     }
 
     /**
@@ -1319,7 +1323,7 @@ App.Utils.CalendarTableView = (function () {
                 $providerColumn
                     .find('.calendar-wrapper')
                     .data('fullCalendar')
-                    .changeView(providerView[providerId] || 'timeGridDay');
+                    .changeView(providerView[providerId] || (isMobile() ? 'listDay' : 'timeGridDay'));
             });
         });
     }
@@ -1398,9 +1402,11 @@ App.Utils.CalendarTableView = (function () {
         const {columnFormat, timeFormat, slotTimeFormat} = getFormatSettings();
         const firstWeekdayNumber = App.Utils.Date.getWeekdayId(vars('first_weekday'));
 
+        const mobileView = isMobile();
+
         const fullCalendar = new FullCalendar.Calendar($wrapper[0], {
             locale: vars('language_code'),
-            initialView: 'timeGridDay',
+            initialView: mobileView ? 'listDay' : 'timeGridDay',
             nowIndicator: true,
             height: getCalendarHeight(),
             editable: true,
@@ -1421,11 +1427,13 @@ App.Utils.CalendarTableView = (function () {
             selectHelper: true,
             themeSystem: 'bootstrap5',
             selectLongPressDelay: 100,
-            headerToolbar: {
-                left: 'listDay,timeGridDay',
-                center: '',
-                right: '',
-            },
+            headerToolbar: mobileView
+                ? false
+                : {
+                      left: 'listDay,timeGridDay',
+                      center: '',
+                      right: '',
+                  },
             buttonText: {
                 today: lang('today'),
                 day: lang('day'),
@@ -1454,12 +1462,23 @@ App.Utils.CalendarTableView = (function () {
 
         const $calendarViewDiv = $('.calendar-view > div');
 
-        $calendarViewDiv.css('min-width', '1000%');
-        let width = 0;
-        $dateColumn.each((index, dateColumn) => {
-            width += $(dateColumn).outerWidth();
-        });
-        $calendarViewDiv.css('min-width', width + 200);
+        if (isMobile()) {
+            $calendarViewDiv.css('min-width', '');
+            $('.calendar-wrapper').each((index, wrapper) => {
+                const fullCalendar = $(wrapper).data('fullCalendar');
+                if (fullCalendar) {
+                    fullCalendar.updateSize();
+                }
+            });
+        } else {
+            $calendarViewDiv.css('min-width', '1000%');
+            let width = 0;
+            $dateColumn.each((index, dateColumn) => {
+                width += $(dateColumn).outerWidth();
+            });
+            $calendarViewDiv.css('min-width', width + 200);
+        }
+
         const dateColumnHeight = $dateColumn.outerHeight();
 
         $('.calendar-wrapper').height(getCalendarHeight());

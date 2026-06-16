@@ -579,4 +579,94 @@
         background-color: #1F1F23;
         border-bottom-color: rgba(255, 255, 255, 0.16);
     }
+
+    /* -------------------------------------------------------------------------
+     * Mobile-first responsive tweaks
+     * ------------------------------------------------------------------------- */
+    @media (max-width: 767.98px) {
+        /* Header: keep only icons to save space */
+        #header .navbar-brand span {
+            display: none;
+        }
+
+        #header #header-menu .nav-link span {
+            display: none;
+        }
+
+        /* Calendar toolbar: stack controls vertically */
+        #calendar-toolbar .calendar-header,
+        #calendar .calendar-header {
+            flex-direction: column !important;
+            gap: 0.5rem;
+        }
+
+        #calendar-toolbar .calendar-header > *,
+        #calendar .calendar-header > * {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        #calendar-toolbar .input-group,
+        #calendar-toolbar .form-select,
+        #calendar-toolbar .btn,
+        #calendar .calendar-header .btn,
+        #calendar .calendar-header .form-select {
+            width: 100% !important;
+        }
+
+        /* Calendar: no horizontal scroll and full-width provider columns on mobile */
+        #calendar .calendar-view {
+            overflow-x: hidden !important;
+        }
+
+        #calendar .calendar-view > div {
+            min-width: auto !important;
+        }
+
+        #calendar .calendar-view .date-column .provider-column {
+            width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
+            border-right: none !important;
+            margin-bottom: 1rem;
+        }
+
+        #calendar .calendar-view .date-column-title {
+            display: none !important;
+        }
+
+        #calendar .calendar-wrapper {
+            max-height: 70vh !important;
+        }
+
+        /* Backend forms: single column on mobile */
+        .backend-page .row .col,
+        .backend-page .row [class*="col-"] {
+            width: 100%;
+            max-width: 100%;
+            flex: 0 0 100%;
+        }
+
+        /* Public booking page: full-width controls */
+        #wizard-frame-1 .form-select,
+        #wizard-frame-1 .form-control,
+        #wizard-frame-1 .btn,
+        #wizard-frame-2 .form-select,
+        #wizard-frame-2 .form-control,
+        #wizard-frame-2 .btn,
+        #wizard-frame-3 .form-select,
+        #wizard-frame-3 .form-control,
+        #wizard-frame-3 .btn {
+            width: 100%;
+            min-height: 48px;
+        }
+
+        /* Larger touch targets for buttons and nav */
+        .btn,
+        .nav-link,
+        .dropdown-item,
+        .form-check-input {
+            min-height: 44px;
+        }
+    }
 </style>
