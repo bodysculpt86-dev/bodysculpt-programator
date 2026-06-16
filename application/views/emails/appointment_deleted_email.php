@@ -25,7 +25,7 @@ $customer_address = trim((string) ($customer['address'] ?? ''));
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <title>
-        <?= lang('appointment_cancelled_title') ?> | Easy!Appointments
+        <?= lang('appointment_cancelled_title') ?> | Bookings by Revclar
     </title>
     <style>
         /* -------------------------------------
@@ -630,7 +630,7 @@ $customer_address = trim((string) ($customer['address'] ?? ''));
                             <td class="content-block powered-by">
                                 Powered by
                                 <a href="https://easyappointments.org" style="text-decoration: none;">
-                                    Easy!Appointments
+                                    Bookings by Revclar
                                 </a>
                                 |
                                 <a href="<?= e($settings['company_link']) ?>" style="text-decoration: none;">

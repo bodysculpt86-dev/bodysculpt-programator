@@ -12,8 +12,8 @@
         <img src="<?= base_url(
             'assets/img/logo.png',
         ) ?>" alt="logo" class="float-start me-2" style="width: 45px; height: 45px;">
-        <h6 class="mb-1 mt-1 fw-bold text-white" style="font-size: 15px;">EASY!APPOINTMENTS</h6>
-        <small class="d-block text-white-50" style="font-size: 12px;">Online Appointment Scheduler</small>
+        <h6 class="mb-1 mt-1 fw-bold text-white" style="font-size: 15px;"><?= e(setting('company_name')) ?></h6>
+        <small class="d-block text-white-50" style="font-size: 12px;">Bookings by Revclar</small>
     </div>
 
     <button type="button" class="navbar-toggler me-1" data-bs-toggle="collapse" data-bs-target="#header-menu">
@@ -25,9 +25,7 @@
             <?php $hidden = can('view', PRIV_APPOINTMENTS) ? '' : 'd-none'; ?>
             <?php $active = $active_menu == PRIV_APPOINTMENTS ? 'active' : ''; ?>
             <li class="nav-item text-center <?= $active . $hidden ?>" style="min-width: 100px;">
-                <a href="<?= site_url(
-                    'calendar' . (vars('calendar_view') === CALENDAR_VIEW_TABLE ? '?view=table' : ''),
-                ) ?>"
+                <a href="<?= site_url('calendar') ?>"
                    class="nav-link text-white fw-light py-3 px-3"
                    data-tippy-content="<?= lang('manage_appointment_record_hint') ?>">
                     <i class="fas fa-calendar-alt me-2"></i>
@@ -107,10 +105,6 @@
                     <a class="dropdown-item" href="<?= site_url('about') ?>">
                         <i class="fas fa-info-circle me-2"></i>
                         <?= lang('about') ?>
-                    </a>
-                    <a class="dropdown-item text-danger" href="https://easyappointments.org/premium" target="_blank">
-                        <i class="fas fa-crown text-warning me-2"></i>
-                        Premium
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="<?= site_url('booking') ?>" target="_blank">

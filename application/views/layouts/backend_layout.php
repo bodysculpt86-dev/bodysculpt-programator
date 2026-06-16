@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="<?= config('language_code') ?>">
+<html lang="<?= config('language_code') ?>" data-bs-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <meta name="theme-color" content="#35A768">
+    <meta name="theme-color" content="#6366F1">
     <meta name="google" content="notranslate">
 
     <?php slot('meta'); ?>
 
-    <title><?= vars('page_title') ?? lang('backend_section') ?> | Easy!Appointments</title>
+    <title><?= vars('page_title') ?? lang('backend_section') ?> | Bookings by Revclar</title>
 
     <link rel="icon" type="image/x-icon" href="<?= asset_url('assets/img/favicon.ico') ?>">
     <link rel="icon" sizes="192x192" href="<?= asset_url('assets/img/logo.png') ?>">
@@ -22,6 +22,8 @@
           href="<?= asset_url('assets/css/themes/' . setting('theme', 'default') . '.css') ?>">
     <link rel="stylesheet" type="text/css" href="<?= asset_url('assets/css/general.css') ?>">
     <link rel="stylesheet" type="text/css" href="<?= asset_url('assets/css/backend.css') ?>">
+
+    <?php component('revclar_theme_style'); ?>
 
     <?php component('company_color_style', ['company_color' => setting('company_color')]); ?>
 

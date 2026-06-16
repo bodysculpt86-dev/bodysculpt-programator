@@ -157,22 +157,7 @@ class Calendar extends EA_Controller
 
         $available_providers = $this->providers_model->get_available_providers();
 
-        if ($role_slug === DB_SLUG_PROVIDER) {
-            $available_providers = array_values(
-                array_filter($available_providers, function ($available_provider) use ($user_id) {
-                    return (int) $available_provider['id'] === (int) $user_id;
-                }),
-            );
-        }
-
-        if ($role_slug === DB_SLUG_SECRETARY) {
-            $available_providers = array_values(
-                array_filter($available_providers, function ($available_provider) use ($secretary_providers) {
-                    return in_array($available_provider['id'], $secretary_providers);
-                }),
-            );
-        }
-
+        // All roles see all providers in the calendar (clinic-wide view).
         $available_services = $this->services_model->get_available_services();
 
         // Filter services to only include those that can be served by at least one available provider
@@ -190,6 +175,9 @@ class Calendar extends EA_Controller
         );
 
         $calendar_view = request('view', $user['settings']['calendar_view']);
+
+        // Force Table View for all users and all roles.
+        $calendar_view = CALENDAR_VIEW_TABLE;
 
         $appointment_status_options = setting('appointment_status_options');
 
@@ -313,8 +301,8 @@ class Calendar extends EA_Controller
                 $appointment = $appointment_data;
 
                 $required_permissions = !empty($appointment['id'])
-                    ? can('add', PRIV_APPOINTMENTS)
-                    : can('edit', PRIV_APPOINTMENTS);
+                    ? can('edit', PRIV_APPOINTMENTS)
+                    : can('add', PRIV_APPOINTMENTS);
 
                 if (!$required_permissions) {
                     throw new RuntimeException('You do not have the required permissions for this task.');
@@ -407,19 +395,9 @@ class Calendar extends EA_Controller
 
     private function check_event_permissions(int $provider_id): void
     {
-        $user_id = (int) session('user_id');
-        $role_slug = session('role_slug');
-
-        if (
-            $role_slug === DB_SLUG_SECRETARY &&
-            !$this->secretaries_model->is_provider_supported($user_id, $provider_id)
-        ) {
-            abort(403);
-        }
-
-        if ($role_slug === DB_SLUG_PROVIDER && $user_id !== $provider_id) {
-            abort(403);
-        }
+        // All employees (admin/provider/secretary) can manage appointments and
+        // unavailabilities for any provider as long as they have the calendar
+        // appointments privilege. The privilege check is performed separately.
     }
 
     /**
@@ -678,49 +656,7 @@ class Calendar extends EA_Controller
 
             unset($appointment);
 
-            $user_id = session('user_id');
-
-            $role_slug = session('role_slug');
-
-            // If the current user is a provider he must only see his own appointments.
-            if ($role_slug === DB_SLUG_PROVIDER) {
-                foreach ($response['appointments'] as $index => $appointment) {
-                    if ((int) $appointment['id_users_provider'] !== (int) $user_id) {
-                        unset($response['appointments'][$index]);
-                    }
-                }
-
-                $response['appointments'] = array_values($response['appointments']);
-
-                foreach ($response['unavailabilities'] as $index => $unavailability) {
-                    if ((int) $unavailability['id_users_provider'] !== (int) $user_id) {
-                        unset($response['unavailabilities'][$index]);
-                    }
-                }
-
-                $response['unavailabilities'] = array_values($response['unavailabilities']);
-            }
-
-            // If the current user is a secretary he must only see the appointments of his providers.
-            if ($role_slug === DB_SLUG_SECRETARY) {
-                $providers = $this->secretaries_model->find($user_id)['providers'];
-
-                foreach ($response['appointments'] as $index => $appointment) {
-                    if (!in_array((int) $appointment['id_users_provider'], $providers)) {
-                        unset($response['appointments'][$index]);
-                    }
-                }
-
-                $response['appointments'] = array_values($response['appointments']);
-
-                foreach ($response['unavailabilities'] as $index => $unavailability) {
-                    if (!in_array((int) $unavailability['id_users_provider'], $providers)) {
-                        unset($response['unavailabilities'][$index]);
-                    }
-                }
-
-                $response['unavailabilities'] = array_values($response['unavailabilities']);
-            }
+            // All roles see all appointments/unavailabilities in the calendar.
 
             foreach ($response['unavailabilities'] as &$unavailability) {
                 $unavailability['provider'] = $this->providers_model->find($unavailability['id_users_provider']);
@@ -869,47 +805,7 @@ class Calendar extends EA_Controller
 
             $role_slug = session('role_slug');
 
-            // If the current user is a provider he must only see his own appointments.
-            if ($role_slug === DB_SLUG_PROVIDER) {
-                foreach ($response['appointments'] as $index => $appointment) {
-                    if ((int) $appointment['id_users_provider'] !== (int) $user_id) {
-                        unset($response['appointments'][$index]);
-                    }
-                }
-
-                $response['appointments'] = array_values($response['appointments']);
-
-                foreach ($response['unavailabilities'] as $index => $unavailability) {
-                    if ((int) $unavailability['id_users_provider'] !== (int) $user_id) {
-                        unset($response['unavailabilities'][$index]);
-                    }
-                }
-
-                unset($unavailability);
-
-                $response['unavailabilities'] = array_values($response['unavailabilities']);
-            }
-
-            // If the current user is a secretary he must only see the appointments of his providers.
-            if ($role_slug === DB_SLUG_SECRETARY) {
-                $providers = $this->secretaries_model->find($user_id)['providers'];
-
-                foreach ($response['appointments'] as $index => $appointment) {
-                    if (!in_array((int) $appointment['id_users_provider'], $providers)) {
-                        unset($response['appointments'][$index]);
-                    }
-                }
-
-                $response['appointments'] = array_values($response['appointments']);
-
-                foreach ($response['unavailabilities'] as $index => $unavailability) {
-                    if (!in_array((int) $unavailability['id_users_provider'], $providers)) {
-                        unset($response['unavailabilities'][$index]);
-                    }
-                }
-
-                $response['unavailabilities'] = array_values($response['unavailabilities']);
-            }
+            // All roles see all appointments/unavailabilities in the calendar.
 
             foreach ($response['unavailabilities'] as &$unavailability) {
                 $unavailability['provider'] = $this->providers_model->find($unavailability['id_users_provider']);

@@ -103,32 +103,7 @@ class Appointments extends EA_Controller
 
             $appointments = $this->appointments_model->search($keyword, $limit, $offset, $order_by);
 
-            $user_id = session('user_id');
-            $role_slug = session('role_slug');
-
-            // If the current user is a provider he must only see his own appointments.
-            if ($role_slug === DB_SLUG_PROVIDER) {
-                foreach ($appointments as $index => $appointment) {
-                    if ((int) $appointment['id_users_provider'] !== (int) $user_id) {
-                        unset($appointments[$index]);
-                    }
-                }
-
-                $appointments = array_values($appointments);
-            }
-
-            // If the current user is a secretary he must only see the appointments of his providers.
-            if ($role_slug === DB_SLUG_SECRETARY) {
-                $provider_ids = $this->secretaries_model->find($user_id)['providers'];
-
-                foreach ($appointments as $index => $appointment) {
-                    if (!in_array((int) $appointment['id_users_provider'], $provider_ids)) {
-                        unset($appointments[$index]);
-                    }
-                }
-
-                $appointments = array_values($appointments);
-            }
+            // All employees can see and manage appointments across all providers.
 
             json_response($appointments);
         } catch (Throwable $e) {
@@ -155,13 +130,6 @@ class Appointments extends EA_Controller
             // Validate decoded appointment is an array
             if (!is_array($appointment)) {
                 throw new InvalidArgumentException('Invalid appointment data provided.');
-            }
-
-            $user_id = (int) session('user_id');
-            $role_slug = session('role_slug');
-
-            if ($role_slug === DB_SLUG_PROVIDER) {
-                $appointment['id_users_provider'] = $user_id;
             }
 
             $this->appointments_model->only($appointment, $this->allowed_appointment_fields);
@@ -235,15 +203,8 @@ class Appointments extends EA_Controller
                 throw new InvalidArgumentException('Invalid appointment data provided.');
             }
 
-            $user_id = (int) session('user_id');
-            $role_slug = session('role_slug');
-
             if (!empty($appointment['id'])) {
                 $this->check_appointment_access((int) $appointment['id']);
-            }
-
-            if ($role_slug === DB_SLUG_PROVIDER) {
-                $appointment['id_users_provider'] = $user_id;
             }
 
             $this->appointments_model->only($appointment, $this->allowed_appointment_fields);
@@ -303,20 +264,7 @@ class Appointments extends EA_Controller
      */
     private function check_appointment_access(int $appointment_id): void
     {
-        $user_id = (int) session('user_id');
-        $role_slug = session('role_slug');
-        $appointment = $this->appointments_model->find($appointment_id);
-        $provider_id = (int) $appointment['id_users_provider'];
-
-        if (
-            $role_slug === DB_SLUG_SECRETARY &&
-            !$this->secretaries_model->is_provider_supported($user_id, $provider_id)
-        ) {
-            abort(403, 'Forbidden');
-        }
-
-        if ($role_slug === DB_SLUG_PROVIDER && $user_id !== $provider_id) {
-            abort(403, 'Forbidden');
-        }
+        // All employees can manage appointments across all providers. The
+        // add/edit/delete privilege checks are performed separately.
     }
 }

@@ -33,6 +33,10 @@ cat <<'EOF' >/etc/apache2/conf-enabled/railway-forwarded-https.conf
 SetEnvIf X-Forwarded-Proto "^https$" HTTPS=on
 EOF
 
+# Replace the upstream product name with the white-label brand in the generated
+# email config (and any other upstream templates that contain it).
+sed -i 's/Easy!Appointments/Bookings by Revclar/g' /usr/local/bin/docker-entrypoint.sh
+
 # Delegate to the original Easy!Appointments entrypoint, which templates
 # config.php / email.php from environment variables and then runs
 # apache2-foreground. Using exec preserves signal handling (PID 1).

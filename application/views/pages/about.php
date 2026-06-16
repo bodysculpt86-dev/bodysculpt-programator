@@ -6,10 +6,10 @@
     <div id="about" class="col-lg-8 offset-lg-2">
 
         <div class="text-center my-5">
-            <img src="<?= base_url('assets/img/logo.png') ?>" alt="Easy!Appointments Logo" class="mb-5">
+            <img src="<?= base_url('assets/img/logo.png') ?>" alt="Bookings by Revclar Logo" class="mb-5">
 
             <h3>
-                Easy!Appointments
+                Bookings by Revclar
             </h3>
             <h6 class="text-primary">
                 Online Appointment Scheduler
@@ -127,6 +127,17 @@
                 </a>
             </div>
         </div>
+
+        <h4 class="fw-light mb-3">
+            Autor / Credite
+        </h4>
+
+        <p class="mb-5">
+            Bookings by Revclar este construit pe baza platformei Easy!Appointments,
+            dezvoltată inițial de
+            <a href="https://alextselegidis.com" target="_blank">Alex Tselegidis</a>
+            &copy; <?= date('Y') ?> - Software Development.
+        </p>
 
         <h4 class="fw-light mb-3">
             <?= lang('license') ?>

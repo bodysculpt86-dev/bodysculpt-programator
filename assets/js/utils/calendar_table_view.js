@@ -115,24 +115,8 @@ App.Utils.CalendarTableView = (function () {
      * @returns {Array} Filtered providers array.
      */
     function getAvailableProviders() {
-        const roleSlug = vars('role_slug');
-        const userId = vars('user_id');
-
-        return vars('available_providers').filter((provider) => {
-            if (roleSlug === App.Layouts.Backend.DB_SLUG_ADMIN) {
-                return true;
-            }
-
-            if (roleSlug === App.Layouts.Backend.DB_SLUG_SECRETARY) {
-                return vars('secretary_providers').indexOf(Number(provider.id)) !== -1;
-            }
-
-            if (roleSlug === App.Layouts.Backend.DB_SLUG_PROVIDER) {
-                return Number(provider.id) === Number(userId);
-            }
-
-            return false;
-        });
+        // All roles see all providers in the calendar.
+        return vars('available_providers');
     }
 
     /**
@@ -1246,17 +1230,9 @@ App.Utils.CalendarTableView = (function () {
             },
         }).appendTo($providerFilterGroup);
 
-        if (vars('role_slug') !== App.Layouts.Backend.DB_SLUG_PROVIDER) {
-            providers.forEach((provider) => {
-                $filterProvider.append(new Option(provider.first_name + ' ' + provider.last_name, provider.id));
-            });
-        } else {
-            providers.forEach((provider) => {
-                if (Number(provider.id) === Number(vars('user_id'))) {
-                    $filterProvider.append(new Option(provider.first_name + ' ' + provider.last_name, provider.id));
-                }
-            });
-        }
+        providers.forEach((provider) => {
+            $filterProvider.append(new Option(provider.first_name + ' ' + provider.last_name, provider.id));
+        });
 
         App.Utils.UI.initializeDropdown($filterProvider);
 
@@ -1382,16 +1358,6 @@ App.Utils.CalendarTableView = (function () {
                     filterProviderIds.includes(provider.id))
             );
         });
-        // Role-based filtering
-
-        if (vars('role_slug') === 'provider') {
-            providers = vars('available_providers').filter((p) => Number(p.id) === Number(vars('user_id')));
-        }
-
-        if (vars('role_slug') === 'secretary') {
-            providers = vars('available_providers').filter((p) => vars('secretary_providers').indexOf(p.id) > -1);
-        }
-
         providers.forEach((provider) => {
             createProviderColumn($dateColumn, date, provider, events);
         });
@@ -1442,12 +1408,14 @@ App.Utils.CalendarTableView = (function () {
             firstDay: firstWeekdayNumber,
             slotDuration: '00:15:00',
             snapDuration: '00:15:00',
-            scrollTime: '07:00:00',
+            scrollTime: '08:00:00',
+            slotMinTime: '08:00:00',
+            slotMaxTime: '22:00:00',
             slotLabelInterval: '01:00',
-            eventTimeFormat: timeFormat,
+            eventTimeFormat: {hour: '2-digit', minute: '2-digit', hour12: false},
             eventTextColor: '#333',
             eventColor: EVENT_COLORS.default,
-            slotLabelFormat: slotTimeFormat,
+            slotLabelFormat: {hour: '2-digit', minute: '2-digit', hour12: false},
             allDayContent: lang('all_day'),
             dayHeaderFormat: columnFormat,
             selectable: true,
