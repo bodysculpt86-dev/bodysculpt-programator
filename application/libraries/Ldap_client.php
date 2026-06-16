@@ -34,7 +34,6 @@ class Ldap_client
 
         $this->CI->load->model('roles_model');
 
-        $this->CI->load->library('timezones');
         $this->CI->load->library('accounts');
     }
 
@@ -84,13 +83,11 @@ class Ldap_client
         if ($user_bind) {
             $role = $this->CI->roles_model->find($user['id_roles']);
 
-            $default_timezone = $this->CI->timezones->get_default_timezone();
-
             return [
                 'user_id' => $user['id'],
                 'user_email' => $user['email'],
                 'username' => $username,
-                'timezone' => !empty($user['timezone']) ? $user['timezone'] : $default_timezone,
+                'timezone' => setting('default_timezone'),
                 'language' => !empty($user['language']) ? $user['language'] : Config::LANGUAGE,
                 'role_slug' => $role['slug'],
             ];

@@ -33,7 +33,6 @@ class Secretaries extends EA_Controller
         'state',
         'zip_code',
         'notes',
-        'timezone',
         'language',
         'is_private',
         'ldap_dn',
@@ -103,7 +102,6 @@ class Secretaries extends EA_Controller
         script_vars([
             'user_id' => $user_id,
             'role_slug' => $role_slug,
-            'timezones' => $this->timezones->to_array(),
             'min_password_length' => MIN_PASSWORD_LENGTH,
             'providers' => filter_sensitive_users_data($providers),
             'default_language' => setting('default_language'),
@@ -114,7 +112,6 @@ class Secretaries extends EA_Controller
             'page_title' => lang('secretaries'),
             'active_menu' => PRIV_USERS,
             'user_display_name' => $this->accounts->get_user_display_name($user_id),
-            'grouped_timezones' => $this->timezones->to_grouped_array(),
             'privileges' => $this->roles_model->get_permissions_by_slug($role_slug),
             'providers' => $this->providers_model->get(),
         ]);
@@ -178,6 +175,8 @@ class Secretaries extends EA_Controller
             $this->secretaries_model->only($secretary['settings'], $this->allowed_secretary_setting_fields);
 
             $this->secretaries_model->optional($secretary['settings'], $this->optional_secretary_setting_fields);
+
+            $secretary['timezone'] = setting('default_timezone');
 
             $secretary_id = $this->secretaries_model->save($secretary);
 
@@ -244,6 +243,8 @@ class Secretaries extends EA_Controller
             $this->secretaries_model->only($secretary['settings'], $this->allowed_secretary_setting_fields);
 
             $this->secretaries_model->optional($secretary, $this->optional_secretary_fields);
+
+            $secretary['timezone'] = setting('default_timezone');
 
             $secretary_id = $this->secretaries_model->save($secretary);
 

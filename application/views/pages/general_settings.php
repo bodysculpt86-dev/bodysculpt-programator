@@ -212,23 +212,6 @@
                                     </div>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label class="form-label" for="default-timezone">
-                                        <?= lang('default_timezone') ?>
-                                        <span class="text-danger" hidden>*</span>
-                                    </label>
-                                    <?php component('timezone_dropdown', [
-                                        'attributes' =>
-                                            'id="default-timezone" data-field="default_timezone" class="form-select required"',
-                                        'grouped_timezones' => vars('grouped_timezones'),
-                                    ]); ?>
-                                </div>
-                                <div class="form-text text-muted">
-                                    <small>
-                                        <?= lang('default_timezone_hint') ?>
-                                    </small>
-                                </div>
-
                             </div>
                         </div>
 

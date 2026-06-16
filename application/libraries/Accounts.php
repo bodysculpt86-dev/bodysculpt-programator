@@ -34,8 +34,6 @@ class Accounts
 
         $this->CI->load->model('users_model');
         $this->CI->load->model('roles_model');
-
-        $this->CI->load->library('timezones');
     }
 
     /**
@@ -81,13 +79,11 @@ class Accounts
 
         $role = $this->CI->roles_model->find($user['id_roles']);
 
-        $default_timezone = $this->CI->timezones->get_default_timezone();
-
         return [
             'user_id' => $user['id'],
             'user_email' => $user['email'],
             'username' => $username,
-            'timezone' => !empty($user['timezone']) ? $user['timezone'] : $default_timezone,
+            'timezone' => setting('default_timezone'),
             'language' => !empty($user['language']) ? $user['language'] : Config::LANGUAGE,
             'role_slug' => $role['slug'],
         ];

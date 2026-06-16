@@ -189,7 +189,6 @@ App.Utils.CalendarTableView = (function () {
         $appointmentsModal.find('#city').val(customer.city);
         $appointmentsModal.find('#zip-code').val(customer.zip_code);
         $appointmentsModal.find('#language').val(customer.language);
-        $appointmentsModal.find('#timezone').val(customer.timezone);
         $appointmentsModal.find('#customer-notes').val(customer.notes);
         $appointmentsModal.find('#custom-field-1').val(customer.custom_field_1);
         $appointmentsModal.find('#custom-field-2').val(customer.custom_field_2);

@@ -412,6 +412,9 @@ class Booking extends EA_Controller
             // Sanitize customer fields - only allow expected fields
             $customer = array_intersect_key($customer, array_flip($this->allowed_customer_fields));
 
+            // Always use the global default timezone for the customer.
+            $customer['timezone'] = setting('default_timezone');
+
             // Sanitize appointment fields - only allow expected fields
             $appointment = array_intersect_key($appointment, array_flip($this->allowed_appointment_fields));
 

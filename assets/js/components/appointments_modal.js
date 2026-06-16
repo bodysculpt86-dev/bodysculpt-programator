@@ -30,7 +30,6 @@ App.Components.AppointmentsModal = (function () {
     const $city = $('#city');
     const $zipCode = $('#zip-code');
     const $language = $('#language');
-    const $timezone = $('#timezone');
     const $customerNotes = $('#customer-notes');
     const $selectCustomer = $('#select-customer');
     const $saveAppointment = $('#save-appointment');
@@ -59,14 +58,8 @@ App.Components.AppointmentsModal = (function () {
      * Update the displayed timezone.
      */
     function updateTimezone() {
-        const providerId = $selectProvider.val();
-
-        const provider = vars('available_providers').find(
-            (availableProvider) => Number(availableProvider.id) === Number(providerId),
-        );
-
-        if (provider && provider.timezone) {
-            $('.provider-timezone').text(vars('timezones')[provider.timezone]);
+        if (vars('default_timezone')) {
+            $('.provider-timezone').text(vars('timezones')[vars('default_timezone')]);
         }
     }
 
@@ -121,7 +114,6 @@ App.Components.AppointmentsModal = (function () {
                 city: $city.val(),
                 zip_code: $zipCode.val(),
                 language: $language.val(),
-                timezone: $timezone.val(),
                 notes: $customerNotes.val(),
                 custom_field_1: $customField1.val(),
                 custom_field_2: $customField2.val(),
@@ -331,7 +323,6 @@ App.Components.AppointmentsModal = (function () {
                 $city.val(customer.city);
                 $zipCode.val(customer.zip_code);
                 $language.val(customer.language);
-                $timezone.val(customer.timezone);
                 $customerNotes.val(customer.notes);
                 $customField1.val(customer.custom_field_1);
                 $customField2.val(customer.custom_field_2);
@@ -493,7 +484,6 @@ App.Components.AppointmentsModal = (function () {
             $city.val('');
             $zipCode.val('');
             $language.val(vars('default_language'));
-            $timezone.val(vars('default_timezone'));
             $customerNotes.val('');
             $customField1.val('');
             $customField2.val('');
@@ -519,7 +509,6 @@ App.Components.AppointmentsModal = (function () {
         $appointmentStatus.val(defaultStatusValue);
 
         $language.val(vars('default_language'));
-        $timezone.val(vars('default_timezone'));
 
         // Reset color.
         $appointmentColor.find('.color-selection-option:first').trigger('click');

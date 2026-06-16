@@ -4,7 +4,6 @@
  *
  * @var array $available_services
  * @var array $appointment_status_options
- * @var array $timezones
  * @var array $require_first_name
  * @var array $require_last_name
  * @var array $require_email
@@ -179,7 +178,7 @@
                                             <small>
                                                 <?= lang('current_user') ?>:
                                                 <span>
-                                                    <?= $timezones[session('timezone', 'UTC')] ?>
+                                                    <?= $timezones[setting('default_timezone')] ?>
                                                 </span>
                                             </small>
                                         </div>
@@ -330,17 +329,6 @@
                                     <input type="text" id="zip-code"
                                            class="<?= $require_zip_code ? 'required' : '' ?> form-control"
                                            maxlength="120"/>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label" for="timezone">
-                                        <?= lang('timezone') ?>
-                                        <span class="text-danger" hidden>*</span>
-                                    </label>
-                                    <?php component('timezone_dropdown', [
-                                        'attributes' => 'id="timezone" class="form-select required"',
-                                        'grouped_timezones' => vars('grouped_timezones'),
-                                    ]); ?>
                                 </div>
 
                                 <div class="mb-3">

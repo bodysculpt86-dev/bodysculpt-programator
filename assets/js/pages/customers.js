@@ -25,7 +25,6 @@ App.Pages.Customers = (function () {
     const $address = $('#address');
     const $city = $('#city');
     const $zipCode = $('#zip-code');
-    const $timezone = $('#timezone');
     const $language = $('#language');
     const $ldapDn = $('#ldap-dn');
     const $customField1 = $('#custom-field-1');
@@ -209,7 +208,6 @@ App.Pages.Customers = (function () {
                 city: $city.val(),
                 zip_code: $zipCode.val(),
                 notes: $notes.val(),
-                timezone: $timezone.val(),
                 language: $language.val() || 'english',
                 custom_field_1: $customField1.val(),
                 custom_field_2: $customField2.val(),
@@ -335,7 +333,6 @@ App.Pages.Customers = (function () {
     function resetForm() {
         $customers.find('.record-details').find('input, select, textarea').val('').prop('disabled', true);
         $customers.find('.record-details .form-label span').prop('hidden', true);
-        $customers.find('.record-details #timezone').val(vars('default_timezone'));
         $customers.find('.record-details #language').val(vars('default_language'));
 
         $customerAppointments.empty();
@@ -367,7 +364,6 @@ App.Pages.Customers = (function () {
         $city.val(customer.city);
         $zipCode.val(customer.zip_code);
         $notes.val(customer.notes);
-        $timezone.val(customer.timezone);
         $language.val(customer.language || 'english');
         $ldapDn.val(customer.ldap_dn);
         $customField1.val(customer.custom_field_1);

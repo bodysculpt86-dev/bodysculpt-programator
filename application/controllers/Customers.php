@@ -40,7 +40,6 @@ class Customers extends EA_Controller
         'state',
         'zip_code',
         'notes',
-        'timezone',
         'language',
         'custom_field_1',
         'custom_field_2',
@@ -132,7 +131,6 @@ class Customers extends EA_Controller
             'active_menu' => PRIV_CUSTOMERS,
             'user_display_name' => $this->accounts->get_user_display_name($user_id),
             'timezones' => $this->timezones->to_array(),
-            'grouped_timezones' => $this->timezones->to_grouped_array(),
             'privileges' => $this->roles_model->get_permissions_by_slug($role_slug),
             'require_first_name' => $require_first_name,
             'require_last_name' => $require_last_name,
@@ -283,6 +281,8 @@ class Customers extends EA_Controller
 
             $this->customers_model->optional($customer, $this->optional_customer_fields);
 
+            $customer['timezone'] = setting('default_timezone');
+
             $customer_id = $this->customers_model->save($customer);
 
             $customer = $this->customers_model->find($customer_id);
@@ -323,6 +323,8 @@ class Customers extends EA_Controller
             $this->customers_model->only($customer, $this->allowed_customer_fields);
 
             $this->customers_model->optional($customer, $this->optional_customer_fields);
+
+            $customer['timezone'] = setting('default_timezone');
 
             $customer_id = $this->customers_model->save($customer);
 

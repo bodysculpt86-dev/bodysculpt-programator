@@ -32,7 +32,6 @@ class Providers extends EA_Controller
         'state',
         'zip_code',
         'notes',
-        'timezone',
         'language',
         'is_private',
         'ldap_dn',
@@ -119,7 +118,6 @@ class Providers extends EA_Controller
             'time_format' => setting('time_format'),
             'first_weekday' => setting('first_weekday'),
             'min_password_length' => MIN_PASSWORD_LENGTH,
-            'timezones' => $this->timezones->to_array(),
             'services' => $services,
             'default_language' => setting('default_language'),
             'default_timezone' => setting('default_timezone'),
@@ -129,7 +127,6 @@ class Providers extends EA_Controller
             'page_title' => lang('providers'),
             'active_menu' => PRIV_USERS,
             'user_display_name' => $this->accounts->get_user_display_name($user_id),
-            'grouped_timezones' => $this->timezones->to_grouped_array(),
             'privileges' => $this->roles_model->get_permissions_by_slug($role_slug),
             'services' => $this->services_model->get(),
         ]);
@@ -193,6 +190,8 @@ class Providers extends EA_Controller
             $this->providers_model->optional($provider, $this->optional_provider_fields);
 
             $this->providers_model->optional($provider['settings'], $this->optional_provider_setting_fields);
+
+            $provider['timezone'] = setting('default_timezone');
 
             $provider_id = $this->providers_model->save($provider);
 
@@ -261,6 +260,8 @@ class Providers extends EA_Controller
             $this->providers_model->optional($provider, $this->optional_provider_fields);
 
             $this->providers_model->optional($provider['settings'], $this->optional_provider_setting_fields);
+
+            $provider['timezone'] = setting('default_timezone');
 
             $provider_id = $this->providers_model->save($provider);
 

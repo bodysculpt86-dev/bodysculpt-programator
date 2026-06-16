@@ -65,7 +65,6 @@ class General_settings extends EA_Controller
         script_vars([
             'user_id' => $user_id,
             'role_slug' => $role_slug,
-            'timezones' => $this->timezones->to_array(),
             'general_settings' => filter_sensitive_settings($this->settings_model->get()),
         ]);
 
@@ -73,7 +72,6 @@ class General_settings extends EA_Controller
             'page_title' => lang('settings'),
             'active_menu' => PRIV_SYSTEM_SETTINGS,
             'user_display_name' => $this->accounts->get_user_display_name($user_id),
-            'grouped_timezones' => $this->timezones->to_grouped_array(),
             'available_themes' => $available_themes,
         ]);
 
@@ -91,7 +89,6 @@ class General_settings extends EA_Controller
         'company_color',
         'company_working_plan',
         'book_advance_timeout',
-        'default_timezone',
         'default_language',
         'theme',
         'date_format',

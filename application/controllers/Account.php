@@ -32,7 +32,6 @@ class Account extends EA_Controller
         'state',
         'zip_code',
         'notes',
-        'timezone',
         'language',
         'settings',
     ];
@@ -99,7 +98,6 @@ class Account extends EA_Controller
             'page_title' => lang('settings'),
             'active_menu' => PRIV_SYSTEM_SETTINGS,
             'user_display_name' => $this->accounts->get_user_display_name($user_id),
-            'grouped_timezones' => $this->timezones->to_grouped_array(),
         ]);
 
         $this->load->view('pages/account');
@@ -135,12 +133,14 @@ class Account extends EA_Controller
                 unset($account['password']);
             }
 
+            $account['timezone'] = setting('default_timezone');
+
             $this->users_model->save($account);
 
             session([
                 'user_email' => $account['email'],
                 'username' => $account['settings']['username'],
-                'timezone' => $account['timezone'],
+                'timezone' => setting('default_timezone'),
                 'language' => $account['language'],
             ]);
 

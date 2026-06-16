@@ -145,6 +145,10 @@ class Installation extends EA_Controller
             unset($admin['username'], $admin['password']);
             $admin['id'] = $this->admins_model->save($admin);
 
+            if (setting('default_timezone') === null) {
+                setting(['default_timezone' => $admin['timezone']]);
+            }
+
             session([
                 'user_id' => $admin['id'],
                 'user_email' => $admin['email'],

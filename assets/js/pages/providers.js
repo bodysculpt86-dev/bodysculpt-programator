@@ -29,7 +29,6 @@ App.Pages.Providers = (function () {
     const $isPrivate = $('#is-private');
     const $notes = $('#notes');
     const $language = $('#language');
-    const $timezone = $('#timezone');
     const $ldapDn = $('#ldap-dn');
     const $username = $('#username');
     const $password = $('#password');
@@ -199,7 +198,6 @@ App.Pages.Providers = (function () {
                 is_private: Number($isPrivate.prop('checked')),
                 notes: $notes.val(),
                 language: $language.val(),
-                timezone: $timezone.val(),
                 ldap_dn: $ldapDn.val(),
                 settings: {
                     username: $username.val(),
@@ -391,7 +389,6 @@ App.Pages.Providers = (function () {
         $providers.find('.record-details .form-label span').prop('hidden', true);
         $providers.find('.record-details #calendar-view').val('default');
         $providers.find('.record-details #language').val(vars('default_language'));
-        $providers.find('.record-details #timezone').val(vars('default_timezone'));
         $providers.find('.record-details #is-private').prop('checked', false);
         $providers.find('.record-details #notifications').prop('checked', true);
         $providers.find('.add-break, .add-working-plan-exception, #reset-working-plan').prop('disabled', true);
@@ -434,7 +431,6 @@ App.Pages.Providers = (function () {
         $isPrivate.prop('checked', provider.is_private);
         $notes.val(provider.notes);
         $language.val(provider.language);
-        $timezone.val(provider.timezone);
         $ldapDn.val(provider.ldap_dn);
 
         $username.val(provider.settings.username);
