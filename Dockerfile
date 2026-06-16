@@ -12,6 +12,10 @@ COPY ./assets/js/utils/calendar_sync.js /var/www/html/assets/js/utils/calendar_s
 COPY ./assets/js/utils/calendar_default_view.js /var/www/html/assets/js/utils/calendar_default_view.js
 COPY ./assets/js/utils/calendar_table_view.js /var/www/html/assets/js/utils/calendar_table_view.js
 
+# Customer import/export feature (backend customers page).
+COPY ./assets/js/http/customers_http_client.js /var/www/html/assets/js/http/customers_http_client.js
+COPY ./assets/js/pages/customers.js /var/www/html/assets/js/pages/customers.js
+
 # Patched session driver (PHP 8.2 ReturnTypeWillChange fix)
 COPY ./system/libraries/Session/drivers/Session_database_driver.php /var/www/html/system/libraries/Session/drivers/Session_database_driver.php
 
