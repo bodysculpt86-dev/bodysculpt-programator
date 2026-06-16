@@ -30,14 +30,21 @@
 
         --bs-secondary-color: #A1A1AA;
         --bs-secondary-color-rgb: 161, 161, 170;
-        --bs-secondary-bg: #18181B;
-        --bs-secondary-bg-rgb: 24, 24, 27;
+        --bs-secondary-bg: #1F1F23;
+        --bs-secondary-bg-rgb: 31, 31, 35;
 
-        --bs-tertiary-bg: #18181B;
-        --bs-tertiary-bg-rgb: 24, 24, 27;
+        --bs-tertiary-bg: #26262B;
+        --bs-tertiary-bg-rgb: 38, 38, 43;
 
-        --bs-border-color: rgba(255, 255, 255, 0.08);
-        --bs-border-color-translucent: rgba(255, 255, 255, 0.08);
+        --bs-border-color: rgba(255, 255, 255, 0.16);
+        --bs-border-color-translucent: rgba(255, 255, 255, 0.16);
+
+        /* Revclar surface palette */
+        --revclar-page-bg: #09090B;
+        --revclar-surface: #1F1F23;
+        --revclar-surface-2: #26262B;
+        --revclar-border: rgba(255, 255, 255, 0.16);
+        --revclar-border-strong: rgba(255, 255, 255, 0.24);
 
         /* Links */
         --bs-link-color: #818CF8;
@@ -55,6 +62,7 @@
 
     body {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: #FAFAFA;
     }
 
     code, pre, .font-monospace {
@@ -62,11 +70,31 @@
     }
 
     /* -------------------------------------------------------------------------
+     * Global text / headings
+     *
+     * Make every heading and label clearly visible on the dark background.
+     * ------------------------------------------------------------------------- */
+    h1, h2, h3, h4, h5, h6,
+    .h1, .h2, .h3, .h4, .h5, .h6,
+    .card-title, .modal-title, .modal-header h3 {
+        color: #FAFAFA;
+    }
+
+    label, .form-label, .col-form-label, legend,
+    .form-text, small, .small {
+        color: #E4E4E7;
+    }
+
+    .text-muted {
+        color: #A1A1AA !important;
+    }
+
+    /* -------------------------------------------------------------------------
      * Header / navigation
      * ------------------------------------------------------------------------- */
     #header {
-        background-color: #18181B !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background-color: #1F1F23 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.16);
     }
 
     #header #header-menu .nav-item:hover {
@@ -95,20 +123,20 @@
     .modal-content,
     .dropdown-menu,
     .popover {
-        background-color: #18181B;
-        border-color: rgba(255, 255, 255, 0.08);
+        background-color: #1F1F23;
+        border-color: rgba(255, 255, 255, 0.16);
         color: #FAFAFA;
     }
 
     .card-header,
     .card-footer {
-        background-color: #18181B;
-        border-color: rgba(255, 255, 255, 0.08);
+        background-color: #1F1F23;
+        border-color: rgba(255, 255, 255, 0.16);
     }
 
     .modal-header {
         background-color: #6366F1;
-        border-bottom-color: rgba(255, 255, 255, 0.08);
+        border-bottom-color: rgba(255, 255, 255, 0.16);
     }
 
     .modal-header h3,
@@ -129,7 +157,7 @@
     }
 
     .dropdown-divider {
-        border-color: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.16);
     }
 
     /* -------------------------------------------------------------------------
@@ -139,7 +167,7 @@
     select optgroup,
     .form-select option,
     .form-select optgroup {
-        background-color: #18181B;
+        background-color: #1F1F23;
         color: #FAFAFA;
     }
 
@@ -156,14 +184,14 @@
     }
 
     .select2-dropdown {
-        background-color: #18181B;
-        border-color: rgba(255, 255, 255, 0.08);
+        background-color: #1F1F23;
+        border-color: rgba(255, 255, 255, 0.16);
     }
 
     .select2-container--default .select2-selection--single,
     .select2-container--default .select2-selection--multiple {
-        background-color: #18181B;
-        border-color: rgba(255, 255, 255, 0.08);
+        background-color: #1F1F23;
+        border-color: rgba(255, 255, 255, 0.16);
     }
 
     .select2-container--default .select2-selection--single .select2-selection__rendered,
@@ -189,14 +217,14 @@
     }
 
     .select2-container--default .select2-search--dropdown .select2-search__field {
-        background-color: #18181B;
-        border-color: rgba(255, 255, 255, 0.08);
+        background-color: #1F1F23;
+        border-color: rgba(255, 255, 255, 0.16);
         color: #FAFAFA;
     }
 
     .select2-container--default .select2-selection--multiple .select2-selection__choice {
         background-color: #6366F1;
-        border-color: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.16);
     }
 
     .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
@@ -214,14 +242,14 @@
      * ------------------------------------------------------------------------- */
     .form-control,
     .form-select {
-        background-color: #18181B;
-        border-color: rgba(255, 255, 255, 0.08);
+        background-color: #1F1F23;
+        border-color: rgba(255, 255, 255, 0.16);
         color: #FAFAFA;
     }
 
     .form-control:focus,
     .form-select:focus {
-        background-color: #18181B;
+        background-color: #1F1F23;
         border-color: #6366F1;
         box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
         color: #FAFAFA;
@@ -247,17 +275,41 @@
         box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25);
     }
 
+    .input-group-text {
+        background-color: #26262B;
+        border-color: rgba(255, 255, 255, 0.16);
+        color: #FAFAFA;
+    }
+
     /* -------------------------------------------------------------------------
      * Tables
      * ------------------------------------------------------------------------- */
     .table {
-        --bs-table-bg: #18181B;
+        --bs-table-bg: #1F1F23;
         --bs-table-color: #FAFAFA;
-        --bs-table-border-color: rgba(255, 255, 255, 0.08);
+        --bs-table-border-color: rgba(255, 255, 255, 0.16);
     }
 
     .table-hover > tbody > tr:hover {
         --bs-table-bg-state: rgba(99, 102, 241, 0.08);
+    }
+
+    .list-group-item {
+        background-color: #1F1F23;
+        border-color: rgba(255, 255, 255, 0.16);
+        color: #FAFAFA;
+    }
+
+    .list-group-item-action:hover,
+    .list-group-item-action:focus {
+        background-color: #26262B;
+        color: #FAFAFA;
+    }
+
+    .list-group-item.active {
+        background-color: #6366F1;
+        border-color: #6366F1;
+        color: #FAFAFA;
     }
 
     /* -------------------------------------------------------------------------
@@ -266,9 +318,9 @@
     #calendar table thead .fc-first,
     #calendar .calendar-view .date-column .date-column-title,
     #calendar .calendar-view .date-column .provider-column h6 {
-        background: #18181B;
+        background: #1F1F23;
         color: #FAFAFA;
-        border-color: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.16);
     }
 
     #calendar .fc-event {
@@ -278,7 +330,7 @@
     }
 
     #calendar .fc-unavailability {
-        background-color: #18181B;
+        background-color: #1F1F23;
         color: #A1A1AA;
     }
 
@@ -317,8 +369,8 @@
         transform: rotate(180deg);
         padding: 10px 5px;
         margin: 0;
-        background: #18181B;
-        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        background: #1F1F23;
+        border-right: 1px solid rgba(255, 255, 255, 0.16);
         white-space: nowrap;
     }
 
@@ -327,31 +379,77 @@
         width: 350px;
         min-width: 350px;
         max-width: 350px;
-        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        border-right: 1px solid rgba(255, 255, 255, 0.16);
     }
 
     #calendar .calendar-view .date-column .provider-column h6 {
         padding: 8px 10px;
         margin: 0;
-        background: #18181B;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: #1F1F23;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.16);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
     /* -------------------------------------------------------------------------
+     * Backend page panels (Customers list/details, Settings cards, etc.)
+     * ------------------------------------------------------------------------- */
+    .backend-page .filter-records,
+    .backend-page .record-details,
+    #customer-appointments {
+        background-color: #1F1F23;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 0.5rem;
+    }
+
+    .backend-page .filter-records .results .entry {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .backend-page .filter-records .results .entry:last-child {
+        border-bottom: none;
+    }
+
+    /* -------------------------------------------------------------------------
      * Buttons
      * ------------------------------------------------------------------------- */
-    .btn-primary {
-        --bs-btn-bg: #6366F1;
-        --bs-btn-border-color: #6366F1;
-        --bs-btn-hover-bg: #4F46E5;
-        --bs-btn-hover-border-color: #4F46E5;
-        --bs-btn-active-bg: #4338CA;
-        --bs-btn-active-border-color: #4338CA;
-        --bs-btn-disabled-bg: #6366F1;
-        --bs-btn-disabled-border-color: #6366F1;
+    .btn-primary,
+    .btn-success,
+    .btn-primary:hover,
+    .btn-success:hover,
+    .btn-primary:focus,
+    .btn-success:focus,
+    .btn-primary:active,
+    .btn-success:active,
+    .btn-primary.active,
+    .btn-success.active {
+        color: #FAFAFA !important;
+    }
+
+    .btn-primary,
+    .btn-success {
+        background-image: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+        background-color: transparent;
+        border-color: transparent;
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus,
+    .btn-primary:active,
+    .btn-success:hover,
+    .btn-success:focus,
+    .btn-success:active {
+        background-image: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+        background-color: transparent;
+        border-color: transparent;
+    }
+
+    .btn-primary:disabled,
+    .btn-success:disabled {
+        background-image: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+        border-color: transparent;
+        opacity: 0.65;
     }
 
     .btn-outline-primary {
@@ -368,7 +466,7 @@
      * ------------------------------------------------------------------------- */
     #footer {
         background-color: #09090B !important;
-        border-top-color: rgba(255, 255, 255, 0.08) !important;
+        border-top-color: rgba(255, 255, 255, 0.16) !important;
     }
 
     #loading {
@@ -379,7 +477,11 @@
      * Utility helpers
      * ------------------------------------------------------------------------- */
     .bg-light {
-        background-color: #18181B !important;
+        background-color: #1F1F23 !important;
+    }
+
+    .bg-white {
+        background-color: #1F1F23 !important;
     }
 
     .border,
@@ -387,23 +489,57 @@
     .border-bottom,
     .border-start,
     .border-end {
-        border-color: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(255, 255, 255, 0.16) !important;
     }
 
     .text-muted {
         color: #A1A1AA !important;
     }
 
+    .text-dark,
+    .text-black,
+    .text-body,
+    .text-reset {
+        color: #FAFAFA !important;
+    }
+
+    .text-secondary {
+        color: #E4E4E7 !important;
+    }
+
+    /* Outline buttons: light text/borders so they remain visible on dark bg */
+    .btn-outline-secondary {
+        --bs-btn-color: #E4E4E7;
+        --bs-btn-border-color: rgba(255, 255, 255, 0.25);
+        --bs-btn-hover-color: #FAFAFA;
+        --bs-btn-hover-bg: rgba(255, 255, 255, 0.08);
+        --bs-btn-hover-border-color: rgba(255, 255, 255, 0.35);
+        --bs-btn-active-color: #FAFAFA;
+        --bs-btn-active-bg: rgba(255, 255, 255, 0.12);
+        --bs-btn-active-border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .btn-outline-primary {
+        --bs-btn-color: #A5B4FC;
+        --bs-btn-border-color: #818CF8;
+        --bs-btn-hover-color: #FAFAFA;
+        --bs-btn-hover-bg: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+        --bs-btn-hover-border-color: transparent;
+        --bs-btn-active-color: #FAFAFA;
+        --bs-btn-active-bg: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+        --bs-btn-active-border-color: transparent;
+    }
+
     /* Trumbowyg editor dark tweaks */
     .trumbowyg-box,
     .trumbowyg-editor {
-        background-color: #18181B;
-        border-color: rgba(255, 255, 255, 0.08);
+        background-color: #1F1F23;
+        border-color: rgba(255, 255, 255, 0.16);
         color: #FAFAFA;
     }
 
     .trumbowyg-button-pane {
-        background-color: #18181B;
-        border-bottom-color: rgba(255, 255, 255, 0.08);
+        background-color: #1F1F23;
+        border-bottom-color: rgba(255, 255, 255, 0.16);
     }
 </style>
