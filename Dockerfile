@@ -16,6 +16,18 @@ COPY ./assets/js/utils/calendar_table_view.js /var/www/html/assets/js/utils/cale
 COPY ./assets/js/http/customers_http_client.js /var/www/html/assets/js/http/customers_http_client.js
 COPY ./assets/js/pages/customers.js /var/www/html/assets/js/pages/customers.js
 
+# Timezone unification (remove per-user timezone selectors).
+COPY ./assets/js/pages/account.js /var/www/html/assets/js/pages/account.js
+COPY ./assets/js/pages/admins.js /var/www/html/assets/js/pages/admins.js
+COPY ./assets/js/pages/booking.js /var/www/html/assets/js/pages/booking.js
+COPY ./assets/js/pages/providers.js /var/www/html/assets/js/pages/providers.js
+COPY ./assets/js/pages/secretaries.js /var/www/html/assets/js/pages/secretaries.js
+COPY ./assets/js/http/booking_http_client.js /var/www/html/assets/js/http/booking_http_client.js
+COPY ./assets/js/components/appointments_modal.js /var/www/html/assets/js/components/appointments_modal.js
+COPY ./assets/js/utils/calendar_default_view.js /var/www/html/assets/js/utils/calendar_default_view.js
+COPY ./assets/js/utils/calendar_event_popover.js /var/www/html/assets/js/utils/calendar_event_popover.js
+COPY ./assets/js/utils/calendar_table_view.js /var/www/html/assets/js/utils/calendar_table_view.js
+
 # Patched session driver (PHP 8.2 ReturnTypeWillChange fix)
 COPY ./system/libraries/Session/drivers/Session_database_driver.php /var/www/html/system/libraries/Session/drivers/Session_database_driver.php
 
