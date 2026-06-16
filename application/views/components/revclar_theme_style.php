@@ -617,10 +617,19 @@
         /* Calendar: no horizontal scroll and full-width provider columns on mobile */
         #calendar .calendar-view {
             overflow-x: hidden !important;
+            width: 100% !important;
         }
 
         #calendar .calendar-view > div {
             min-width: auto !important;
+            width: 100% !important;
+            display: block !important;
+        }
+
+        #calendar .calendar-view .date-column {
+            width: 100% !important;
+            min-width: 100% !important;
+            flex-direction: column !important;
         }
 
         #calendar .calendar-view .date-column .provider-column {
@@ -635,8 +644,19 @@
             display: none !important;
         }
 
-        #calendar .calendar-wrapper {
-            max-height: 70vh !important;
+        /* Hide the desktop provider multi-select on mobile; use the mobile selector instead */
+        .calendar-header .filter-group:has(#filter-provider) {
+            display: none !important;
+        }
+
+        #mobile-provider-selector {
+            background-color: #1F1F23;
+            color: #E4E4E7;
+            border: 1px solid #3F3F46;
+            border-radius: 0.5rem;
+            margin: 0.75rem 1rem 0.5rem;
+            min-height: 44px;
+            width: calc(100% - 2rem);
         }
 
         /* Backend forms: single column on mobile */

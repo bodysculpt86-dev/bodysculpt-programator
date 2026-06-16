@@ -74,6 +74,25 @@ App.Utils.CalendarTableView = (function () {
     }
 
     /**
+     * Get the calendar height for mobile, accounting for the provider selector.
+     *
+     * @returns {number} Calendar height in pixels (minimum 500px).
+     */
+    function getMobileCalendarHeight() {
+        const selectorHeight = $('#mobile-provider-selector').outerHeight() || 0;
+        const offset =
+            $footer.outerHeight() +
+            $header.outerHeight() +
+            $calendarToolbar.outerHeight() +
+            $('.calendar-header').outerHeight() +
+            selectorHeight +
+            65;
+        const height = window.innerHeight - offset;
+
+        return Math.max(height, 500);
+    }
+
+    /**
      * Close the current popover if open.
      */
     function closePopover() {
@@ -1309,11 +1328,7 @@ App.Utils.CalendarTableView = (function () {
 
             setCalendarViewSize();
 
-            // Activate calendar navigation
-
-            $('#calendar .calendar-header .btn').removeClass('disabled').prop('disabled', false);
-
-            // Apply provider calendar view mode
+            // Apply provider calendar view mode (force time-grid on mobile)
 
             $('.provider-column').each((index, providerColumn) => {
                 const $providerColumn = $(providerColumn);
@@ -1323,8 +1338,14 @@ App.Utils.CalendarTableView = (function () {
                 $providerColumn
                     .find('.calendar-wrapper')
                     .data('fullCalendar')
-                    .changeView(providerView[providerId] || (isMobile() ? 'listDay' : 'timeGridDay'));
+                    .changeView(isMobile() ? 'timeGridDay' : (providerView[providerId] || 'timeGridDay'));
             });
+
+            setupMobileProviderSelector();
+
+            // Activate calendar navigation
+
+            $('#calendar .calendar-header .btn').removeClass('disabled').prop('disabled', false);
         });
     }
 
@@ -1406,9 +1427,9 @@ App.Utils.CalendarTableView = (function () {
 
         const fullCalendar = new FullCalendar.Calendar($wrapper[0], {
             locale: vars('language_code'),
-            initialView: mobileView ? 'listDay' : 'timeGridDay',
+            initialView: 'timeGridDay',
             nowIndicator: true,
-            height: getCalendarHeight(),
+            height: mobileView ? getMobileCalendarHeight() : getCalendarHeight(),
             editable: true,
             firstDay: firstWeekdayNumber,
             slotDuration: '00:15:00',
@@ -1416,7 +1437,7 @@ App.Utils.CalendarTableView = (function () {
             scrollTime: '08:00:00',
             slotMinTime: '08:00:00',
             slotMaxTime: '22:00:00',
-            slotLabelInterval: '01:00',
+            slotLabelInterval: '00:15',
             eventTimeFormat: {hour: '2-digit', minute: '2-digit', hour12: false},
             eventTextColor: '#333',
             eventColor: EVENT_COLORS.default,
@@ -1455,6 +1476,82 @@ App.Utils.CalendarTableView = (function () {
     }
 
     /**
+     * On mobile, add a provider selector and show only the selected provider column.
+     */
+    function setupMobileProviderSelector() {
+        const $calendar = $('#calendar');
+        $calendar.find('#mobile-provider-selector').remove();
+
+        if (!isMobile()) {
+            $calendar.find('.provider-column').show();
+            return;
+        }
+
+        const $providerColumns = $calendar.find('.provider-column');
+
+        if ($providerColumns.length <= 1) {
+            return;
+        }
+
+        const $selector = $('<select/>', {
+            id: 'mobile-provider-selector',
+            class: 'form-select form-select-sm',
+        });
+
+        $providerColumns.each((index, providerColumn) => {
+            const provider = $(providerColumn).data('provider');
+            if (!provider) {
+                return;
+            }
+            $selector.append(
+                $('<option/>', {
+                    value: provider.id,
+                    text: provider.first_name + ' ' + provider.last_name,
+                }),
+            );
+        });
+
+        const userId = vars('user_id') ? Number(vars('user_id')) : null;
+        let selectedProviderId = null;
+
+        $providerColumns.each((index, providerColumn) => {
+            const provider = $(providerColumn).data('provider');
+            if (userId && Number(provider.id) === userId) {
+                selectedProviderId = provider.id;
+            }
+        });
+
+        if (!selectedProviderId) {
+            selectedProviderId = $providerColumns.first().data('provider').id;
+        }
+
+        $selector.val(selectedProviderId);
+
+        $selector.on('change', () => {
+            const selectedId = Number($selector.val());
+
+            $providerColumns.each((index, providerColumn) => {
+                const provider = $(providerColumn).data('provider');
+                if (Number(provider.id) === selectedId) {
+                    $(providerColumn).show();
+                } else {
+                    $(providerColumn).hide();
+                }
+            });
+
+            $providerColumns.filter(':visible').find('.calendar-wrapper').each((index, wrapper) => {
+                const fullCalendar = $(wrapper).data('fullCalendar');
+                if (fullCalendar) {
+                    fullCalendar.updateSize();
+                }
+            });
+        });
+
+        $calendar.prepend($selector);
+        $selector.trigger('change');
+    }
+
+    /**
      * Set calendar view size to fit the page.
      */
     function setCalendarViewSize() {
@@ -1479,9 +1576,15 @@ App.Utils.CalendarTableView = (function () {
             $calendarViewDiv.css('min-width', width + 200);
         }
 
-        const dateColumnHeight = $dateColumn.outerHeight();
+        const height = isMobile() ? getMobileCalendarHeight() : getCalendarHeight();
 
-        $('.calendar-wrapper').height(getCalendarHeight());
+        $('.calendar-wrapper').each((index, wrapper) => {
+            const fullCalendar = $(wrapper).data('fullCalendar');
+            if (fullCalendar) {
+                fullCalendar.setOption('height', height);
+            }
+            $(wrapper).height(height);
+        });
     }
 
     // Event Listeners
