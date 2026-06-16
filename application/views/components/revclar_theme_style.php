@@ -90,30 +90,56 @@
     }
 
     /* -------------------------------------------------------------------------
-     * Header / navigation
+     * Header / left sidebar navigation
      * ------------------------------------------------------------------------- */
-    #header {
+    .backend-sidebar,
+    .backend-mobile-header,
+    .offcanvas#header-menu-offcanvas {
         background-color: #1F1F23 !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+        border-color: rgba(255, 255, 255, 0.16) !important;
     }
 
-    #header #header-menu .nav-item:hover {
-        background: rgba(99, 102, 241, 0.12);
+    .backend-sidebar-brand,
+    .backend-sidebar-footer,
+    .backend-sidebar-submenu {
+        border-color: rgba(255, 255, 255, 0.16) !important;
     }
 
-    #header #header-menu .nav-item.active {
-        background: rgba(99, 102, 241, 0.22);
-        box-shadow: inset 0 -2px 0 0 #6366F1;
-    }
-
-    #header .nav-link,
-    #header .navbar-brand,
-    #header .navbar-toggler-icon {
+    .backend-sidebar-link,
+    .backend-sidebar-sublink,
+    .backend-sidebar-brand,
+    .backend-mobile-brand,
+    .backend-mobile-toggle {
         color: #FAFAFA !important;
     }
 
-    #header .text-white-50 {
+    .backend-sidebar-link:hover,
+    .backend-sidebar-sublink:hover {
+        background: rgba(99, 102, 241, 0.12) !important;
+    }
+
+    .backend-sidebar-link.active,
+    .backend-sidebar-dropdown.active > .backend-sidebar-link,
+    .backend-sidebar-submenu {
+        background: rgba(99, 102, 241, 0.16) !important;
+    }
+
+    .backend-sidebar-link.active,
+    .backend-sidebar-dropdown.active > .backend-sidebar-link {
+        box-shadow: inset 4px 0 0 0 #6366F1;
+    }
+
+    .backend-sidebar-brand small,
+    .backend-sidebar-sublink {
         color: #A1A1AA !important;
+    }
+
+    .backend-sidebar-sublink:hover {
+        color: #FAFAFA !important;
+    }
+
+    .backend-sidebar-submenu .backend-sidebar-sublink i {
+        color: #A1A1AA;
     }
 
     /* -------------------------------------------------------------------------
@@ -584,14 +610,7 @@
      * Mobile-first responsive tweaks
      * ------------------------------------------------------------------------- */
     @media (max-width: 767.98px) {
-        /* Header: keep only icons to save space */
-        #header .navbar-brand span {
-            display: none;
-        }
-
-        #header #header-menu .nav-link span {
-            display: none;
-        }
+        /* Mobile sidebar is handled by Bootstrap offcanvas */
 
         /* Hide footer on mobile to keep calendar fully visible */
         #footer {

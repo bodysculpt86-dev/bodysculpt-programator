@@ -9,13 +9,175 @@
  * @since       v1.5.0
  * ---------------------------------------------------------------------------- */
 
-/* Navigation hover and active states */
-#header #header-menu .nav-item:hover {
-    background: rgba(0, 0, 0, 0.1);
+/* ----------------------------------------------------------------------------
+ * Backend left sidebar layout
+ * ---------------------------------------------------------------------------- */
+
+:root {
+    --backend-sidebar-width: 260px;
 }
 
-#header #header-menu .nav-item.active {
-    background: rgba(0, 0, 0, 0.2);
+.backend-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--backend-sidebar-width);
+    z-index: 1040;
+    background-color: var(--bs-primary);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.backend-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.backend-sidebar-logo {
+    width: 45px;
+    height: 45px;
+    flex-shrink: 0;
+}
+
+.backend-sidebar-brand-text h6,
+.backend-sidebar-brand-text small {
+    margin: 0;
+    line-height: 1.2;
+}
+
+.backend-sidebar-brand-text small {
+    opacity: 0.7;
+}
+
+.backend-sidebar-nav {
+    padding: 0.5rem 0;
+}
+
+.backend-sidebar-link,
+.backend-sidebar-sublink {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: #fff;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+}
+
+.backend-sidebar-link:hover,
+.backend-sidebar-sublink:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.backend-sidebar-link.active,
+.backend-sidebar-dropdown.active > .backend-sidebar-link {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.backend-sidebar-icon {
+    width: 24px;
+    text-align: center;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.backend-sidebar-link.dropdown-toggle::after {
+    display: none;
+}
+
+.backend-sidebar-caret {
+    font-size: 0.7rem;
+    transition: transform 0.2s ease;
+}
+
+[aria-expanded="true"] .backend-sidebar-caret {
+    transform: rotate(180deg);
+}
+
+.backend-sidebar-submenu {
+    padding-left: 1rem;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.backend-sidebar-sublink {
+    padding: 0.5rem 1rem 0.5rem 2.25rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.backend-sidebar-footer {
+    margin-top: auto;
+    padding: 0.5rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.backend-sidebar-dropdown.dropend {
+    position: relative;
+}
+
+.backend-sidebar-dropdown .dropdown-menu {
+    min-width: 180px;
+    margin-left: 0.25rem;
+    padding: 0.25rem 0;
+    background-color: #1f1f23;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.backend-sidebar-dropdown .dropdown-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    color: #fafafa;
+    padding: 0.5rem 1rem;
+}
+
+.backend-sidebar-dropdown .dropdown-menu .dropdown-item:hover,
+.backend-sidebar-dropdown .dropdown-menu .dropdown-item:focus {
+    background-color: rgba(99, 102, 241, 0.12);
+    color: #fafafa;
+}
+
+.backend-sidebar-dropdown .dropdown-menu .dropdown-item.active {
+    background-color: rgba(99, 102, 241, 0.22);
+}
+
+.backend-sidebar-dropdown.dropend [aria-expanded="true"] .backend-sidebar-caret {
+    transform: rotate(90deg);
+}
+
+.backend-wrapper {
+    margin-left: var(--backend-sidebar-width);
+    min-height: 100vh;
+}
+
+.backend-mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    z-index: 1030;
+    background-color: var(--bs-primary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.backend-mobile-brand {
+    color: #fff;
+    font-weight: 600;
+}
+
+.backend-mobile-toggle {
+    padding: 0.25rem 0.5rem;
+    border: none;
+}
+
+@media (max-width: 991.98px) {
+    .backend-wrapper {
+        margin-left: 0;
+        padding-top: 56px;
+    }
 }
 
 /* Notification positioning */

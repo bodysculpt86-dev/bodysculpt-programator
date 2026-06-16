@@ -7,120 +7,272 @@
  */
 ?>
 
-<nav id="header" class="navbar navbar-expand-md navbar-dark bg-primary p-0">
-    <div id="header-logo" class="navbar-brand p-1 lh-1">
+<!-- Desktop fixed left sidebar -->
+<aside id="header" class="backend-sidebar d-none d-lg-flex flex-column">
+    <div class="backend-sidebar-brand">
         <img src="<?= base_url(
             'assets/img/logo.png',
-        ) ?>" alt="logo" class="float-start me-2" style="width: 45px; height: 45px;">
-        <h6 class="mb-1 mt-1 fw-bold text-white" style="font-size: 15px;"><?= e(setting('company_name')) ?></h6>
-        <small class="d-block text-white-50" style="font-size: 12px;">Bookings by Revclar</small>
+        ) ?>" alt="logo" class="backend-sidebar-logo">
+        <div class="backend-sidebar-brand-text">
+            <h6 class="backend-sidebar-company"><?= e(setting('company_name')) ?></h6>
+            <small>Bookings by Revclar</small>
+        </div>
     </div>
 
-    <button type="button" class="navbar-toggler me-1" data-bs-toggle="collapse" data-bs-target="#header-menu">
-        <span class="navbar-toggler-icon"></span>
-    </button>
+    <nav class="backend-sidebar-nav nav flex-column flex-grow-1">
+        <?php $hidden = can('view', PRIV_APPOINTMENTS) ? '' : 'd-none'; ?>
+        <?php $active = $active_menu == PRIV_APPOINTMENTS ? 'active' : ''; ?>
+        <a href="<?= site_url('calendar') ?>"
+           class="backend-sidebar-link <?= $active . $hidden ?>"
+           data-tippy-content="<?= lang('manage_appointment_record_hint') ?>">
+            <i class="fas fa-calendar-alt backend-sidebar-icon"></i>
+            <span><?= lang('calendar') ?></span>
+        </a>
 
-    <div id="header-menu" class="collapse navbar-collapse flex-row-reverse px-2">
-        <ul class="navbar-nav">
+        <?php $hidden = can('view', PRIV_CUSTOMERS) ? '' : 'd-none'; ?>
+        <?php $active = $active_menu == PRIV_CUSTOMERS ? 'active' : ''; ?>
+        <a href="<?= site_url('customers') ?>"
+           class="backend-sidebar-link <?= $active . $hidden ?>"
+           data-tippy-content="<?= lang('manage_customers_hint') ?>">
+            <i class="fas fa-user-friends backend-sidebar-icon"></i>
+            <span><?= lang('customers') ?></span>
+        </a>
+
+        <?php if (can('view', PRIV_SERVICES)): ?>
+            <?php $active = $active_menu == PRIV_SERVICES ? 'active' : ''; ?>
+            <div class="backend-sidebar-dropdown dropend <?= $active ?>">
+                <a class="backend-sidebar-link dropdown-toggle" href="#"
+                   data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-business-time backend-sidebar-icon"></i>
+                    <span><?= lang('services') ?></span>
+                    <i class="fas fa-chevron-right backend-sidebar-caret ms-auto"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark backend-sidebar-dropdown-menu">
+                    <li>
+                        <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('services') ?>">
+                            <?= lang('services') ?>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('service_categories') ?>">
+                            <?= lang('categories') ?>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        <?php endif; ?>
+
+        <?php if (can('view', PRIV_USERS)): ?>
+            <?php $active = $active_menu == PRIV_USERS ? 'active' : ''; ?>
+            <div class="backend-sidebar-dropdown dropend <?= $active ?>">
+                <a class="backend-sidebar-link dropdown-toggle" href="#"
+                   data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-users backend-sidebar-icon"></i>
+                    <span><?= lang('users') ?></span>
+                    <i class="fas fa-chevron-right backend-sidebar-caret ms-auto"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark backend-sidebar-dropdown-menu">
+                    <li>
+                        <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('providers') ?>">
+                            <?= lang('providers') ?>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('secretaries') ?>">
+                            <?= lang('secretaries') ?>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('admins') ?>">
+                            <?= lang('admins') ?>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        <?php endif; ?>
+    </nav>
+
+    <?php if (can('view', PRIV_SYSTEM_SETTINGS) || can('view', PRIV_USER_SETTINGS)): ?>
+        <?php $active = $active_menu == PRIV_SYSTEM_SETTINGS ? 'active' : ''; ?>
+        <div class="backend-sidebar-footer">
+            <div class="backend-sidebar-dropdown dropend <?= $active ?>">
+                <a class="backend-sidebar-link dropdown-toggle" href="#"
+                   data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user backend-sidebar-icon"></i>
+                    <span><?= e(vars('user_display_name')) ?></span>
+                    <i class="fas fa-chevron-right backend-sidebar-caret ms-auto"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark backend-sidebar-dropdown-menu">
+                    <?php if (can('view', PRIV_SYSTEM_SETTINGS)): ?>
+                        <li>
+                            <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('general_settings') ?>">
+                                <i class="fas fa-cogs me-2"></i>
+                                <?= lang('settings') ?>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                    <li>
+                        <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('account') ?>">
+                            <i class="fas fa-user me-2"></i>
+                            <?= lang('account') ?>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('about') ?>">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <?= lang('about') ?>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('booking') ?>" target="_blank">
+                            <i class="fas fa-external-link me-2"></i>
+                            <?= lang('booking') ?>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('logout') ?>">
+                            <i class="fas fa-sign-out me-2"></i>
+                            <?= lang('log_out') ?>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    <?php endif; ?>
+</aside>
+
+<!-- Mobile header -->
+<nav class="backend-mobile-header d-lg-none navbar navbar-dark">
+    <div class="container-fluid">
+        <button class="navbar-toggler backend-mobile-toggle" type="button"
+                data-bs-toggle="offcanvas" data-bs-target="#header-menu-offcanvas"
+                aria-controls="header-menu-offcanvas">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <span class="backend-mobile-brand"><?= e(setting('company_name')) ?></span>
+    </div>
+</nav>
+
+<!-- Mobile offcanvas sidebar -->
+<div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="header-menu-offcanvas">
+    <div class="offcanvas-header">
+        <div class="backend-sidebar-brand">
+            <img src="<?= base_url(
+                'assets/img/logo.png',
+            ) ?>" alt="logo" class="backend-sidebar-logo">
+            <div class="backend-sidebar-brand-text">
+                <h6 class="backend-sidebar-company"><?= e(setting('company_name')) ?></h6>
+                <small>Bookings by Revclar</small>
+            </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column">
+        <nav class="backend-sidebar-nav nav flex-column flex-grow-1">
             <?php $hidden = can('view', PRIV_APPOINTMENTS) ? '' : 'd-none'; ?>
             <?php $active = $active_menu == PRIV_APPOINTMENTS ? 'active' : ''; ?>
-            <li class="nav-item text-center <?= $active . $hidden ?>" style="min-width: 100px;">
-                <a href="<?= site_url('calendar') ?>"
-                   class="nav-link text-white fw-light py-3 px-3"
-                   data-tippy-content="<?= lang('manage_appointment_record_hint') ?>">
-                    <i class="fas fa-calendar-alt me-2"></i>
-                    <?= lang('calendar') ?>
-                </a>
-            </li>
+            <a href="<?= site_url('calendar') ?>"
+               class="backend-sidebar-link <?= $active . $hidden ?>"
+               data-tippy-content="<?= lang('manage_appointment_record_hint') ?>">
+                <i class="fas fa-calendar-alt backend-sidebar-icon"></i>
+                <span><?= lang('calendar') ?></span>
+            </a>
 
             <?php $hidden = can('view', PRIV_CUSTOMERS) ? '' : 'd-none'; ?>
             <?php $active = $active_menu == PRIV_CUSTOMERS ? 'active' : ''; ?>
-            <li class="nav-item text-center <?= $active . $hidden ?>" style="min-width: 100px;">
-                <a href="<?= site_url('customers') ?>" class="nav-link text-white fw-light py-3 px-3"
-                   data-tippy-content="<?= lang('manage_customers_hint') ?>">
-                    <i class="fas fa-user-friends me-2"></i>
-                    <?= lang('customers') ?>
-                </a>
-            </li>
+            <a href="<?= site_url('customers') ?>"
+               class="backend-sidebar-link <?= $active . $hidden ?>"
+               data-tippy-content="<?= lang('manage_customers_hint') ?>">
+                <i class="fas fa-user-friends backend-sidebar-icon"></i>
+                <span><?= lang('customers') ?></span>
+            </a>
 
-            <?php $hidden = can('view', PRIV_SERVICES) ? '' : 'd-none'; ?>
-            <?php $active = $active_menu == PRIV_SERVICES ? 'active' : ''; ?>
-            <li class="nav-item dropdown text-center <?= $active . $hidden ?>" style="min-width: 100px;">
-                <a class="nav-link dropdown-toggle text-white fw-light py-3 px-3" href="#" data-bs-toggle="dropdown"
-                   data-tippy-content="<?= lang('manage_services_hint') ?>">
-                    <i class="fas fa-business-time me-2"></i>
-                    <?= lang('services') ?>
-                </a>
-                <div class="dropdown-menu dropdown-menu-end">
-                    <a class="dropdown-item" href="<?= site_url('services') ?>">
-                        <?= lang('services') ?>
+            <?php if (can('view', PRIV_SERVICES)): ?>
+                <?php $active = $active_menu == PRIV_SERVICES ? 'active' : ''; ?>
+                <div class="backend-sidebar-dropdown <?= $active ?>">
+                    <a class="backend-sidebar-link dropdown-toggle" href="#"
+                       data-bs-toggle="collapse" data-bs-target="#sidebar-services-submenu-mobile"
+                       aria-expanded="<?= $active ? 'true' : 'false' ?>">
+                        <i class="fas fa-business-time backend-sidebar-icon"></i>
+                        <span><?= lang('services') ?></span>
+                        <i class="fas fa-chevron-down backend-sidebar-caret ms-auto"></i>
                     </a>
-                    <a class="dropdown-item" href="<?= site_url('service_categories') ?>">
-                        <?= lang('categories') ?>
-                    </a>
-                </div>
-            </li>
-
-            <?php $hidden = can('view', PRIV_USERS) ? '' : 'd-none'; ?>
-            <?php $active = $active_menu == PRIV_USERS ? 'active' : ''; ?>
-            <li class="nav-item dropdown text-center <?= $active . $hidden ?>" style="min-width: 100px;">
-                <a class="nav-link dropdown-toggle text-white fw-light py-3 px-3" href="#" data-bs-toggle="dropdown"
-                   data-tippy-content="<?= lang('manage_users_hint') ?>">
-                    <i class="fas fa-users me-2"></i>
-                    <?= lang('users') ?>
-                </a>
-                <div class="dropdown-menu dropdown-menu-end">
-                    <a class="dropdown-item" href="<?= site_url('providers') ?>">
-                        <?= lang('providers') ?>
-                    </a>
-                    <a class="dropdown-item" href="<?= site_url('secretaries') ?>">
-                        <?= lang('secretaries') ?>
-                    </a>
-                    <a class="dropdown-item" href="<?= site_url('admins') ?>">
-                        <?= lang('admins') ?>
-                    </a>
-                </div>
-            </li>
-
-            <?php $hidden = can('view', PRIV_SYSTEM_SETTINGS) || can('view', PRIV_USER_SETTINGS) ? '' : 'd-none'; ?>
-            <?php $active = $active_menu == PRIV_SYSTEM_SETTINGS ? 'active' : ''; ?>
-            <li class="nav-item dropdown text-center <?= $active . $hidden ?>" style="min-width: 100px;">
-                <a class="nav-link dropdown-toggle text-white fw-light py-3 px-3" href="#" data-bs-toggle="dropdown"
-                   data-tippy-content="<?= lang('settings_hint') ?>">
-                    <i class="fas fa-user me-2"></i>
-                    <?= e(vars('user_display_name')) ?>
-                </a>
-                <div class="dropdown-menu dropdown-menu-end">
-                    <?php if (can('view', PRIV_SYSTEM_SETTINGS)): ?>
-                        <a class="dropdown-item" href="<?= site_url('general_settings') ?>">
-                            <i class="fas fa-cogs me-2"></i>
-                            <?= lang('settings') ?>
+                    <div class="collapse backend-sidebar-submenu <?= $active ? 'show' : '' ?>" id="sidebar-services-submenu-mobile">
+                        <a class="backend-sidebar-sublink" href="<?= site_url('services') ?>">
+                            <?= lang('services') ?>
                         </a>
-                    <?php endif; ?>
-
-                    <a class="dropdown-item" href="<?= site_url('account') ?>">
-                        <i class="fas fa-user me-2"></i>
-                        <?= lang('account') ?>
-                    </a>
-                    <a class="dropdown-item" href="<?= site_url('about') ?>">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <?= lang('about') ?>
-                    </a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="<?= site_url('booking') ?>" target="_blank">
-                        <i class="fas fa-external-link me-2"></i>
-                        <?= lang('booking') ?>
-                    </a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="<?= site_url('logout') ?>">
-                        <i class="fas fa-sign-out me-2"></i>
-                        <?= lang('log_out') ?>
-                    </a>
+                        <a class="backend-sidebar-sublink" href="<?= site_url('service_categories') ?>">
+                            <?= lang('categories') ?>
+                        </a>
+                    </div>
                 </div>
-            </li>
-        </ul>
+            <?php endif; ?>
+
+            <?php if (can('view', PRIV_USERS)): ?>
+                <?php $active = $active_menu == PRIV_USERS ? 'active' : ''; ?>
+                <div class="backend-sidebar-dropdown <?= $active ?>">
+                    <a class="backend-sidebar-link dropdown-toggle" href="#"
+                       data-bs-toggle="collapse" data-bs-target="#sidebar-users-submenu-mobile"
+                       aria-expanded="<?= $active ? 'true' : 'false' ?>">
+                        <i class="fas fa-users backend-sidebar-icon"></i>
+                        <span><?= lang('users') ?></span>
+                        <i class="fas fa-chevron-down backend-sidebar-caret ms-auto"></i>
+                    </a>
+                    <div class="collapse backend-sidebar-submenu <?= $active ? 'show' : '' ?>" id="sidebar-users-submenu-mobile">
+                        <a class="backend-sidebar-sublink" href="<?= site_url('providers') ?>">
+                            <?= lang('providers') ?>
+                        </a>
+                        <a class="backend-sidebar-sublink" href="<?= site_url('secretaries') ?>">
+                            <?= lang('secretaries') ?>
+                        </a>
+                        <a class="backend-sidebar-sublink" href="<?= site_url('admins') ?>">
+                            <?= lang('admins') ?>
+                        </a>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </nav>
+
+        <?php if (can('view', PRIV_SYSTEM_SETTINGS) || can('view', PRIV_USER_SETTINGS)): ?>
+            <?php $active = $active_menu == PRIV_SYSTEM_SETTINGS ? 'active' : ''; ?>
+            <div class="backend-sidebar-footer">
+                <div class="backend-sidebar-dropdown <?= $active ?>">
+                    <a class="backend-sidebar-link dropdown-toggle" href="#"
+                       data-bs-toggle="collapse" data-bs-target="#sidebar-account-submenu-mobile"
+                       aria-expanded="<?= $active ? 'true' : 'false' ?>">
+                        <i class="fas fa-user backend-sidebar-icon"></i>
+                        <span><?= e(vars('user_display_name')) ?></span>
+                        <i class="fas fa-chevron-down backend-sidebar-caret ms-auto"></i>
+                    </a>
+                    <div class="collapse backend-sidebar-submenu <?= $active ? 'show' : '' ?>" id="sidebar-account-submenu-mobile">
+                        <?php if (can('view', PRIV_SYSTEM_SETTINGS)): ?>
+                            <a class="backend-sidebar-sublink" href="<?= site_url('general_settings') ?>">
+                                <i class="fas fa-cogs me-2"></i>
+                                <?= lang('settings') ?>
+                            </a>
+                        <?php endif; ?>
+                        <a class="backend-sidebar-sublink" href="<?= site_url('account') ?>">
+                            <i class="fas fa-user me-2"></i>
+                            <?= lang('account') ?>
+                        </a>
+                        <a class="backend-sidebar-sublink" href="<?= site_url('about') ?>">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <?= lang('about') ?>
+                        </a>
+                        <a class="backend-sidebar-sublink" href="<?= site_url('booking') ?>" target="_blank">
+                            <i class="fas fa-external-link me-2"></i>
+                            <?= lang('booking') ?>
+                        </a>
+                        <a class="backend-sidebar-sublink" href="<?= site_url('logout') ?>">
+                            <i class="fas fa-sign-out me-2"></i>
+                            <?= lang('log_out') ?>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
-</nav>
+</div>
 
 <div id="notification" style="display: none;"></div>
 

@@ -29,17 +29,17 @@
 
     <?php slot('styles'); ?>
 </head>
-<body class="d-flex flex-column h-100">
+<body class="backend-body d-flex flex-column h-100">
 
-<main class="flex-shrink-0">
+<?php component('backend_header', ['active_menu' => vars('active_menu')]); ?>
 
-    <?php component('backend_header', ['active_menu' => vars('active_menu')]); ?>
+<div class="backend-wrapper flex-grow-1 d-flex flex-column">
+    <main class="backend-main flex-shrink-0">
+        <?php slot('content'); ?>
+    </main>
 
-    <?php slot('content'); ?>
-
-</main>
-
-<?php component('backend_footer', ['user_display_name' => vars('user_display_name')]); ?>
+    <?php component('backend_footer', ['user_display_name' => vars('user_display_name')]); ?>
+</div>
 
 <script src="<?= asset_url('assets/vendor/jquery/jquery.min.js') ?>"></script>
 <script src="<?= asset_url('assets/vendor/@popperjs-core/popper.min.js') ?>"></script>
