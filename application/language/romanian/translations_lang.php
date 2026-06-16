@@ -574,4 +574,10 @@ $lang['about_app_premium'] = 'Oferim servicii complete pentru software auto-găz
 $lang['go_premium'] = 'Treceți la Premium';
 $lang['notify_users_on_create_question'] = 'Doriți să notificați clientul despre această nouă programare?';
 $lang['notify_users_on_delete_question'] = 'Doriți să notificați clientul despre anularea programării?';
+$lang['import_customers'] = 'Importează clienți';
+$lang['export_customers'] = 'Exportă clienți';
+$lang['download_template'] = 'Descarcă șablon';
+$lang['select_file'] = 'Selectează fișierul';
+$lang['customers_imported'] = 'clienți importați';
+$lang['customers_import_failed'] = 'clienți eșuați';
 // End

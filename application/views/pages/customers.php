@@ -13,6 +13,25 @@
                     <i class="fas fa-plus-square me-2"></i>
                     <?= lang('add') ?>
                 </button>
+
+                <button id="import-customers" class="btn btn-outline-secondary mb-4" type="button"
+                        data-bs-toggle="modal" data-bs-target="#import-customers-modal">
+                    <i class="fas fa-file-import me-2"></i>
+                    <?= lang('import_customers') ?>
+                </button>
+
+                <a href="<?= site_url('customers/import_template') ?>" class="btn btn-outline-secondary mb-4"
+                   download>
+                    <i class="fas fa-download me-2"></i>
+                    <?= lang('download_template') ?>
+                </a>
+            <?php endif; ?>
+
+            <?php if (can('view', PRIV_CUSTOMERS)): ?>
+                <a href="<?= site_url('customers/export') ?>" class="btn btn-outline-secondary mb-4" download>
+                    <i class="fas fa-file-export me-2"></i>
+                    <?= lang('export_customers') ?>
+                </a>
             <?php endif; ?>
 
             <form class="mb-4">
@@ -216,6 +235,43 @@
         </div>
     </div>
 </div>
+
+<?php if (can('add', PRIV_CUSTOMERS)): ?>
+    <div class="modal fade" id="import-customers-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><?= lang('import_customers') ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="import-customers-form" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="<?= vars('csrf_token') ?>">
+
+                        <div class="mb-3">
+                            <label for="import-file" class="form-label">
+                                <?= lang('select_file') ?> (.xls, .xlsx)
+                            </label>
+                            <input type="file" id="import-file" name="import_file" class="form-control"
+                                   accept=".xls,.xlsx" required>
+                        </div>
+                    </form>
+
+                    <div id="import-result" class="alert d-none" role="alert"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <?= lang('close') ?>
+                    </button>
+                    <button type="button" id="start-import" class="btn btn-primary">
+                        <i class="fas fa-file-import me-2"></i>
+                        <?= lang('import') ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
 
 <?php end_section('content'); ?>
 

@@ -105,6 +105,25 @@ App.Http.Customers = (function () {
     }
 
     /**
+     * Import customers from an XLS/XLSX file.
+     *
+     * @param {FormData} formData
+     *
+     * @return {Object}
+     */
+    function importCustomers(formData) {
+        const url = App.Utils.Url.siteUrl('customers/import');
+
+        return $.ajax({
+            url: url,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+        });
+    }
+
+    /**
      * Find a customer.
      *
      * @param {Number} customerId
@@ -129,5 +148,6 @@ App.Http.Customers = (function () {
         destroy,
         search,
         find,
+        importCustomers,
     };
 })();

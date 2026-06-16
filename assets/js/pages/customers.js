@@ -107,6 +107,69 @@ App.Pages.Customers = (function () {
         });
 
         /**
+         * Event: Start Import Button "Click"
+         */
+        $('#start-import').on('click', () => {
+            const $form = $('#import-customers-form');
+            const $fileInput = $('#import-file');
+            const $result = $('#import-result');
+            const $button = $('#start-import');
+
+            if (!$fileInput.val()) {
+                $result.removeClass('d-none alert-success').addClass('alert-danger');
+                $result.text(lang('select_file'));
+                return;
+            }
+
+            const formData = new FormData($form[0]);
+
+            $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> ' + lang('import'));
+            $result.addClass('d-none').removeClass('alert-success alert-danger').html('');
+
+            App.Http.Customers.importCustomers(formData)
+                .done((response) => {
+                    let message =
+                        '<strong>' +
+                        response.imported +
+                        '</strong> ' +
+                        lang('customers_imported') +
+                        '. ';
+
+                    if (response.failed > 0) {
+                        message +=
+                            '<strong>' + response.failed + '</strong> ' + lang('customers_import_failed') + '.';
+                    }
+
+                    if (response.errors && response.errors.length) {
+                        message +=
+                            '<hr class="my-2">' + response.errors.slice(0, 5).join('<br>');
+                    }
+
+                    $result.removeClass('d-none alert-danger').addClass('alert-success');
+                    $result.html(message);
+
+                    // Refresh the customer list.
+                    App.Pages.Customers.filter($filterCustomers.find('.key').val());
+                })
+                .fail((xhr) => {
+                    const message = xhr.responseJSON?.message || 'Import failed.';
+                    $result.removeClass('d-none alert-success').addClass('alert-danger');
+                    $result.html(message);
+                })
+                .always(() => {
+                    $button.prop('disabled', false).html('<i class="fas fa-file-import me-2"></i> ' + lang('import'));
+                });
+        });
+
+        /**
+         * Reset import modal when it is closed.
+         */
+        $('#import-customers-modal').on('hidden.bs.modal', () => {
+            $('#import-customers-form')[0].reset();
+            $('#import-result').addClass('d-none').removeClass('alert-success alert-danger').html('');
+        });
+
+        /**
          * Event: Edit Customer Button "Click"
          */
         $customers.on('click', '#edit-customer', () => {
