@@ -31,27 +31,9 @@ COPY ./application/ /var/www/html/application/
 COPY --from=assets-builder /build/assets/css/backend.css /build/assets/css/backend.min.css /build/assets/css/frontend.css /build/assets/css/frontend.min.css /build/assets/css/general.css /build/assets/css/general.min.css /var/www/html/assets/css/
 COPY --from=assets-builder /build/assets/css/themes/ /var/www/html/assets/css/themes/
 
-# White-label JS strings (the base image would otherwise keep "Easy!Appointments").
-COPY ./assets/js/app.js /var/www/html/assets/js/app.js
-COPY ./assets/js/utils/calendar_sync.js /var/www/html/assets/js/utils/calendar_sync.js
-
-# Calendar customizations (default/table views, visible hours, 24h format).
-COPY ./assets/js/utils/calendar_default_view.js /var/www/html/assets/js/utils/calendar_default_view.js
-COPY ./assets/js/utils/calendar_table_view.js /var/www/html/assets/js/utils/calendar_table_view.js
-
-# Customer import/export feature (backend customers page).
-COPY ./assets/js/http/customers_http_client.js /var/www/html/assets/js/http/customers_http_client.js
-COPY ./assets/js/pages/customers.js /var/www/html/assets/js/pages/customers.js
-
-# Timezone unification (remove per-user timezone selectors).
-COPY ./assets/js/pages/account.js /var/www/html/assets/js/pages/account.js
-COPY ./assets/js/pages/admins.js /var/www/html/assets/js/pages/admins.js
-COPY ./assets/js/pages/booking.js /var/www/html/assets/js/pages/booking.js
-COPY ./assets/js/pages/providers.js /var/www/html/assets/js/pages/providers.js
-COPY ./assets/js/pages/secretaries.js /var/www/html/assets/js/pages/secretaries.js
-COPY ./assets/js/http/booking_http_client.js /var/www/html/assets/js/http/booking_http_client.js
-COPY ./assets/js/components/appointments_modal.js /var/www/html/assets/js/components/appointments_modal.js
-COPY ./assets/js/utils/calendar_event_popover.js /var/www/html/assets/js/utils/calendar_event_popover.js
+# Copy local JS source files. The upstream image ships minified/older builds, while
+# this repository contains the matching source files for the deployed application code.
+COPY ./assets/js/ /var/www/html/assets/js/
 
 # Patched session driver (PHP 8.2 ReturnTypeWillChange fix)
 COPY ./system/libraries/Session/drivers/Session_database_driver.php /var/www/html/system/libraries/Session/drivers/Session_database_driver.php
