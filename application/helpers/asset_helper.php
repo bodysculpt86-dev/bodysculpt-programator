@@ -28,17 +28,13 @@ function asset_url(string $uri = '', ?string $protocol = null): string
 
     $cache_busting_token = '?' . config('cache_busting_token');
 
-    // Do not automatically switch to minified assets. This makes sure that all
-    // custom JS/CSS changes are served in production without having to maintain
-    // separate minified copies.
-    //
-    // if (str_contains(basename($uri), '.js') && !str_contains(basename($uri), '.min.js') && !$debug) {
-    //     $uri = str_replace('.js', '.min.js', $uri);
-    // }
-    //
-    // if (str_contains(basename($uri), '.css') && !str_contains(basename($uri), '.min.css') && !$debug) {
-    //     $uri = str_replace('.css', '.min.css', $uri);
-    // }
+    // Keep JS files non-minified so that local/custom JS changes (e.g. calendar
+    // customizations) are always served as-is. For CSS files, fall back to the
+    // minified version on production so that stylesheets that only exist as
+    // .min.css on the deployed image still load correctly.
+    if (str_contains(basename($uri), '.css') && !str_contains(basename($uri), '.min.css') && !$debug) {
+        $uri = str_replace('.css', '.min.css', $uri);
+    }
 
     return base_url($uri . $cache_busting_token, $protocol);
 }
