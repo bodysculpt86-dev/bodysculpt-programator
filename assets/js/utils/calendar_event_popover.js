@@ -254,6 +254,29 @@ App.Utils.CalendarEventPopover = (function () {
     }
 
     /**
+     * Convert a closing status value to a popover text color class.
+     *
+     * @param {string} status
+     * @returns {string}
+     */
+    function getPopoverStatusClass(status) {
+        if (!status) {
+            return '';
+        }
+
+        const normalized = status
+            .toLowerCase()
+            .replace(/[ăâ]/g, 'a')
+            .replace(/î/g, 'i')
+            .replace(/ș/g, 's')
+            .replace(/ț/g, 't')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+
+        return 'popover-status-' + normalized;
+    }
+
+    /**
      * Build popover content for appointment events.
      *
      * @param {Object} info - FullCalendar event info.
@@ -278,7 +301,9 @@ App.Utils.CalendarEventPopover = (function () {
                 ...createPopoverRow('start', formatDateTime(info.event.start)),
                 ...createPopoverRow('end', formatDateTime(info.event.end)),
                 ...createPopoverRow('timezone', vars('timezones')[vars('default_timezone')]),
-                ...createPopoverRow('status', data.status || '-'),
+                $('<strong/>', {class: 'd-inline-block me-2', text: lang('status')}),
+                $('<span/>', {class: getPopoverStatusClass(data.status), text: data.status || '-'}),
+                $('<br/>'),
                 ...createPopoverRow('service', data.service.name),
                 ...createPopoverRow('price', data.price ? data.price + ' Lei' : '-'),
                 $('<strong/>', {class: 'd-inline-block me-2', text: lang('provider')}),

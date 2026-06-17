@@ -900,3 +900,33 @@ body .modal.full-screen .modal-push {
     width: 4px;
     background-color: rgba(255, 255, 255, 0.5);
 }
+
+/* Popover status value colors */
+.popover-status-cash,
+.popover-status-card {
+    color: #22c55e;
+}
+
+.popover-status-barter {
+    color: #f59e0b;
+}
+
+.popover-status-protocol {
+    color: #3b82f6;
+}
+
+.popover-status-banca-op {
+    color: #06b6d4;
+}
+
+.popover-status-consum-abonament {
+    color: #ec4899;
+}
+
+.popover-status-voucher {
+    color: #a855f7;
+}
+
+.popover-status-nu-s-a-prezentat {
+    color: #ef4444;
+}
