@@ -206,6 +206,6 @@ class Sms_smso
      */
     private function log(string $message): void
     {
-        log_message('info', '[SMSO] ' . $message);
+        log_message('debug', '[SMSO] ' . $message);
     }
 }

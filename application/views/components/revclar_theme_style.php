@@ -636,94 +636,44 @@
     }
 
     /* -------------------------------------------------------------------------
-     * Full-height calendar: show 08:00-22:00 without vertical scroll.
+     * Calendar page: normal page scrolling, calendar renders its natural height.
+     * The calendar itself has no internal vertical scrollbar; if it is taller
+     * than the viewport the user scrolls the page normally.
      * ------------------------------------------------------------------------- */
-    .backend-wrapper:has(#calendar-page) {
-        overflow: hidden;
-    }
-
-    .backend-wrapper:has(#calendar-page) #footer {
-        display: none !important;
-    }
-
-    .backend-wrapper:has(#calendar-page) .backend-main {
-        flex: 1 1 auto !important;
-        display: flex !important;
-        flex-direction: column !important;
-        min-height: 0 !important;
-        overflow: hidden !important;
-    }
-
     #calendar-page {
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        overflow: hidden;
-        padding-bottom: 0 !important;
-    }
-
-    #calendar-toolbar {
-        flex-shrink: 0;
-        margin-bottom: 0 !important;
-    }
-
-    #calendar {
-        flex: 1;
-        min-height: 0;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-    }
-
-    #calendar .calendar-header {
-        flex-shrink: 0;
+        overflow: visible;
+        padding-bottom: 1rem;
     }
 
     #calendar .calendar-view {
-        flex: 1;
-        min-height: 0;
         overflow-x: auto;
-        overflow-y: hidden;
+        overflow-y: visible;
     }
 
     #calendar .calendar-view > div {
         display: flex;
-        height: 100%;
     }
 
     #calendar .date-column {
         display: flex;
         flex-direction: row;
-        height: 100%;
     }
 
     #calendar .provider-column {
         display: flex;
         flex-direction: column;
-        height: 100%;
         width: 350px;
         min-width: 350px;
         max-width: 350px;
     }
 
     #calendar .provider-column h6 {
-        flex-shrink: 0;
         margin: 0;
         padding: 8px 10px;
     }
 
     #calendar .calendar-wrapper {
-        flex: 1;
-        min-height: 0;
         height: auto !important;
-    }
-
-    /* Force FullCalendar timeGrid to fit 08:00-22:00 without internal scroll.
-       14 hours × 2 slots/hour (30min) = 28 slots. */
-    #calendar .fc-timegrid-slot {
-        height: calc((100dvh - 240px) / 28) !important;
-        min-height: 14px !important;
     }
 
     #calendar .fc-timegrid-slot-label-cushion,
