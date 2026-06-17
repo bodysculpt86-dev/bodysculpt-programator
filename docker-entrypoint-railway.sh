@@ -27,18 +27,21 @@ a2enmod setenvif 2>/dev/null || true
 # Configure Apache to trust Railway's X-Forwarded-Proto header and set HTTPS=on
 # when the request arrived over HTTPS. This makes PHP see $_SERVER['HTTPS']
 # correctly without modifying any application code.
-cat <<'EOF' >/etc/apache2/conf-enabled/railway-forwarded-https.conf
+cat <<'CONF' >/etc/apache2/conf-enabled/railway-forwarded-https.conf
 # Trust X-Forwarded-Proto header from Railway's TLS-terminating proxy
 # and expose it to PHP as the HTTPS environment variable.
 SetEnvIf X-Forwarded-Proto "^https$" HTTPS=on
-EOF
+CONF
 
 # Replace the upstream product name with the white-label brand in the generated
 # email config (and any other upstream templates that contain it).
 sed -i 's/Easy!Appointments/Bookings by Revclar/g' /usr/local/bin/docker-entrypoint.sh
 
-# Run pending database migrations automatically (safe: failures are logged but do not stop startup).
-php /var/www/html/index.php console migrate 2>&1 || echo "Automatic migrations failed; continuing startup." >&2
+# Inject automatic migration execution into the upstream entrypoint right before
+# Apache starts. The upstream entrypoint generates config.php/email.php first,
+# so migrations can connect to the database. Failures are logged but do not stop
+# startup.
+perl -0pi -e 's/# Start Apache\n\napache2-foreground/# Start Apache\n\n# Run pending database migrations (safe: failures are logged but do not stop startup).\nphp \/var\/www\/html\/index.php console migrate 2>\&1 || echo "Automatic migrations failed; continuing startup." >\&2\n\napache2-foreground/' /usr/local/bin/docker-entrypoint.sh
 
 # Delegate to the original Easy!Appointments entrypoint, which templates
 # config.php / email.php from environment variables and then runs
