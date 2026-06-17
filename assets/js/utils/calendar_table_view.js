@@ -44,10 +44,6 @@ App.Utils.CalendarTableView = (function () {
 
     const moment = window.moment;
 
-    function isMobile() {
-        return window.innerWidth < 768;
-    }
-
     let $filterProvider;
     let $filterService;
     let $selectDate;
@@ -70,7 +66,7 @@ App.Utils.CalendarTableView = (function () {
             65;
         const height = window.innerHeight - offset;
 
-        return Math.max(height, isMobile() ? 500 : 700);
+        return Math.max(height, 700);
     }
 
 
@@ -1346,7 +1342,7 @@ App.Utils.CalendarTableView = (function () {
                 $providerColumn
                     .find('.calendar-wrapper')
                     .data('fullCalendar')
-                    .changeView(isMobile() ? 'timeGridDay' : (providerView[providerId] || 'timeGridDay'));
+                    .changeView(providerView[providerId] || 'timeGridDay');
             });
 
             // Activate calendar navigation
@@ -1429,13 +1425,11 @@ App.Utils.CalendarTableView = (function () {
         const {columnFormat, timeFormat, slotTimeFormat} = getFormatSettings();
         const firstWeekdayNumber = App.Utils.Date.getWeekdayId(vars('first_weekday'));
 
-        const mobileView = isMobile();
-
         const fullCalendar = new FullCalendar.Calendar($wrapper[0], {
             locale: vars('language_code'),
             initialView: 'timeGridDay',
             nowIndicator: true,
-            height: mobileView ? 'auto' : getCalendarHeight(),
+            height: getCalendarHeight(),
             editable: true,
             firstDay: firstWeekdayNumber,
             slotDuration: '00:15:00',
@@ -1448,21 +1442,19 @@ App.Utils.CalendarTableView = (function () {
             eventTextColor: '#333',
             eventColor: EVENT_COLORS.default,
             slotLabelFormat: {hour: '2-digit', minute: '2-digit', hour12: false},
-            allDaySlot: !mobileView,
+            allDaySlot: true,
             allDayContent: lang('all_day'),
-            dayHeaders: !mobileView,
+            dayHeaders: true,
             dayHeaderFormat: columnFormat,
             selectable: true,
             selectHelper: true,
             themeSystem: 'bootstrap5',
             selectLongPressDelay: 100,
-            headerToolbar: mobileView
-                ? false
-                : {
-                      left: 'listDay,timeGridDay',
-                      center: '',
-                      right: '',
-                  },
+            headerToolbar: {
+                left: 'listDay,timeGridDay',
+                center: '',
+                right: '',
+            },
             buttonText: {
                 today: lang('today'),
                 day: lang('day'),
@@ -1498,7 +1490,7 @@ App.Utils.CalendarTableView = (function () {
         });
         $calendarViewDiv.css('min-width', width + 200);
 
-        const height = isMobile() ? 'auto' : getCalendarHeight();
+        const height = getCalendarHeight();
 
         $('.calendar-wrapper').each((index, wrapper) => {
             const fullCalendar = $(wrapper).data('fullCalendar');
