@@ -183,6 +183,94 @@ class Sms_smso
     }
 
     /**
+     * Send a reminder SMS ~24 hours before an appointment.
+     *
+     * Reuses the same failure isolation as send_confirmation.
+     *
+     * @param array $appointment Appointment data (must contain start_datetime).
+     * @param array $customer Customer data (must contain phone_number and id).
+     *
+     * @return void
+     */
+    public function send_reminder(array $appointment, array $customer): void
+    {
+        try {
+            $rawPhone = $customer['phone_number'] ?? null;
+            $customerId = $customer['id'] ?? null;
+
+            $normalizedPhone = normalize_romanian_phone($rawPhone);
+
+            if ($normalizedPhone === null) {
+                $this->log(
+                    'Reminder SMS skipped: invalid phone for customer #' . ($customerId ?? 'N/A') . ': ' . ($rawPhone ?: '(empty)')
+                );
+                return;
+            }
+
+            $message = $this->buildReminderMessage($appointment);
+
+            if ($this->logOnly) {
+                $this->log(
+                    'LOG_ONLY reminder SMS would send to ' . $normalizedPhone . ': ' . $message
+                );
+                return;
+            }
+
+            if (empty($this->apiKey) || empty($this->senderId)) {
+                $this->log('Reminder SMS skipped: SMSO_API_KEY or SMSO_SENDER_ID not configured.');
+                return;
+            }
+
+            $this->send($normalizedPhone, $message);
+        } catch (Throwable $e) {
+            $this->log(
+                'Reminder SMS failed for customer #' . ($customer['id'] ?? 'N/A') . ': ' . $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * Build the Romanian reminder message text (no diacritics, 1 SMS segment).
+     *
+     * @param array $appointment Appointment data.
+     *
+     * @return string
+     */
+    private function buildReminderMessage(array $appointment): string
+    {
+        $start = $appointment['start_datetime'] ?? null;
+
+        if (empty($start)) {
+            $date = '-';
+            $time = '-';
+        } else {
+            $timestamp = strtotime($start);
+            $day = date('j', $timestamp);
+            $month = (int) date('n', $timestamp);
+            $romanianMonths = [
+                1 => 'Ianuarie',
+                2 => 'Februarie',
+                3 => 'Martie',
+                4 => 'Aprilie',
+                5 => 'Mai',
+                6 => 'Iunie',
+                7 => 'Iulie',
+                8 => 'August',
+                9 => 'Septembrie',
+                10 => 'Octombrie',
+                11 => 'Noiembrie',
+                12 => 'Decembrie',
+            ];
+            $date = $day . ' ' . ($romanianMonths[$month] ?? date('F', $timestamp));
+            $time = date('H:i', $timestamp);
+        }
+
+        $message = 'Reminder: aveti programare la BodySculpt maine, ' . $date . ' la ' . $time . '. Va asteptam!';
+
+        return $this->removeDiacritics($message);
+    }
+
+    /**
      * Remove Romanian/Western European diacritics from a string.
      *
      * Keeps the SMS cheap by ensuring plain ASCII output.

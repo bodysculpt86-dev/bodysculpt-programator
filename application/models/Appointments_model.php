@@ -237,11 +237,54 @@ class Appointments_model extends EA_Model
     {
         $appointment['update_datetime'] = date('Y-m-d H:i:s');
 
+        // If the appointment start time changed, reset the SMS reminder flag so the
+        // customer receives the reminder for the new date/time instead of the old one.
+        if (array_key_exists('start_datetime', $appointment)) {
+            $existing = $this->db->get_where('appointments', ['id' => $appointment['id']])->row_array();
+
+            if (!empty($existing) && $existing['start_datetime'] !== $appointment['start_datetime']) {
+                $appointment['sms_reminder_sent_at'] = null;
+                $appointment['sms_reminder_error'] = null;
+            }
+        }
+
         if (!$this->db->update('appointments', $appointment, ['id' => $appointment['id']])) {
             throw new RuntimeException('Could not update appointment record.');
         }
 
         return $appointment['id'];
+    }
+
+    /**
+     * Get appointments that are approximately 24 hours away and have not received
+     * an SMS reminder yet.
+     *
+     * @param string $from Start of the target window (Y-m-d H:i:s).
+     * @param string $until End of the target window (Y-m-d H:i:s).
+     * @param array $exclude_statuses Appointment statuses to skip.
+     *
+     * @return array
+     */
+    public function get_pending_sms_reminders(string $from, string $until, array $exclude_statuses = []): array
+    {
+        $this->db
+            ->from('appointments')
+            ->where('is_unavailability', false)
+            ->where('start_datetime >=', $from)
+            ->where('start_datetime <=', $until)
+            ->where('sms_reminder_sent_at IS NULL', null, false);
+
+        if (!empty($exclude_statuses)) {
+            $this->db->where_not_in('status', $exclude_statuses);
+        }
+
+        $appointments = $this->db->get()->result_array();
+
+        foreach ($appointments as &$appointment) {
+            $this->cast($appointment);
+        }
+
+        return $appointments;
     }
 
     /**

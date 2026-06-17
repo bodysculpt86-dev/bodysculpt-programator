@@ -86,6 +86,18 @@ This command removes expired sessions, old logs and cache files, and deletes old
 
 **Tip:** Add this command to a [cron job](https://en.wikipedia.org/wiki/Cron) so cleanup runs automatically.
 
+### Send SMS Reminders
+
+Sends SMS reminders to customers with appointments approximately 24 hours away:
+
+```
+php index.php console send_sms_reminders
+```
+
+The command selects appointments between 23 and 25 hours from now that have not yet received a reminder, and sends each customer an SMS via SMSO.ro. Appointments that are cancelled or still in draft status are skipped.
+
+**Tip:** Run this command every hour as a cron job. On Railway, set the `RAILWAY_CRON_COMMAND` environment variable to `php /var/www/html/index.php console send_sms_reminders` and configure a cron schedule (for example, `0 * * * *`).
+
 ### Help
 
 Shows a summary of all available commands:

@@ -38,8 +38,10 @@ class Console extends EA_Controller
 
         $this->load->library('instance');
         $this->load->library('cleanup');
+        $this->load->library('sms_smso');
 
         $this->load->model('admins_model');
+        $this->load->model('appointments_model');
         $this->load->model('customers_model');
         $this->load->model('providers_model');
         $this->load->model('services_model');
@@ -173,6 +175,75 @@ class Console extends EA_Controller
     }
 
     /**
+     * Send SMS reminders for appointments that are ~24 hours away.
+     *
+     * Use this method in a cronjob to automatically remind customers about upcoming
+     * appointments via SMSO.ro. Runs hourly on Railway; selects appointments between
+     * 23 and 25 hours from now that have not been reminded yet.
+     *
+     * Usage:
+     *
+     * php index.php console send_sms_reminders
+     */
+    public function send_sms_reminders(): void
+    {
+        $now = new DateTime();
+
+        // Hourly cron: look 23-25 hours ahead so every appointment in the 24h window
+        // gets picked up exactly once, even with small platform timing drifts.
+        $from = (clone $now)->modify('+23 hours')->format('Y-m-d H:i:s');
+        $until = (clone $now)->modify('+25 hours')->format('Y-m-d H:i:s');
+
+        $excludedStatuses = ['Anulat', 'Schita', 'Nu s-a prezentat'];
+
+        $appointments = $this->appointments_model->get_pending_sms_reminders($from, $until, $excludedStatuses);
+
+        foreach ($appointments as $appointment) {
+            try {
+                $customer = $this->customers_model->find($appointment['id_users_customer']);
+            } catch (Throwable $e) {
+                log_message('debug', '[SMSO] Reminder skipped: customer not found for appointment #' . $appointment['id']);
+                continue;
+            }
+
+            if (empty($customer['phone_number'])) {
+                log_message('debug', '[SMSO] Reminder skipped: no phone for customer #' . $customer['id']);
+                $this->markReminderAttempted($appointment['id'], 'no phone');
+                continue;
+            }
+
+            try {
+                $this->sms_smso->send_reminder($appointment, $customer);
+                $this->markReminderAttempted($appointment['id']);
+            } catch (Throwable $e) {
+                log_message('error', '[SMSO] Reminder exception for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
+                $this->markReminderAttempted($appointment['id'], $e->getMessage());
+            }
+        }
+
+        log_message('debug', '[SMSO] Reminder run finished. Checked ' . count($appointments) . ' appointment(s).');
+    }
+
+    /**
+     * Mark an appointment as having received (or attempted) an SMS reminder.
+     *
+     * @param int $appointmentId Appointment ID.
+     * @param string|null $error Optional error message if the reminder failed.
+     */
+    private function markReminderAttempted(int $appointmentId, ?string $error = null): void
+    {
+        $data = [
+            'sms_reminder_sent_at' => date('Y-m-d H:i:s'),
+        ];
+
+        if ($error !== null) {
+            $data['sms_reminder_error'] = substr($error, 0, 512);
+        }
+
+        $this->db->update('appointments', $data, ['id' => $appointmentId]);
+    }
+
+    /**
      * Show help information about the console capabilities.
      *
      * Use this method to see the available commands.
@@ -201,7 +272,8 @@ class Console extends EA_Controller
             '⇾ php index.php console install',
             '⇾ php index.php console backup',
             '⇾ php index.php console sync',
-            '⇾ php index.php console cleanup    (cleans sessions, logs, cache, and customer data)',
+            '⇾ php index.php console cleanup        (cleans sessions, logs, cache, and customer data)',
+            '⇾ php index.php console send_sms_reminders  (sends ~24h SMS reminders via SMSO.ro)',
             '',
             '',
         ];
