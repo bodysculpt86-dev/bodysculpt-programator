@@ -76,6 +76,45 @@
 </form>
 <?php end_section('content'); ?>
 
+<?php section('styles'); ?>
+<style>
+    body {
+        background: linear-gradient(135deg, var(--bs-primary) 0%, #2d6e5b 100%);
+    }
+
+    .card {
+        border: none;
+        border-top: 5px solid var(--bs-primary);
+        border-radius: 0.75rem;
+    }
+
+    .text-primary {
+        color: var(--bs-primary) !important;
+    }
+
+    .btn-primary {
+        --bs-btn-bg: var(--bs-primary);
+        --bs-btn-border-color: var(--bs-primary);
+        --bs-btn-hover-bg: #357a67;
+        --bs-btn-hover-border-color: #357a67;
+    }
+
+    .form-control:focus,
+    .input-group:focus-within .form-control,
+    .input-group:focus-within .input-group-text {
+        border-color: var(--bs-primary);
+    }
+
+    .form-control:focus {
+        box-shadow: 0 0 0 0.25rem var(--bs-primary-bg-subtle);
+    }
+
+    .input-group-text {
+        color: var(--bs-primary);
+    }
+</style>
+<?php end_section('styles'); ?>
+
 <?php section('scripts'); ?>
 
 <script src="<?= asset_url('assets/js/http/login_http_client.js') ?>"></script>

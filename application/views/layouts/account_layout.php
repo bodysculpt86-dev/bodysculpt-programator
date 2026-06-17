@@ -32,8 +32,7 @@
 
         <div class="card-footer text-center py-3">
             <small>
-                Powered by
-                <a href="https://easyappointments.org">Bookings by Revclar</a>
+                <?= e(setting('company_name') ?: 'Bookings by Revclar') ?>
             </small>
         </div>
     </div>
