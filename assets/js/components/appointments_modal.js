@@ -669,7 +669,7 @@ App.Components.AppointmentsModal = (function () {
                 .closest('.additional-service-row')
                 .find('.additional-service-price');
 
-            if (service && service.price !== undefined && service.price !== null && !$price.val()) {
+            if (service && service.price !== undefined && service.price !== null) {
                 $price.val(service.price);
             }
 

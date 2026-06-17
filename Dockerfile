@@ -35,6 +35,10 @@ COPY --from=assets-builder /build/assets/css/themes/ /var/www/html/assets/css/th
 # this repository contains the matching source files for the deployed application code.
 COPY ./assets/js/ /var/www/html/assets/js/
 
+# Copy local image assets (including the custom logo) so the deployed image matches
+# the local development build instead of falling back to the upstream default images.
+COPY ./assets/img/ /var/www/html/assets/img/
+
 # Patched session driver (PHP 8.2 ReturnTypeWillChange fix)
 COPY ./system/libraries/Session/drivers/Session_database_driver.php /var/www/html/system/libraries/Session/drivers/Session_database_driver.php
 
