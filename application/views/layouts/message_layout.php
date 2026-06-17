@@ -11,7 +11,7 @@
 
     <title><?= vars('page_title') ?> | Bookings by Revclar</title>
 
-    <link rel="icon" type="image/x-icon" href="<?= asset_url('assets/img/favicon.ico') ?>">
+    <link rel="icon" type="image/x-icon" href="<?= asset_url('assets/img/logo.png') ?>">
     <link rel="icon" sizes="192x192" href="<?= asset_url('assets/img/logo.png') ?>">
 
     <link rel="stylesheet" type="text/css"

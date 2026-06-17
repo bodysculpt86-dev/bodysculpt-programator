@@ -45,6 +45,9 @@ App.Components.AppointmentsModal = (function () {
     const $selectService = $('#select-service');
     const $selectProvider = $('#select-provider');
     const $appointmentPrice = $('#appointment-price');
+    const $additionalServices = $('#additional-services');
+    const $addAdditionalService = $('#add-additional-service');
+    const $appointmentServicesTotal = $('#appointment-services-total');
     const $insertAppointment = $('#insert-appointment');
     const $existingCustomersList = $('#existing-customers-list');
     const $newCustomer = $('#new-customer');
@@ -55,6 +58,81 @@ App.Components.AppointmentsModal = (function () {
     const $customField5 = $('#custom-field-5');
 
     const moment = window.moment;
+
+    /**
+     * Update the displayed total price for all selected services.
+     */
+    function updateAppointmentServicesTotal() {
+        let total = 0;
+
+        $appointmentsModal.find('.appointment-service-price').each(function () {
+            const value = parseFloat($(this).val());
+
+            if (!isNaN(value)) {
+                total += value;
+            }
+        });
+
+        $appointmentServicesTotal.text(total.toFixed(2));
+    }
+
+    /**
+     * Build the HTML for an additional service row.
+     */
+    function buildAdditionalServiceRow() {
+        const serviceOptions = $selectService.html();
+
+        return `
+            <div class="additional-service-row mb-2">
+                <div class="row g-2 align-items-center">
+                    <div class="col-7">
+                        <select class="form-select additional-service-id">
+                            ${serviceOptions}
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <input type="number" class="form-control additional-service-price appointment-service-price" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                    <div class="col-1">
+                        <button class="btn btn-outline-danger btn-sm remove-additional-service" type="button">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Add a new additional service row to the form.
+     */
+    function addAdditionalServiceRow() {
+        const $row = $(buildAdditionalServiceRow());
+
+        $additionalServices.append($row);
+
+        const serviceId = $row.find('.additional-service-id').val();
+
+        const service = vars('available_services').find(
+            (availableService) => Number(availableService.id) === Number(serviceId),
+        );
+
+        const $price = $row.find('.additional-service-price');
+
+        if (service && service.price !== undefined && service.price !== null && !$price.val()) {
+            $price.val(service.price);
+        }
+
+        updateAppointmentServicesTotal();
+    }
+
+    /**
+     * Remove all additional service rows.
+     */
+    function clearAdditionalServices() {
+        $additionalServices.empty();
+        updateAppointmentServicesTotal();
+    }
 
     /**
      * Update the displayed timezone.
@@ -93,24 +171,66 @@ App.Components.AppointmentsModal = (function () {
             // otherwise fall back to the regular status dropdown.
             const appointmentStatus = $appointmentCloseStatus.val() || $appointmentStatus.val();
 
-            const appointment = {
-                id_services: $selectService.val(),
+            const baseAppointment = {
                 id_users_provider: $selectProvider.val(),
-                start_datetime: startDatetime,
-                end_datetime: endDatetime,
                 location: $appointmentLocation.val(),
                 meeting_link: $appointmentMeetingLink.val(),
                 color: App.Components.ColorSelection.getColor($appointmentColor),
                 status: appointmentStatus,
-                price: $appointmentPrice.val() || null,
                 notes: $appointmentNotes.val(),
                 is_unavailability: Number(false),
             };
 
+            const buildAppointment = (serviceId, price, start, end) => ({
+                ...baseAppointment,
+                id_services: serviceId,
+                price: price || null,
+                start_datetime: start,
+                end_datetime: end,
+            });
+
+            let currentStart = moment(startDateTimeObject);
+            let currentEnd = moment(endDateTimeObject);
+
+            const appointments = [
+                buildAppointment($selectService.val(), $appointmentPrice.val(), startDatetime, endDatetime),
+            ];
+
+            $additionalServices.find('.additional-service-row').each(function () {
+                const $row = $(this);
+                const serviceId = $row.find('.additional-service-id').val();
+                const price = $row.find('.additional-service-price').val();
+
+                if (!serviceId) {
+                    return; // continue
+                }
+
+                currentStart = currentEnd.clone();
+
+                const service = vars('available_services').find(
+                    (availableService) => Number(availableService.id) === Number(serviceId),
+                );
+
+                const duration = service ? service.duration : 60;
+
+                currentEnd = currentStart.clone().add(duration, 'minutes');
+
+                appointments.push(
+                    buildAppointment(
+                        serviceId,
+                        price,
+                        currentStart.format('YYYY-MM-DD HH:mm:ss'),
+                        currentEnd.format('YYYY-MM-DD HH:mm:ss'),
+                    ),
+                );
+            });
+
             if ($appointmentId.val() !== '') {
                 // Set the id value, only if we are editing an appointment.
-                appointment.id = $appointmentId.val();
+                appointments[0].id = $appointmentId.val();
             }
+
+            const appointment = appointments.length === 1 ? appointments[0] : appointments;
 
             const customer = {
                 first_name: $firstName.val(),
@@ -265,6 +385,8 @@ App.Components.AppointmentsModal = (function () {
             if (service && service.price !== undefined && service.price !== null && !$appointmentPrice.val()) {
                 $appointmentPrice.val(service.price);
             }
+
+            updateAppointmentServicesTotal();
 
             const startMoment = moment();
 
@@ -473,6 +595,8 @@ App.Components.AppointmentsModal = (function () {
                 $appointmentPrice.val(service.price);
             }
 
+            updateAppointmentServicesTotal();
+
             const duration = service ? service.duration : 60;
 
             const startDateTimeObject = App.Utils.UI.getDateTimePickerValue($startDatetime);
@@ -517,6 +641,49 @@ App.Components.AppointmentsModal = (function () {
         });
 
         /**
+         * Event: Add Additional Service Button "Click"
+         */
+        $addAdditionalService.on('click', () => {
+            addAdditionalServiceRow();
+        });
+
+        /**
+         * Event: Remove Additional Service Button "Click"
+         */
+        $additionalServices.on('click', '.remove-additional-service', (event) => {
+            $(event.currentTarget).closest('.additional-service-row').remove();
+            updateAppointmentServicesTotal();
+        });
+
+        /**
+         * Event: Additional Service "Change"
+         */
+        $additionalServices.on('change', '.additional-service-id', (event) => {
+            const serviceId = $(event.currentTarget).val();
+
+            const service = vars('available_services').find(
+                (availableService) => Number(availableService.id) === Number(serviceId),
+            );
+
+            const $price = $(event.currentTarget)
+                .closest('.additional-service-row')
+                .find('.additional-service-price');
+
+            if (service && service.price !== undefined && service.price !== null && !$price.val()) {
+                $price.val(service.price);
+            }
+
+            updateAppointmentServicesTotal();
+        });
+
+        /**
+         * Event: Service Price "Input"
+         */
+        $appointmentsModal.on('input', '.appointment-service-price', () => {
+            updateAppointmentServicesTotal();
+        });
+
+        /**
          * Event: Enter New Customer Button "Click"
          */
         $newCustomer.on('click', () => {
@@ -549,6 +716,8 @@ App.Components.AppointmentsModal = (function () {
         $appointmentsModal.find('input, textarea').val('');
         $appointmentsModal.find('.modal-message').addClass('.d-none');
         $appointmentsModal.find('.is-invalid').removeClass('is-invalid');
+
+        clearAdditionalServices();
 
         const defaultStatusValue = $appointmentStatus.find('option:first').val();
         $appointmentStatus.val(defaultStatusValue);
@@ -615,6 +784,8 @@ App.Components.AppointmentsModal = (function () {
         App.Utils.UI.initializeDateTimePicker($endDatetime);
         App.Utils.UI.setDateTimePickerValue($endDatetime, endDatetime);
         $appointmentsModal.find('.modal-message').removeClass('alert-danger').text('').addClass('d-none');
+
+        updateAppointmentServicesTotal();
     }
 
     /**

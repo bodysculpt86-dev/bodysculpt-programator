@@ -112,7 +112,22 @@
                                         <?= lang('price') ?>
                                         <span class="text-muted">(Lei)</span>
                                     </label>
-                                    <input id="appointment-price" class="form-control" type="number" step="0.01" min="0" placeholder="0.00">
+                                    <input id="appointment-price" class="form-control appointment-service-price" type="number" step="0.01" min="0" placeholder="0.00">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <?= lang('additional_services') ?>
+                                    </label>
+                                    <div id="additional-services"></div>
+                                    <button id="add-additional-service" class="btn btn-outline-secondary btn-sm" type="button">
+                                        <i class="fas fa-plus me-2"></i>
+                                        <?= lang('add_service') ?>
+                                    </button>
+                                    <div class="mt-2 text-end fw-bold">
+                                        <?= lang('total') ?>:
+                                        <span id="appointment-services-total">0.00</span> Lei
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">

@@ -253,6 +253,9 @@ class Calendar extends EA_Controller
 
     /**
      * Save appointment changes that are made from the backend calendar page.
+     *
+     * Supports saving a single appointment or multiple appointments at once (e.g. when the customer
+     * books more than one service).
      */
     public function save_appointment(): void
     {
@@ -272,9 +275,18 @@ class Calendar extends EA_Controller
 
             $force_save = filter_var(request('force_save', false), FILTER_VALIDATE_BOOLEAN);
 
-            $this->check_event_permissions((int) $appointment_data['id_users_provider']);
+            // Normalize the appointment data to a list of appointment records.
+            $appointments = array_is_list($appointment_data) ? array_values($appointment_data) : [$appointment_data];
+
+            if (empty($appointments)) {
+                throw new InvalidArgumentException('No appointment data provided.');
+            }
+
+            $this->check_event_permissions((int) ($appointments[0]['id_users_provider'] ?? 0));
 
             // Save customer changes to the database.
+            $customer_id = null;
+
             if ($customer_data) {
                 $customer = $customer_data;
 
@@ -296,14 +308,14 @@ class Calendar extends EA_Controller
                 }
 
                 $customer['id'] = $this->customers_model->save($customer);
+
+                $customer_id = $customer['id'];
             }
 
             // Save appointment changes to the database.
-            $manage_mode = !empty($appointment_data['id']);
+            $manage_mode = !empty($appointments[0]['id']);
 
-            if ($appointment_data) {
-                $appointment = $appointment_data;
-
+            foreach ($appointments as &$appointment) {
                 $required_permissions = !empty($appointment['id'])
                     ? can('edit', PRIV_APPOINTMENTS)
                     : can('add', PRIV_APPOINTMENTS);
@@ -313,12 +325,14 @@ class Calendar extends EA_Controller
                 }
 
                 // If the appointment does not contain the customer record id, then it means that is going to be inserted.
-
                 if (!isset($appointment['id_users_customer'])) {
-                    $appointment['id_users_customer'] = $customer['id'] ?? $customer_data['id'];
+                    $appointment['id_users_customer'] = $customer_id ?? $customer_data['id'] ?? null;
                 }
+            }
+            unset($appointment);
 
-                // Check if the provider has a conflicting appointment at the selected time
+            // Check if any of the providers has a conflicting appointment at the selected time.
+            foreach ($appointments as $appointment) {
                 $exclude_appointment_id = !empty($appointment['id']) ? (int) $appointment['id'] : null;
 
                 $has_conflict = $this->appointments_model->has_provider_conflict(
@@ -336,7 +350,10 @@ class Calendar extends EA_Controller
                     ]);
                     return;
                 }
+            }
 
+            // Save all appointments.
+            foreach ($appointments as &$appointment) {
                 if ($manage_mode && !empty($appointment['id'])) {
                     $this->synchronization->remove_appointment_on_provider_change($appointment['id']);
                 }
@@ -352,42 +369,48 @@ class Calendar extends EA_Controller
 
                 $appointment['id'] = $this->appointments_model->save($appointment);
             }
+            unset($appointment);
 
-            if (empty($appointment['id'])) {
-                throw new RuntimeException('The appointment ID is not available.');
-            }
+            // Sync, notify and trigger webhooks for each saved appointment.
+            foreach ($appointments as $appointment) {
+                $saved_appointment = $this->appointments_model->find($appointment['id']);
+                $provider = $this->providers_model->find($saved_appointment['id_users_provider']);
+                $customer = $this->customers_model->find($saved_appointment['id_users_customer']);
+                $service = $this->services_model->find($saved_appointment['id_services']);
 
-            $appointment = $this->appointments_model->find($appointment['id']);
-            $provider = $this->providers_model->find($appointment['id_users_provider']);
-            $customer = $this->customers_model->find($appointment['id_users_customer']);
-            $service = $this->services_model->find($appointment['id_services']);
+                $company_color = setting('company_color');
 
-            $company_color = setting('company_color');
+                $settings = [
+                    'company_name' => setting('company_name'),
+                    'company_link' => setting('company_link'),
+                    'company_email' => setting('company_email'),
+                    'company_color' =>
+                        !empty($company_color) && $company_color != DEFAULT_COMPANY_COLOR ? $company_color : null,
+                    'date_format' => setting('date_format'),
+                    'time_format' => setting('time_format'),
+                ];
 
-            $settings = [
-                'company_name' => setting('company_name'),
-                'company_link' => setting('company_link'),
-                'company_email' => setting('company_email'),
-                'company_color' =>
-                    !empty($company_color) && $company_color != DEFAULT_COMPANY_COLOR ? $company_color : null,
-                'date_format' => setting('date_format'),
-                'time_format' => setting('time_format'),
-            ];
-
-            $this->synchronization->sync_appointment_saved($appointment, $service, $provider, $customer, $settings);
-
-            if ($notify_users) {
-                $this->notifications->notify_appointment_saved(
-                    $appointment,
+                $this->synchronization->sync_appointment_saved(
+                    $saved_appointment,
                     $service,
                     $provider,
                     $customer,
                     $settings,
-                    $manage_mode,
                 );
-            }
 
-            $this->webhooks_client->trigger(WEBHOOK_APPOINTMENT_SAVE, $appointment);
+                if ($notify_users) {
+                    $this->notifications->notify_appointment_saved(
+                        $saved_appointment,
+                        $service,
+                        $provider,
+                        $customer,
+                        $settings,
+                        $manage_mode,
+                    );
+                }
+
+                $this->webhooks_client->trigger(WEBHOOK_APPOINTMENT_SAVE, $saved_appointment);
+            }
 
             json_response([
                 'success' => true,

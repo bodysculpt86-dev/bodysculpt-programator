@@ -181,7 +181,7 @@ App.Utils.CalendarDefaultView = (function () {
         $appointmentsModal.find('#appointment-meeting-link').val(appointment.meeting_link);
         $appointmentsModal.find('#appointment-status').val(appointment.status);
         $appointmentsModal.find('#appointment-close-status').val(appointment.status);
-        $appointmentsModal.find('#appointment-price').val(appointment.price ?? '');
+        $appointmentsModal.find('#appointment-price').val(appointment.price ?? '').trigger('input');
         $appointmentsModal.find('#appointment-notes').val(appointment.notes);
         App.Components.ColorSelection.setColor($appointmentsModal.find('#appointment-color'), appointment.color);
 
