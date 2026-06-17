@@ -27,7 +27,7 @@ class Migration_Add_appointment_status_options_setting extends CI_Migration
         if (!$this->db->get_where('settings', ['name' => 'appointment_status_options'])->num_rows()) {
             $this->db->insert('settings', [
                 'name' => 'appointment_status_options',
-                'value' => '["Booked", "Confirmed", "Rescheduled", "Cancelled", "Draft"]',
+                'value' => '["Booked", "Confirmed", "Rescheduled", "Cancelled", "Draft", "Nu s-a prezentat", "A plătit cash", "A plătit card", "Barter", "Cadou"]',
             ]);
         }
     }

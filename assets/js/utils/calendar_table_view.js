@@ -205,7 +205,7 @@ App.Utils.CalendarTableView = (function () {
 
         $appointmentsModal.find('#appointment-location').val(appointment.location);
         $appointmentsModal.find('#appointment-meeting-link').val(appointment.meeting_link);
-        $appointmentsModal.find('#appointment-status').val(appointment.status);
+        $appointmentsModal.find('#appointment-status').val(appointment.status).trigger('change');
         $appointmentsModal.find('#appointment-notes').val(appointment.notes);
         App.Components.ColorSelection.setColor($appointmentsModal.find('#appointment-color'), appointment.color);
         $appointmentsModal.modal('show');
@@ -839,6 +839,29 @@ App.Utils.CalendarTableView = (function () {
      * @param {jQuery} $providerColumn - Provider column element.
      * @param {Array} appointments - Appointment data array.
      */
+    /**
+     * Convert an appointment status value to a CSS class name.
+     *
+     * @param {string} status
+     * @returns {string}
+     */
+    function getAppointmentStatusClass(status) {
+        if (!status) {
+            return '';
+        }
+
+        const normalized = status
+            .toLowerCase()
+            .replace(/[ăâ]/g, 'a')
+            .replace(/î/g, 'i')
+            .replace(/ș/g, 's')
+            .replace(/ț/g, 't')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+
+        return 'status-' + normalized;
+    }
+
     function createAppointments($providerColumn, appointments) {
         if (!appointments.length) {
             return;
@@ -870,6 +893,7 @@ App.Utils.CalendarTableView = (function () {
                     end: moment(appointment.end_datetime).toDate(),
                     allDay: false,
                     color: appointment.color,
+                    className: getAppointmentStatusClass(appointment.status),
                     display: 'block',
                     data: appointment,
                 };

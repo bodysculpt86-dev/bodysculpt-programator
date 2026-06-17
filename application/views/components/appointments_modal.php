@@ -145,6 +145,22 @@
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
+
+                                <div class="mb-3">
+                                    <label for="appointment-close-status" class="form-label">
+                                        <?= lang('close_appointment') ?>
+                                    </label>
+                                    <select id="appointment-close-status" class="form-select">
+                                        <option value="">—</option>
+                                        <?php foreach ($appointment_closing_statuses as $appointment_closing_status): ?>
+                                            <?php $status_class = 'status-' . preg_replace('/[^a-z0-9]+/', '-', strtolower(str_replace(['ă', 'â', 'î', 'ș', 'ț'], ['a', 'a', 'i', 's', 't'], $appointment_closing_status))); ?>
+                                            <option value="<?= e($appointment_closing_status) ?>"
+                                                    data-status-class="<?= e($status_class) ?>">
+                                                <?= e($appointment_closing_status) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
                             </div>
 
                             <div class="col-12 col-sm-6">

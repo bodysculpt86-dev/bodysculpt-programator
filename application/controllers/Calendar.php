@@ -181,6 +181,8 @@ class Calendar extends EA_Controller
 
         $appointment_status_options = setting('appointment_status_options');
 
+        $appointment_closing_statuses = setting('appointment_closing_statuses');
+
         $customers = $this->customers_model->get(null, 50, null, 'update_datetime DESC');
 
         if (setting('limit_customer_access') && $role_slug === DB_SLUG_PROVIDER) {
@@ -234,6 +236,7 @@ class Calendar extends EA_Controller
             'available_services' => $available_services,
             'secretary_providers' => $secretary_providers,
             'appointment_status_options' => json_decode($appointment_status_options, true) ?? [],
+            'appointment_closing_statuses' => json_decode($appointment_closing_statuses, true) ?? [],
             'require_first_name' => setting('require_first_name'),
             'require_last_name' => setting('require_last_name'),
             'require_email' => setting('require_email'),

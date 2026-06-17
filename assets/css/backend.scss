@@ -788,3 +788,79 @@ body .modal.full-screen .modal-push {
         min-width: 0;
     }
 }
+
+/* ----------------------------------------------------------------------------
+ * Appointment closing status colors
+ * ----------------------------------------------------------------------------
+ * These classes are applied to calendar events based on the appointment status.
+ * Colors are chosen to be readable on both light and dark/indigo calendar themes.
+ */
+
+/* Modal close-status dropdown indicator */
+#appointment-close-status option[value="Nu s-a prezentat"] {
+    color: #ef4444;
+}
+
+#appointment-close-status option[value="A plătit cash"],
+#appointment-close-status option[value="A plătit card"] {
+    color: #22c55e;
+}
+
+#appointment-close-status option[value="Barter"] {
+    color: #f59e0b;
+}
+
+#appointment-close-status option[value="Cadou"] {
+    color: #a855f7;
+}
+
+/* Calendar event status markers (default + table views) */
+.fc-event.status-nu-s-a-prezentat,
+#calendar-table .appointment-event.status-nu-s-a-prezentat {
+    background-color: #ef4444 !important;
+    border-color: #b91c1c !important;
+    color: #fff !important;
+}
+
+.fc-event.status-a-platit-cash,
+#calendar-table .appointment-event.status-a-platit-cash {
+    background-color: #22c55e !important;
+    border-color: #15803d !important;
+    color: #fff !important;
+}
+
+.fc-event.status-a-platit-card,
+#calendar-table .appointment-event.status-a-platit-card {
+    background-color: #16a34a !important;
+    border-color: #14532d !important;
+    color: #fff !important;
+}
+
+.fc-event.status-barter,
+#calendar-table .appointment-event.status-barter {
+    background-color: #f59e0b !important;
+    border-color: #b45309 !important;
+    color: #1f2937 !important;
+}
+
+.fc-event.status-cadou,
+#calendar-table .appointment-event.status-cadou {
+    background-color: #a855f7 !important;
+    border-color: #7e22ce !important;
+    color: #fff !important;
+}
+
+/* Optional left-border stripe marker for closed/paid statuses */
+.fc-event.status-nu-s-a-prezentat::before,
+.fc-event.status-a-platit-cash::before,
+.fc-event.status-a-platit-card::before,
+.fc-event.status-barter::before,
+.fc-event.status-cadou::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: rgba(255, 255, 255, 0.5);
+}

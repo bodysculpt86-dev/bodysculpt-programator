@@ -179,7 +179,7 @@ App.Utils.CalendarDefaultView = (function () {
         // Appointment fields
         $appointmentsModal.find('#appointment-location').val(appointment.location);
         $appointmentsModal.find('#appointment-meeting-link').val(appointment.meeting_link);
-        $appointmentsModal.find('#appointment-status').val(appointment.status);
+        $appointmentsModal.find('#appointment-status').val(appointment.status).trigger('change');
         $appointmentsModal.find('#appointment-notes').val(appointment.notes);
         App.Components.ColorSelection.setColor($appointmentsModal.find('#appointment-color'), appointment.color);
 
@@ -899,6 +899,29 @@ App.Utils.CalendarDefaultView = (function () {
      * @param {Array} appointments - Appointment data array.
      * @returns {Array} Calendar event objects.
      */
+    /**
+     * Convert an appointment status value to a CSS class name.
+     *
+     * @param {string} status
+     * @returns {string}
+     */
+    function getAppointmentStatusClass(status) {
+        if (!status) {
+            return '';
+        }
+
+        const normalized = status
+            .toLowerCase()
+            .replace(/[ăâ]/g, 'a')
+            .replace(/î/g, 'i')
+            .replace(/ș/g, 's')
+            .replace(/ț/g, 't')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+
+        return 'status-' + normalized;
+    }
+
     function createAppointmentEvents(appointments) {
         return appointments.map((appointment) => {
             const customerName = [appointment.customer.first_name, appointment.customer.last_name]
@@ -919,6 +942,7 @@ App.Utils.CalendarDefaultView = (function () {
                 end: moment(appointment.end_datetime).toDate(),
                 allDay: false,
                 color: appointment.color,
+                className: getAppointmentStatusClass(appointment.status),
                 data: appointment,
                 display: 'block',
             };

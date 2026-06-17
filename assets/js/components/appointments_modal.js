@@ -37,6 +37,7 @@ App.Components.AppointmentsModal = (function () {
     const $appointmentLocation = $('#appointment-location');
     const $appointmentMeetingLink = $('#appointment-meeting-link');
     const $appointmentStatus = $('#appointment-status');
+    const $appointmentCloseStatus = $('#appointment-close-status');
     const $appointmentColor = $('#appointment-color');
     const $appointmentNotes = $('#appointment-notes');
     const $reloadAppointments = $('#reload-appointments');
@@ -412,6 +413,35 @@ App.Components.AppointmentsModal = (function () {
          * When the user clicks on a service, its available providers should become visible. We also need to
          * update the start and end time of the appointment.
          */
+        /**
+         * Event: Close Status "Change"
+         *
+         * Selecting a closing status updates the main appointment status field.
+         */
+        $appointmentCloseStatus.on('change', () => {
+            const closeStatus = $appointmentCloseStatus.val();
+
+            if (closeStatus) {
+                $appointmentStatus.val(closeStatus);
+            }
+        });
+
+        /**
+         * Event: Appointment Status "Change"
+         *
+         * If the selected status is a closing status, keep the close-status dropdown in sync.
+         */
+        $appointmentStatus.on('change', () => {
+            const status = $appointmentStatus.val();
+            const closeStatusOption = $appointmentCloseStatus.find('option[value="' + status + '"]');
+
+            if (closeStatusOption.length) {
+                $appointmentCloseStatus.val(status);
+            } else {
+                $appointmentCloseStatus.val('');
+            }
+        });
+
         $selectService.on('change', () => {
             const serviceId = $selectService.val();
 
@@ -507,6 +537,7 @@ App.Components.AppointmentsModal = (function () {
 
         const defaultStatusValue = $appointmentStatus.find('option:first').val();
         $appointmentStatus.val(defaultStatusValue);
+        $appointmentCloseStatus.val('');
 
         $language.val(vars('default_language'));
 
