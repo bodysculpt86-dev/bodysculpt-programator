@@ -88,6 +88,10 @@ App.Components.AppointmentsModal = (function () {
             const endDateTimeObject = App.Utils.UI.getDateTimePickerValue($endDatetime);
             const endDatetime = moment(endDateTimeObject).format('YYYY-MM-DD HH:mm:ss');
 
+            // The closing/payment status (Închide programare) takes precedence when set,
+            // otherwise fall back to the regular status dropdown.
+            const appointmentStatus = $appointmentCloseStatus.val() || $appointmentStatus.val();
+
             const appointment = {
                 id_services: $selectService.val(),
                 id_users_provider: $selectProvider.val(),
@@ -96,7 +100,7 @@ App.Components.AppointmentsModal = (function () {
                 location: $appointmentLocation.val(),
                 meeting_link: $appointmentMeetingLink.val(),
                 color: App.Components.ColorSelection.getColor($appointmentColor),
-                status: $appointmentStatus.val(),
+                status: appointmentStatus,
                 notes: $appointmentNotes.val(),
                 is_unavailability: Number(false),
             };

@@ -797,12 +797,8 @@ body .modal.full-screen .modal-push {
  */
 
 /* Modal close-status dropdown indicator */
-#appointment-close-status option[value="Nu s-a prezentat"] {
-    color: #ef4444;
-}
-
-#appointment-close-status option[value="A plătit cash"],
-#appointment-close-status option[value="A plătit card"] {
+#appointment-close-status option[value="Cash"],
+#appointment-close-status option[value="Card"] {
     color: #22c55e;
 }
 
@@ -810,27 +806,36 @@ body .modal.full-screen .modal-push {
     color: #f59e0b;
 }
 
-#appointment-close-status option[value="Cadou"] {
+#appointment-close-status option[value="Protocol"] {
+    color: #3b82f6;
+}
+
+#appointment-close-status option[value="Banca/OP"] {
+    color: #06b6d4;
+}
+
+#appointment-close-status option[value="Consum abonament"] {
+    color: #ec4899;
+}
+
+#appointment-close-status option[value="Voucher"] {
     color: #a855f7;
 }
 
-/* Calendar event status markers (default + table views) */
-.fc-event.status-nu-s-a-prezentat,
-#calendar-table .appointment-event.status-nu-s-a-prezentat {
-    background-color: #ef4444 !important;
-    border-color: #b91c1c !important;
-    color: #fff !important;
+#appointment-close-status option[value="Nu s-a prezentat"] {
+    color: #ef4444;
 }
 
-.fc-event.status-a-platit-cash,
-#calendar-table .appointment-event.status-a-platit-cash {
+/* Calendar event status markers (default + table views) */
+.fc-event.status-cash,
+#calendar-table .appointment-event.status-cash {
     background-color: #22c55e !important;
     border-color: #15803d !important;
     color: #fff !important;
 }
 
-.fc-event.status-a-platit-card,
-#calendar-table .appointment-event.status-a-platit-card {
+.fc-event.status-card,
+#calendar-table .appointment-event.status-card {
     background-color: #16a34a !important;
     border-color: #14532d !important;
     color: #fff !important;
@@ -843,19 +848,50 @@ body .modal.full-screen .modal-push {
     color: #1f2937 !important;
 }
 
-.fc-event.status-cadou,
-#calendar-table .appointment-event.status-cadou {
+.fc-event.status-protocol,
+#calendar-table .appointment-event.status-protocol {
+    background-color: #3b82f6 !important;
+    border-color: #1d4ed8 !important;
+    color: #fff !important;
+}
+
+.fc-event.status-banca-op,
+#calendar-table .appointment-event.status-banca-op {
+    background-color: #06b6d4 !important;
+    border-color: #0e7490 !important;
+    color: #fff !important;
+}
+
+.fc-event.status-consum-abonament,
+#calendar-table .appointment-event.status-consum-abonament {
+    background-color: #ec4899 !important;
+    border-color: #be185d !important;
+    color: #fff !important;
+}
+
+.fc-event.status-voucher,
+#calendar-table .appointment-event.status-voucher {
     background-color: #a855f7 !important;
     border-color: #7e22ce !important;
     color: #fff !important;
 }
 
-/* Optional left-border stripe marker for closed/paid statuses */
-.fc-event.status-nu-s-a-prezentat::before,
-.fc-event.status-a-platit-cash::before,
-.fc-event.status-a-platit-card::before,
+.fc-event.status-nu-s-a-prezentat,
+#calendar-table .appointment-event.status-nu-s-a-prezentat {
+    background-color: #ef4444 !important;
+    border-color: #b91c1c !important;
+    color: #fff !important;
+}
+
+/* Optional left-border stripe marker for closing statuses */
+.fc-event.status-cash::before,
+.fc-event.status-card::before,
 .fc-event.status-barter::before,
-.fc-event.status-cadou::before {
+.fc-event.status-protocol::before,
+.fc-event.status-banca-op::before,
+.fc-event.status-consum-abonament::before,
+.fc-event.status-voucher::before,
+.fc-event.status-nu-s-a-prezentat::before {
     content: '';
     position: absolute;
     left: 0;
