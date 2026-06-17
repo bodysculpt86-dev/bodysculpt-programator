@@ -590,8 +590,8 @@ App.Components.AppointmentsModal = (function () {
                 App.Components.ColorSelection.setColor($appointmentColor, service.color);
             }
 
-            // Pre-fill the appointment price with the service default when the field is still empty.
-            if (service && service.price !== undefined && service.price !== null && !$appointmentPrice.val()) {
+            // Update the appointment price to the selected service's default price.
+            if (service && service.price !== undefined && service.price !== null) {
                 $appointmentPrice.val(service.price);
             }
 
