@@ -41,6 +41,7 @@ class Notifications
         $this->CI->load->library('email_messages');
         $this->CI->load->library('ics_file');
         $this->CI->load->library('timezones');
+        $this->CI->load->library('sms_smso');
     }
 
     /**
@@ -96,6 +97,15 @@ class Notifications
                     );
                 } catch (Throwable $e) {
                     $this->log_exception($e, 'appointment-saved to customer', $appointment['id'] ?? null);
+                }
+            }
+
+            // Send confirmation SMS for new appointments only.
+            if ($manage_mode === false) {
+                try {
+                    $this->CI->sms_smso->send_confirmation($appointment, $customer);
+                } catch (Throwable $e) {
+                    $this->log_exception($e, 'appointment-saved sms to customer', $appointment['id'] ?? null);
                 }
             }
 

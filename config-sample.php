@@ -53,4 +53,14 @@ class Config
     // const GOOGLE_SYNC_FEATURE = false;
     // const GOOGLE_CLIENT_ID = '';
     // const GOOGLE_CLIENT_SECRET = '';
+
+    // ------------------------------------------------------------------------
+    // SMSO.RO SMS NOTIFICATIONS (Optional)
+    // ------------------------------------------------------------------------
+    // Set SMSO_API_KEY to your SMSO.ro API key to enable SMS notifications.
+    // Set SMSO_SENDER_ID to the numeric sender ID from your SMSO dashboard.
+    // Use SMSO_API_KEY=LOG_ONLY to log messages without sending real SMS.
+    //
+    // const SMSO_API_KEY = '';
+    // const SMSO_SENDER_ID = '';
 }

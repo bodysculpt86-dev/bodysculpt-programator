@@ -82,6 +82,7 @@ $autoload['helper'] = [
     'routes',
     'security',
     'session',
+    'phone',
     'setting',
     'string',
     'url',
