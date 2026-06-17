@@ -57,10 +57,11 @@ class Calendar extends EA_Controller
         'id_users_provider',
         'id_users_customer',
         'id_services',
+        'price',
     ];
 
     public array $optional_appointment_fields = [
-        //
+        'price' => null,
     ];
 
     /**

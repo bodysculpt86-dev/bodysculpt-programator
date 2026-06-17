@@ -41,6 +41,7 @@ class Appointments_model extends EA_Model
         'meetingLink' => 'meeting_link',
         'color' => 'color',
         'status' => 'status',
+        'price' => 'price',
         'notes' => 'notes',
         'hash' => 'hash',
         'serviceId' => 'id_services',

@@ -108,6 +108,14 @@
                                 </div>
 
                                 <div class="mb-3">
+                                    <label for="appointment-price" class="form-label">
+                                        <?= lang('price') ?>
+                                        <span class="text-muted">(Lei)</span>
+                                    </label>
+                                    <input id="appointment-price" class="form-control" type="number" step="0.01" min="0" placeholder="0.00">
+                                </div>
+
+                                <div class="mb-3">
                                     <label for="select-provider" class="form-label">
                                         <?= lang('provider') ?>
                                         <span class="text-danger">*</span>

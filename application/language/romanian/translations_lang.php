@@ -405,6 +405,7 @@ $lang['allow_rescheduling_cancellation_before'] = 'Permite Reprogramarea/Anulare
 $lang['at_least_one_field'] = 'Cel puțin un câmp trebuie să fie afișat pe pagina de rezervare.';
 $lang['status'] = 'Stare';
 $lang['close_appointment'] = 'Închide programare';
+$lang['price'] = 'Preț';
 $lang['appointment_status_options'] = 'Opțiuni Stare Programare';
 $lang['appointment_status_options_info'] = 'Definiți o listă de opțiuni de stare a programării care pot fi utilizate pe pagina calendarului (prima va deveni automat valoarea implicită).';
 $lang['sunday_short'] = 'Dum';

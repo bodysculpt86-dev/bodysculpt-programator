@@ -37,6 +37,9 @@ EOF
 # email config (and any other upstream templates that contain it).
 sed -i 's/Easy!Appointments/Bookings by Revclar/g' /usr/local/bin/docker-entrypoint.sh
 
+# Run pending database migrations automatically (safe: failures are logged but do not stop startup).
+php /var/www/html/index.php console migrate 2>&1 || echo "Automatic migrations failed; continuing startup." >&2
+
 # Delegate to the original Easy!Appointments entrypoint, which templates
 # config.php / email.php from environment variables and then runs
 # apache2-foreground. Using exec preserves signal handling (PID 1).

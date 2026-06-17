@@ -405,6 +405,7 @@ $lang['allow_rescheduling_cancellation_before'] = 'Allow Rescheduling/Cancellati
 $lang['at_least_one_field'] = 'At least one field must be displayed in the booking page.';
 $lang['status'] = 'Status';
 $lang['close_appointment'] = 'Close Appointment';
+$lang['price'] = 'Price';
 $lang['appointment_status_options'] = 'Appointment Status Options';
 $lang['appointment_status_options_info'] = 'Define a list of available appointment status options that can be used in the the calendar page (the first one will automatically become the default value).';
 $lang['sunday_short'] = 'Sun';

@@ -44,6 +44,7 @@ App.Components.AppointmentsModal = (function () {
     const $selectFilterItem = $('#select-filter-item');
     const $selectService = $('#select-service');
     const $selectProvider = $('#select-provider');
+    const $appointmentPrice = $('#appointment-price');
     const $insertAppointment = $('#insert-appointment');
     const $existingCustomersList = $('#existing-customers-list');
     const $newCustomer = $('#new-customer');
@@ -101,6 +102,7 @@ App.Components.AppointmentsModal = (function () {
                 meeting_link: $appointmentMeetingLink.val(),
                 color: App.Components.ColorSelection.getColor($appointmentColor),
                 status: appointmentStatus,
+                price: $appointmentPrice.val() || null,
                 notes: $appointmentNotes.val(),
                 is_unavailability: Number(false),
             };
@@ -259,6 +261,10 @@ App.Components.AppointmentsModal = (function () {
             );
 
             const duration = service ? service.duration : 60;
+
+            if (service && service.price !== undefined && service.price !== null && !$appointmentPrice.val()) {
+                $appointmentPrice.val(service.price);
+            }
 
             const startMoment = moment();
 
@@ -460,6 +466,11 @@ App.Components.AppointmentsModal = (function () {
 
             if (service?.color) {
                 App.Components.ColorSelection.setColor($appointmentColor, service.color);
+            }
+
+            // Pre-fill the appointment price with the service default when the field is still empty.
+            if (service && service.price !== undefined && service.price !== null && !$appointmentPrice.val()) {
+                $appointmentPrice.val(service.price);
             }
 
             const duration = service ? service.duration : 60;

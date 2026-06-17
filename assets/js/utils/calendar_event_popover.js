@@ -280,6 +280,7 @@ App.Utils.CalendarEventPopover = (function () {
                 ...createPopoverRow('timezone', vars('timezones')[vars('default_timezone')]),
                 ...createPopoverRow('status', data.status || '-'),
                 ...createPopoverRow('service', data.service.name),
+                ...createPopoverRow('price', data.price ? data.price + ' Lei' : '-'),
                 $('<strong/>', {class: 'd-inline-block me-2', text: lang('provider')}),
                 renderMapIcon(provider),
                 $('<span/>', {text: provider.first_name + ' ' + provider.last_name}),
