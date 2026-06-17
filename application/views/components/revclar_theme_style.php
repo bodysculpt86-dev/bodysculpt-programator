@@ -634,4 +634,117 @@
             min-height: 44px;
         }
     }
+
+    /* -------------------------------------------------------------------------
+     * Full-height calendar: show 08:00-22:00 without vertical scroll.
+     * ------------------------------------------------------------------------- */
+    .backend-wrapper:has(#calendar-page) {
+        overflow: hidden;
+    }
+
+    .backend-wrapper:has(#calendar-page) #footer {
+        display: none !important;
+    }
+
+    .backend-wrapper:has(#calendar-page) .backend-main {
+        flex: 1 1 auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    #calendar-page {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+        padding-bottom: 0 !important;
+    }
+
+    #calendar-toolbar {
+        flex-shrink: 0;
+        margin-bottom: 0 !important;
+    }
+
+    #calendar {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #calendar .calendar-header {
+        flex-shrink: 0;
+    }
+
+    #calendar .calendar-view {
+        flex: 1;
+        min-height: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    #calendar .calendar-view > div {
+        display: flex;
+        height: 100%;
+    }
+
+    #calendar .date-column {
+        display: flex;
+        flex-direction: row;
+        height: 100%;
+    }
+
+    #calendar .provider-column {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 350px;
+        min-width: 350px;
+        max-width: 350px;
+    }
+
+    #calendar .provider-column h6 {
+        flex-shrink: 0;
+        margin: 0;
+        padding: 8px 10px;
+    }
+
+    #calendar .calendar-wrapper {
+        flex: 1;
+        min-height: 0;
+        height: auto !important;
+    }
+
+    /* Force FullCalendar timeGrid to fit 08:00-22:00 without internal scroll.
+       14 hours × 2 slots/hour (30min) = 28 slots. */
+    #calendar .fc-timegrid-slot {
+        height: calc((100dvh - 240px) / 28) !important;
+        min-height: 14px !important;
+    }
+
+    #calendar .fc-timegrid-slot-label-cushion,
+    #calendar .fc-timegrid-axis-cushion {
+        font-size: 0.75rem;
+        line-height: 1;
+    }
+
+    #calendar .fc-event-main,
+    #calendar .fc-event-main-frame,
+    #calendar .fc-event-time,
+    #calendar .fc-event-title-container,
+    #calendar .fc-event-title {
+        font-size: 0.7rem !important;
+        line-height: 1.1 !important;
+    }
+
+    #calendar .fc-event-title-container,
+    #calendar .fc-event-title {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
 </style>

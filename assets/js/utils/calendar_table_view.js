@@ -37,7 +37,6 @@ App.Utils.CalendarTableView = (function () {
     const $selectProvider = $('#select-provider');
     const $appointmentsModal = $('#appointments-modal');
     const $unavailabilitiesModal = $('#unavailabilities-modal');
-    const $header = $('#header');
     const $footer = $('#footer');
 
     // Module State
@@ -51,24 +50,6 @@ App.Utils.CalendarTableView = (function () {
     let lastFocusedEventData = null;
 
     // Helper Functions
-
-    /**
-     * Get the calendar height based on window size.
-     *
-     * @returns {number} Calendar height in pixels (minimum 700px).
-     */
-    function getCalendarHeight() {
-        const offset =
-            $footer.outerHeight() +
-            $header.outerHeight() +
-            $calendarToolbar.outerHeight() +
-            $('.calendar-header').outerHeight() +
-            65;
-        const height = window.innerHeight - offset;
-
-        return Math.max(height, 700);
-    }
-
 
     /**
      * Close the current popover if open.
@@ -1429,10 +1410,10 @@ App.Utils.CalendarTableView = (function () {
             locale: vars('language_code'),
             initialView: 'timeGridDay',
             nowIndicator: true,
-            height: getCalendarHeight(),
+            height: 'auto',
             editable: true,
             firstDay: firstWeekdayNumber,
-            slotDuration: '00:15:00',
+            slotDuration: '00:30:00',
             snapDuration: '00:15:00',
             scrollTime: '08:00:00',
             slotMinTime: '08:00:00',
@@ -1490,14 +1471,11 @@ App.Utils.CalendarTableView = (function () {
         });
         $calendarViewDiv.css('min-width', width + 200);
 
-        const height = getCalendarHeight();
-
         $('.calendar-wrapper').each((index, wrapper) => {
             const fullCalendar = $(wrapper).data('fullCalendar');
             if (fullCalendar) {
-                fullCalendar.setOption('height', height);
+                fullCalendar.setOption('height', 'auto');
             }
-            $(wrapper).height(height);
         });
 
         $('.calendar-wrapper').each((index, wrapper) => {

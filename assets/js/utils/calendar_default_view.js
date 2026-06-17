@@ -39,10 +39,7 @@ App.Utils.CalendarDefaultView = (function () {
     const $selectFilterItem = $('#select-filter-item');
     const $appointmentsModal = $('#appointments-modal');
     const $unavailabilitiesModal = $('#unavailabilities-modal');
-    const $header = $('#header');
-    const $footer = $('#footer');
     const $notification = $('#notification');
-    const $calendarToolbar = $('#calendar-toolbar');
 
     // Module State
 
@@ -52,18 +49,6 @@ App.Utils.CalendarDefaultView = (function () {
     let lastFocusedEventData = null;
 
     // Helper Functions
-
-    /**
-     * Get the calendar height based on window size.
-     *
-     * @returns {number} Calendar height in pixels (minimum 700px).
-     */
-    function getCalendarHeight() {
-        const offset = $footer.outerHeight() + $header.outerHeight() + $calendarToolbar.outerHeight() + 35;
-        const height = window.innerHeight - offset;
-
-        return Math.max(height, 700);
-    }
 
     /**
      * Get the selected filter type from the dropdown.
@@ -824,7 +809,7 @@ App.Utils.CalendarDefaultView = (function () {
      * Handle calendar window resize.
      */
     function onWindowResize() {
-        fullCalendar.setOption('height', getCalendarHeight());
+        fullCalendar.setOption('height', 'auto');
     }
 
     /**
@@ -1335,10 +1320,10 @@ App.Utils.CalendarDefaultView = (function () {
             initialView,
             locale: vars('language_code'),
             nowIndicator: true,
-            height: getCalendarHeight(),
+            height: 'auto',
             editable: true,
             firstDay: firstWeekdayNumber,
-            slotDuration: '00:15:00',
+            slotDuration: '00:30:00',
             snapDuration: '00:15:00',
             scrollTime: '08:00:00',
             slotMinTime: '08:00:00',
