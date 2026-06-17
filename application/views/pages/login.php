@@ -17,7 +17,7 @@
             <?= lang('username') ?>
         </label>
         <div class="input-group">
-            <span class="input-group-text bg-light border-end-0">
+            <span class="input-group-text border-end-0">
                 <i class="fas fa-user "></i>
             </span>
             <input type="text" id="username" 
@@ -30,7 +30,7 @@
             <?= lang('password') ?>
         </label>
         <div class="input-group">
-            <span class="input-group-text bg-light border-end-0">
+            <span class="input-group-text border-end-0">
                 <i class="fas fa-lock "></i>
             </span>
             <input type="password" id="password" 
@@ -79,38 +79,73 @@
 <?php section('styles'); ?>
 <style>
     body {
-        background: linear-gradient(135deg, var(--bs-primary) 0%, #2d6e5b 100%);
+        background: #09090b;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     .card {
-        border: none;
-        border-top: 5px solid var(--bs-primary);
+        background: #18181b;
+        border: 1px solid #27272a;
         border-radius: 0.75rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     }
 
+    .card-footer {
+        background: #18181b;
+        border-top: 1px solid #27272a;
+        color: #a1a1aa;
+    }
+
+    h4,
+    .form-label,
     .text-primary {
-        color: var(--bs-primary) !important;
+        color: #fafafa !important;
     }
 
-    .btn-primary {
-        --bs-btn-bg: var(--bs-primary);
-        --bs-btn-border-color: var(--bs-primary);
-        --bs-btn-hover-bg: #357a67;
-        --bs-btn-hover-border-color: #357a67;
+    .form-control,
+    .input-group-text {
+        background: #27272a;
+        border-color: #3f3f46;
+        color: #fafafa;
+    }
+
+    .form-control::placeholder {
+        color: #a1a1aa;
     }
 
     .form-control:focus,
     .input-group:focus-within .form-control,
     .input-group:focus-within .input-group-text {
-        border-color: var(--bs-primary);
+        background: #27272a;
+        border-color: #6366f1;
+        color: #fafafa;
     }
 
     .form-control:focus {
-        box-shadow: 0 0 0 0.25rem var(--bs-primary-bg-subtle);
+        box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25);
     }
 
     .input-group-text {
-        color: var(--bs-primary);
+        color: #a1a1aa;
+    }
+
+    .btn-primary,
+    .btn-primary:focus {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+        border: none !important;
+        color: #fff !important;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+    }
+
+    a {
+        color: #a5b4fc;
+    }
+
+    a:hover {
+        color: #c7d2fe;
     }
 </style>
 <?php end_section('styles'); ?>
