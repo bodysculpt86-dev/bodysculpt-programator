@@ -87,10 +87,11 @@ class Sms_smso
      *
      * @param array $appointment Appointment data (must contain start_datetime).
      * @param array $customer Customer data (must contain phone_number and id).
+     * @param array $service Service data (must contain name).
      *
      * @return void
      */
-    public function send_confirmation(array $appointment, array $customer): void
+    public function send_confirmation(array $appointment, array $customer, array $service): void
     {
         try {
             $rawPhone = $customer['phone_number'] ?? null;
@@ -105,7 +106,7 @@ class Sms_smso
                 return;
             }
 
-            $message = $this->buildConfirmationMessage($appointment);
+            $message = $this->buildConfirmationMessage($appointment, $customer, $service);
 
             if ($this->logOnly) {
                 $this->log(
@@ -131,10 +132,12 @@ class Sms_smso
      * Build the Romanian confirmation message text (no diacritics, 1 SMS segment).
      *
      * @param array $appointment Appointment data.
+     * @param array $customer Customer data.
+     * @param array $service Service data.
      *
      * @return string
      */
-    private function buildConfirmationMessage(array $appointment): string
+    private function buildConfirmationMessage(array $appointment, array $customer, array $service): string
     {
         $start = $appointment['start_datetime'] ?? null;
 
@@ -142,12 +145,76 @@ class Sms_smso
             $date = '-';
             $time = '-';
         } else {
-            $date = date('d.m.Y', strtotime($start));
-            $time = date('H:i', strtotime($start));
+            $timestamp = strtotime($start);
+            $day = date('j', $timestamp);
+            $month = (int) date('n', $timestamp);
+            $romanianMonths = [
+                1 => 'Ianuarie',
+                2 => 'Februarie',
+                3 => 'Martie',
+                4 => 'Aprilie',
+                5 => 'Mai',
+                6 => 'Iunie',
+                7 => 'Iulie',
+                8 => 'August',
+                9 => 'Septembrie',
+                10 => 'Octombrie',
+                11 => 'Noiembrie',
+                12 => 'Decembrie',
+            ];
+            $date = $day . ' ' . ($romanianMonths[$month] ?? date('F', $timestamp));
+            $time = date('H:i', $timestamp);
         }
 
-        return 'Buna ziua! Programarea dvs. la BodySculpt pe ' . $date . ' la ' . $time
-            . ' a fost confirmata. Va asteptam!';
+        $firstName = $customer['first_name'] ?? '';
+        $lastName = $customer['last_name'] ?? '';
+        $name = trim($firstName . ' ' . $lastName);
+
+        if ($name === '') {
+            $name = 'client';
+        }
+
+        $serviceName = $service['name'] ?? '-';
+
+        $message = 'Buna, ' . $name . ', programarea ta din data de ' . $date . ', ora ' . $time
+            . ' la procedura ' . $serviceName . ' a fost stabilita. Te asteptam in locatia noastra din str. Berzei nr. 16, la Body Sculpt Clinique. Zi frumoasa!';
+
+        return $this->removeDiacritics($message);
+    }
+
+    /**
+     * Remove Romanian/Western European diacritics from a string.
+     *
+     * Keeps the SMS cheap by ensuring plain ASCII output.
+     *
+     * @param string $text Input text.
+     *
+     * @return string
+     */
+    private function removeDiacritics(string $text): string
+    {
+        $replacements = [
+            // Lowercase
+            'ă' => 'a', 'â' => 'a', 'á' => 'a', 'à' => 'a', 'ä' => 'a', 'ã' => 'a',
+            'î' => 'i', 'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'ĩ' => 'i',
+            'ș' => 's', 'ş' => 's', 'ś' => 's',
+            'ț' => 't', 'ţ' => 't', 'ť' => 't',
+            'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'ẽ' => 'e',
+            'ó' => 'o', 'ò' => 'o', 'ô' => 'o', 'ö' => 'o', 'õ' => 'o',
+            'ú' => 'u', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ũ' => 'u',
+            'ñ' => 'n', 'ç' => 'c', 'ý' => 'y', 'ÿ' => 'y',
+            // Uppercase
+            'Ă' => 'A', 'Â' => 'A', 'Á' => 'A', 'À' => 'A', 'Ä' => 'A', 'Ã' => 'A',
+            'Î' => 'I', 'Í' => 'I', 'Ì' => 'I', 'Ï' => 'I', 'Ĩ' => 'I',
+            'Ș' => 'S', 'Ş' => 'S', 'Ś' => 'S',
+            'Ț' => 'T', 'Ţ' => 'T', 'Ť' => 'T',
+            'É' => 'E', 'È' => 'E', 'Ê' => 'E', 'Ë' => 'E', 'Ẽ' => 'E',
+            'Ó' => 'O', 'Ò' => 'O', 'Ô' => 'O', 'Ö' => 'O', 'Õ' => 'O',
+            'Ú' => 'U', 'Ù' => 'U', 'Û' => 'U', 'Ü' => 'U', 'Ũ' => 'U',
+            'Ñ' => 'N', 'Ç' => 'C', 'Ý' => 'Y', 'Ÿ' => 'Y',
+        ];
+
+        return strtr($text, $replacements);
     }
 
     /**

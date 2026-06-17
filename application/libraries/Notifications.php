@@ -103,7 +103,7 @@ class Notifications
             // Send confirmation SMS for new appointments only.
             if ($manage_mode === false) {
                 try {
-                    $this->CI->sms_smso->send_confirmation($appointment, $customer);
+                    $this->CI->sms_smso->send_confirmation($appointment, $customer, $service);
                 } catch (Throwable $e) {
                     $this->log_exception($e, 'appointment-saved sms to customer', $appointment['id'] ?? null);
                 }
