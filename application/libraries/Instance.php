@@ -156,6 +156,89 @@ class Instance
     }
 
     /**
+     * Bootstrap (or update) the super-admin account from environment variables.
+     *
+     * Reads SUPERADMIN_EMAIL, SUPERADMIN_USERNAME (defaults to email) and
+     * SUPERADMIN_PASSWORD. If an admin with the given email already exists, the
+     * username and/or password are updated when they changed. If it does not
+     * exist, a new admin is created.
+     *
+     * @return string A human-readable result message.
+     */
+    public function bootstrap(): string
+    {
+        $email = getenv('SUPERADMIN_EMAIL');
+        $username = getenv('SUPERADMIN_USERNAME') ?: $email;
+        $password = getenv('SUPERADMIN_PASSWORD');
+
+        if (empty($email) || empty($password)) {
+            return 'SUPERADMIN_EMAIL and SUPERADMIN_PASSWORD must be set to bootstrap the super-admin.';
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return 'Invalid SUPERADMIN_EMAIL provided.';
+        }
+
+        $role_id = $this->CI->admins_model->get_admin_role_id();
+
+        $existing = $this->CI->db
+            ->select('users.id, users.first_name, users.last_name, users.email, user_settings.username, user_settings.password, user_settings.salt')
+            ->from('users')
+            ->join('user_settings', 'user_settings.id_users = users.id', 'inner')
+            ->where('users.id_roles', $role_id)
+            ->where('users.email', $email)
+            ->get()
+            ->row_array();
+
+        if (!empty($existing)) {
+            $admin = [
+                'id' => (int) $existing['id'],
+                'first_name' => $existing['first_name'],
+                'last_name' => $existing['last_name'],
+                'email' => $email,
+                'settings' => [],
+            ];
+
+            if ($existing['username'] !== $username) {
+                $admin['settings']['username'] = $username;
+            }
+
+            $password_changed = true;
+
+            if (!empty($existing['password']) && !empty($existing['salt'])) {
+                $password_changed = !verify_password($existing['salt'], $password, $existing['password']);
+            }
+
+            if ($password_changed) {
+                $admin['settings']['password'] = $password;
+            }
+
+            if (empty($admin['settings'])) {
+                return 'Super-admin already exists and credentials are up to date.';
+            }
+
+            $this->CI->admins_model->save($admin);
+
+            return 'Super-admin updated.';
+        }
+
+        $this->CI->admins_model->save([
+            'first_name' => 'Super',
+            'last_name' => 'Admin',
+            'email' => $email,
+            'phone_number' => '',
+            'settings' => [
+                'username' => $username,
+                'password' => $password,
+                'notifications' => true,
+                'calendar_view' => CALENDAR_VIEW_DEFAULT,
+            ],
+        ]);
+
+        return 'Super-admin created.';
+    }
+
+    /**
      * Create a database backup file.
      *
      * @param string|null $path Override the default backup path (storage/backups/*).

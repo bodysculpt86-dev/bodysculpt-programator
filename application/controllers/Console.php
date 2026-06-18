@@ -71,6 +71,22 @@ class Console extends EA_Controller
     }
 
     /**
+     * Bootstrap (or update) the super-admin account from environment variables.
+     *
+     * Uses SUPERADMIN_EMAIL, SUPERADMIN_USERNAME (defaults to email) and SUPERADMIN_PASSWORD.
+     *
+     * Usage:
+     *
+     * php index.php console bootstrap
+     */
+    public function bootstrap(): void
+    {
+        $message = $this->instance->bootstrap();
+
+        response(PHP_EOL . '⇾ ' . $message . PHP_EOL . PHP_EOL);
+    }
+
+    /**
      * Migrate the database to the latest state.
      *
      * Use this method to upgrade an Easy!Appointments instance to the latest database state.
@@ -270,6 +286,7 @@ class Console extends EA_Controller
             '',
             'Commands:',
             '',
+            '⇾ php index.php console bootstrap      (create/update super-admin from env vars)',
             '⇾ php index.php console migrate',
             '⇾ php index.php console migrate fresh',
             '⇾ php index.php console migrate up',

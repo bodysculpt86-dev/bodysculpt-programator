@@ -45,7 +45,7 @@ sed -i 's/Easy!Appointments/Bookings by Revclar/g' /usr/local/bin/docker-entrypo
 # When RAILWAY_CRON_COMMAND is set, the container runs that command and exits
 # instead of starting Apache. This lets the same image be used for Railway
 # cron-job services (e.g. hourly SMS reminders).
-perl -0pi -e 's/# Start Apache\n\napache2-foreground/# Start Apache\n\n# Run pending database migrations (safe: failures are logged but do not stop startup).\nphp \/var\/www\/html\/index.php console migrate 2>\&1 || echo "Automatic migrations failed; continuing startup." >\&2\n\n# Railway cron mode: run the configured one-off command and exit.\nif [ -n "${RAILWAY_CRON_COMMAND}" ]; then\n    echo "Running cron command: ${RAILWAY_CRON_COMMAND}"\n    exec ${RAILWAY_CRON_COMMAND}\nfi\n\napache2-foreground/' /usr/local/bin/docker-entrypoint.sh
+perl -0pi -e 's/# Start Apache\n\napache2-foreground/# Start Apache\n\n# Run pending database migrations (safe: failures are logged but do not stop startup).\nphp \/var\/www\/html\/index.php console migrate 2>\&1 || echo "Automatic migrations failed; continuing startup." >\&2\n\n# Bootstrap the super-admin account from Railway env vars (idempotent).\nphp \/var\/www\/html\/index.php console bootstrap 2>\&1 || echo "Super-admin bootstrap failed; continuing startup." >\&2\n\n# Railway cron mode: run the configured one-off command and exit.\nif [ -n "${RAILWAY_CRON_COMMAND}" ]; then\n    echo "Running cron command: ${RAILWAY_CRON_COMMAND}"\n    exec ${RAILWAY_CRON_COMMAND}\nfi\n\napache2-foreground/' /usr/local/bin/docker-entrypoint.sh
 
 # Delegate to the original Easy!Appointments entrypoint, which templates
 # config.php / email.php from environment variables and then runs
