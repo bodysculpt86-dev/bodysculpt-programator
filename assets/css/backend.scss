@@ -263,6 +263,14 @@ body .modal.full-screen .modal-push {
     padding-left: 0;
 }
 
+/* Reports page table contrast fix */
+#reports-page .table {
+    --bs-table-color: var(--bs-body-color);
+    --bs-table-striped-color: var(--bs-body-color);
+    --bs-table-active-color: var(--bs-body-color);
+    --bs-table-hover-color: var(--bs-body-color);
+}
+
 /* CRUD List/Form Toggle Layout */
 .backend-page .record-details {
     display: none;
