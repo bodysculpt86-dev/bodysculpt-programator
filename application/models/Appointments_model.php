@@ -838,4 +838,114 @@ class Appointments_model extends EA_Model
             ->get()
             ->num_rows() > 0;
     }
+
+    /**
+     * Get daily revenue grouped by date and payment status.
+     *
+     * Only appointments whose status is in the configured closing statuses (excluding
+     * "Nu s-a prezentat") and that are not unavailability entries are counted.
+     *
+     * @param string $start_date Start date (Y-m-d).
+     * @param string $end_date End date (Y-m-d).
+     *
+     * @return array List of daily revenue entries.
+     */
+    public function get_daily_revenue(string $start_date, string $end_date): array
+    {
+        $closing_statuses = json_decode(setting('appointment_closing_statuses'), true) ?? [];
+
+        $revenue_statuses = array_values(array_diff($closing_statuses, ['Nu s-a prezentat']));
+
+        if (empty($revenue_statuses)) {
+            return [];
+        }
+
+        $rows = $this->db
+            ->select("DATE(start_datetime) as date, status, SUM(price) as total", false)
+            ->from('appointments')
+            ->where('is_unavailability', 0)
+            ->where_in('status', $revenue_statuses)
+            ->where('start_datetime >=', $start_date . ' 00:00:00')
+            ->where('start_datetime <=', $end_date . ' 23:59:59')
+            ->group_by('DATE(start_datetime), status')
+            ->order_by('date', 'ASC')
+            ->get()
+            ->result_array();
+
+        $result = [];
+
+        foreach ($rows as $row) {
+            $date = $row['date'];
+
+            if (!isset($result[$date])) {
+                $result[$date] = [
+                    'date' => $date,
+                    'total' => 0.0,
+                    'statuses' => [],
+                ];
+            }
+
+            $amount = (float) $row['total'];
+
+            $result[$date]['total'] += $amount;
+            $result[$date]['statuses'][$row['status']] = $amount;
+        }
+
+        return array_values($result);
+    }
+
+    /**
+     * Get monthly revenue grouped by month and payment status.
+     *
+     * Only appointments whose status is in the configured closing statuses (excluding
+     * "Nu s-a prezentat") and that are not unavailability entries are counted.
+     *
+     * @param string $start_date Start date (Y-m-d).
+     * @param string $end_date End date (Y-m-d).
+     *
+     * @return array List of monthly revenue entries.
+     */
+    public function get_monthly_revenue(string $start_date, string $end_date): array
+    {
+        $closing_statuses = json_decode(setting('appointment_closing_statuses'), true) ?? [];
+
+        $revenue_statuses = array_values(array_diff($closing_statuses, ['Nu s-a prezentat']));
+
+        if (empty($revenue_statuses)) {
+            return [];
+            }
+
+        $rows = $this->db
+            ->select("DATE_FORMAT(start_datetime, '%Y-%m') as month, status, SUM(price) as total", false)
+            ->from('appointments')
+            ->where('is_unavailability', 0)
+            ->where_in('status', $revenue_statuses)
+            ->where('start_datetime >=', $start_date . ' 00:00:00')
+            ->where('start_datetime <=', $end_date . ' 23:59:59')
+            ->group_by("DATE_FORMAT(start_datetime, '%Y-%m'), status")
+            ->order_by('month', 'ASC')
+            ->get()
+            ->result_array();
+
+        $result = [];
+
+        foreach ($rows as $row) {
+            $month = $row['month'];
+
+            if (!isset($result[$month])) {
+                $result[$month] = [
+                    'month' => $month,
+                    'total' => 0.0,
+                    'statuses' => [],
+                ];
+            }
+
+            $amount = (float) $row['total'];
+
+            $result[$month]['total'] += $amount;
+            $result[$month]['statuses'][$row['status']] = $amount;
+        }
+
+        return array_values($result);
+    }
 }

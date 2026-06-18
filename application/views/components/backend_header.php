@@ -44,6 +44,16 @@
             <span><?= lang('customers') ?></span>
         </a>
 
+        <?php if (session('role_slug') === DB_SLUG_ADMIN): ?>
+            <?php $active = $active_menu === 'reports' ? 'active' : ''; ?>
+            <a href="<?= site_url('reports') ?>"
+               class="backend-sidebar-link <?= $active ?>"
+               data-tippy-content="<?= lang('revenue_report_hint') ?>">
+                <i class="fas fa-chart-line backend-sidebar-icon"></i>
+                <span><?= lang('reports') ?></span>
+            </a>
+        <?php endif; ?>
+
         <?php if (can('view', PRIV_SERVICES)): ?>
             <?php $active = $active_menu == PRIV_SERVICES ? 'active' : ''; ?>
             <div class="backend-sidebar-dropdown dropend <?= $active ?>">
@@ -192,6 +202,16 @@
                 <i class="fas fa-user-friends backend-sidebar-icon"></i>
                 <span><?= lang('customers') ?></span>
             </a>
+
+            <?php if (session('role_slug') === DB_SLUG_ADMIN): ?>
+                <?php $active = $active_menu === 'reports' ? 'active' : ''; ?>
+                <a href="<?= site_url('reports') ?>"
+                   class="backend-sidebar-link <?= $active ?>"
+                   data-tippy-content="<?= lang('revenue_report_hint') ?>">
+                    <i class="fas fa-chart-line backend-sidebar-icon"></i>
+                    <span><?= lang('reports') ?></span>
+                </a>
+            <?php endif; ?>
 
             <?php if (can('view', PRIV_SERVICES)): ?>
                 <?php $active = $active_menu == PRIV_SERVICES ? 'active' : ''; ?>
