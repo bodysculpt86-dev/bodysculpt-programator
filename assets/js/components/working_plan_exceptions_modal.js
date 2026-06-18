@@ -144,8 +144,8 @@ App.Components.WorkingPlanExceptionsModal = (function () {
                 const end = $tr.find('.working-plan-exceptions-break-end').text();
 
                 breaks.push({
-                    start: moment(start, vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm').format('HH:mm'),
-                    end: moment(end, vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm').format('HH:mm'),
+                    start: moment(start, 'HH:mm').format('HH:mm'),
+                    end: moment(end, 'HH:mm').format('HH:mm'),
                 });
             });
 
@@ -312,7 +312,7 @@ App.Components.WorkingPlanExceptionsModal = (function () {
      * @return {jQuery}
      */
     function renderBreakRow(breakPeriod) {
-        const timeFormat = vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm';
+        const timeFormat = 'HH:mm';
 
         return $('<tr/>', {
             'html': [
@@ -438,16 +438,16 @@ App.Components.WorkingPlanExceptionsModal = (function () {
         const $tr = $(this).closest('tr');
         const start = moment(
             $tr.find('.working-plan-exceptions-break-start input').val(),
-            vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm',
+            'HH:mm',
         );
         const end = moment(
             $tr.find('.working-plan-exceptions-break-end input').val(),
-            vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm',
+            'HH:mm',
         );
 
         if (start > end) {
             $tr.find('.working-plan-exceptions-break-end input').val(
-                start.add(1, 'hour').format(vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm'),
+                start.add(1, 'hour').format('HH:mm'),
             );
         }
 

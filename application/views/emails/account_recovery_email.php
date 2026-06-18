@@ -410,7 +410,7 @@
                         <tr>
                             <td class="content-block powered-by">
                                 Powered by
-                                <a href="https://easyappointments.org" style="text-decoration: none;">
+                                <a href="https://www.bookings.revclar.com" style="text-decoration: none;">
                                     Bookings by Revclar
                                 </a>
                                 |

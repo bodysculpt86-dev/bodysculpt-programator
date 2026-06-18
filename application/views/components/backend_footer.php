@@ -9,7 +9,7 @@
     <div class="mb-3 me-lg-5 mb-lg-0">
         <img class="me-1" src="<?= base_url('assets/img/logo-16x16.png') ?>" alt="Bookings by Revclar Logo">
 
-        <a href="https://easyappointments.org" target="_blank">Bookings by Revclar</a>
+        <a href="https://www.bookings.revclar.com" target="_blank">Bookings by Revclar</a>
 
         <span>v<?= config('version') ?></span>
     </div>

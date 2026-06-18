@@ -38,13 +38,7 @@ if (!function_exists('get_time_format')) {
      */
     function get_time_format(): string
     {
-        $time_format = setting('time_format');
-
-        return match ($time_format) {
-            'military' => 'H:i',
-            'regular' => 'g:i a',
-            default => throw new RuntimeException('Invalid time format value: ' . $time_format),
-        };
+        return 'H:i';
     }
 }
 

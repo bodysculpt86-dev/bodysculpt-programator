@@ -81,7 +81,7 @@ App.Http.Booking = (function () {
             // The response contains the available hours for the selected provider and service. Fill the available
             // hours div with response data.
             if (response.length > 0) {
-                const timeFormat = vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm';
+                const timeFormat = 'HH:mm';
 
                 response.forEach((availableHour) => {
                     const availableHourMoment = moment(selectedDate + ' ' + availableHour + ':00');

@@ -930,3 +930,87 @@ body .modal.full-screen .modal-push {
 .popover-status-nu-s-a-prezentat {
     color: #ef4444;
 }
+
+/* -------------------------------------------------------------------------
+ * Sidebar collapse/expand toggle (desktop only)
+ * ------------------------------------------------------------------------- */
+
+.backend-sidebar-toggle-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.5rem;
+}
+
+.backend-sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.8);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease, transform 0.2s ease;
+}
+
+.backend-sidebar-toggle:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.backend-sidebar-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.15);
+}
+
+/* Collapsed state */
+html.backend-sidebar-collapsed {
+    --backend-sidebar-width: 70px;
+}
+
+html.backend-sidebar-collapsed .backend-sidebar-toggle-wrapper {
+    justify-content: center;
+}
+
+html.backend-sidebar-collapsed .backend-sidebar-toggle {
+    transform: rotate(180deg);
+}
+
+html.backend-sidebar-collapsed .backend-sidebar-brand {
+    justify-content: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+html.backend-sidebar-collapsed .backend-sidebar-brand-text,
+html.backend-sidebar-collapsed .backend-sidebar-link > span,
+html.backend-sidebar-collapsed .backend-sidebar-caret {
+    display: none !important;
+}
+
+html.backend-sidebar-collapsed .backend-sidebar-link {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+html.backend-sidebar-collapsed .backend-sidebar-icon {
+    margin-right: 0;
+    font-size: 1.1rem;
+}
+
+html.backend-sidebar-collapsed .backend-sidebar-dropdown.dropend .dropdown-menu {
+    margin-left: 0.25rem;
+}
+
+html.backend-sidebar-collapsed .backend-sidebar-footer {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+html.backend-sidebar-collapsed .backend-sidebar-footer .backend-sidebar-link {
+    justify-content: center;
+}

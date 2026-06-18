@@ -55,7 +55,7 @@ App.Utils.WorkingPlan = (function () {
             $('.breaks tbody').empty();
 
             // Build working plan day list starting with the first weekday as set in the General settings
-            const timeFormat = vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm';
+            const timeFormat = 'HH:mm';
 
             $.each(
                 workingPlanSorted,
@@ -315,7 +315,7 @@ App.Utils.WorkingPlan = (function () {
          * @param {Object} workingPlanException Contains exception information (startDate, endDate, startTime, endTime, breaks).
          */
         renderWorkingPlanExceptionRow(workingPlanException) {
-            const timeFormat = vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm';
+            const timeFormat = 'HH:mm';
 
             const startDate = workingPlanException.startDate;
             const endDate = workingPlanException.endDate;
@@ -391,9 +391,8 @@ App.Utils.WorkingPlan = (function () {
             $('.working-plan tbody').on('click', 'input:checkbox', (event) => {
                 const id = $(event.currentTarget).attr('id');
 
-                const isRegularFormat = vars('time_format') === 'regular';
-                const defaultStartTime = isRegularFormat ? '9:00 am' : '09:00';
-                const defaultEndTime = isRegularFormat ? '6:00 pm' : '18:00';
+                const defaultStartTime = '09:00';
+                const defaultEndTime = '18:00';
 
                 if ($(event.currentTarget).prop('checked') === true) {
                     $('#' + id + '-start')
@@ -419,7 +418,7 @@ App.Utils.WorkingPlan = (function () {
              * data. After that he can either press the save or cancel button.
              */
             $('.add-break').on('click', () => {
-                const timeFormat = vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm';
+                const timeFormat = 'HH:mm';
 
                 const $newBreak = $('<tr/>', {
                     'html': [
@@ -557,7 +556,7 @@ App.Utils.WorkingPlan = (function () {
              * @param {jQuery.Event} event
              */
             $(document).on('click', '.save-break', (event) => {
-                const timeFormat = vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm';
+                const timeFormat = 'HH:mm';
                 // Break's start time must always be prior to break's end.
                 const element = event.target;
 
@@ -639,7 +638,7 @@ App.Utils.WorkingPlan = (function () {
                 errors: [],
             };
 
-            const timeFormat = vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm';
+            const timeFormat = 'HH:mm';
 
             $('.working-plan input:checkbox').each((index, checkbox) => {
                 const id = $(checkbox).attr('id');
@@ -719,7 +718,7 @@ App.Utils.WorkingPlan = (function () {
          * @param {Object} workingDay The working day object with start and end times.
          */
         removeInvalidBreaksFromDOM(dayId, workingDay) {
-            const timeFormat = vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm';
+            const timeFormat = 'HH:mm';
             const dayStart = moment(workingDay.start, 'HH:mm');
             const dayEnd = moment(workingDay.end, 'HH:mm');
 
@@ -775,7 +774,7 @@ App.Utils.WorkingPlan = (function () {
          * 3. Have start time >= end time
          */
         cleanupInvalidBreaks() {
-            const timeFormat = vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm';
+            const timeFormat = 'HH:mm';
 
             // First remove breaks for non-working days
             this.removeBreaksForNonWorkingDays();
@@ -823,7 +822,7 @@ App.Utils.WorkingPlan = (function () {
             }
 
             const workingPlan = {};
-            const timeFormat = vars('time_format') === 'regular' ? 'h:mm a' : 'HH:mm';
+            const timeFormat = 'HH:mm';
 
             $('.working-plan input:checkbox').each((index, checkbox) => {
                 const id = $(checkbox).attr('id');

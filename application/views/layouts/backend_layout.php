@@ -28,6 +28,13 @@
     <?php component('company_color_style', ['company_color' => setting('company_color')]); ?>
 
     <?php slot('styles'); ?>
+
+    <script>
+        // Apply persisted sidebar collapse state before first paint to avoid flash.
+        if (localStorage.getItem('backend-sidebar-collapsed') === 'true') {
+            document.documentElement.classList.add('backend-sidebar-collapsed');
+        }
+    </script>
 </head>
 <body class="backend-body d-flex flex-column h-100">
 

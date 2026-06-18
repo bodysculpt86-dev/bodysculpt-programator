@@ -163,7 +163,6 @@
                                         <?= lang('time_format') ?>
                                     </label>
                                     <select class="form-select" id="time-format" data-field="time_format">
-                                        <option value="<?= TIME_FORMAT_REGULAR ?>">H:MM AM/PM</option>
                                         <option value="<?= TIME_FORMAT_MILITARY ?>">HH:MM</option>
                                     </select>
                                     <div class="form-text text-muted">

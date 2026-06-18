@@ -32,7 +32,7 @@
             <div class="mt-2">
                 <small>
                     Powered by
-                    <a href="https://easyappointments.org">Bookings by Revclar</a>
+                    <a href="https://www.bookings.revclar.com">Bookings by Revclar</a>
 
                     <?php if (vars('legal_notice_url')): ?>
                         <span class="mx-1">|</span>

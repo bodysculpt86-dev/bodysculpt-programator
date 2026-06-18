@@ -8,22 +8,20 @@
  * @copyright   Copyright (c) Alex Tselegidis
  * @license     https://opensource.org/licenses/GPL-3.0 - GPLv3
  * @link        https://easyappointments.org
- * @since       v1.3.0
+ * @since       v1.6.0
  * ---------------------------------------------------------------------------- */
 
-class Migration_Add_time_format_setting extends EA_Migration
+class Migration_Set_time_format_to_military extends EA_Migration
 {
     /**
      * Upgrade method.
      */
     public function up(): void
     {
-        if (!$this->db->get_where('settings', ['name' => 'time_format'])->num_rows()) {
-            $this->db->insert('settings', [
-                'name' => 'time_format',
-                'value' => 'military',
-            ]);
-        }
+        $this->db
+            ->where('name', 'time_format')
+            ->where('value', 'regular')
+            ->update('settings', ['value' => 'military']);
     }
 
     /**
@@ -31,8 +29,9 @@ class Migration_Add_time_format_setting extends EA_Migration
      */
     public function down(): void
     {
-        if ($this->db->get_where('settings', ['name' => 'time_format'])->num_rows()) {
-            $this->db->delete('settings', ['name' => 'time_format']);
-        }
+        $this->db
+            ->where('name', 'time_format')
+            ->where('value', 'military')
+            ->update('settings', ['value' => 'regular']);
     }
 }

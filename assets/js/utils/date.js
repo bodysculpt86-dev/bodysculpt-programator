@@ -55,8 +55,6 @@ window.App.Utils.Date = (function () {
 
         switch (timeFormatType) {
             case 'regular':
-                timeFormat = 'h:mm a';
-                break;
             case 'military':
                 timeFormat = 'HH:mm';
                 break;

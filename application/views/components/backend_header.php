@@ -9,6 +9,12 @@
 
 <!-- Desktop fixed left sidebar -->
 <aside id="header" class="backend-sidebar d-none d-lg-flex flex-column">
+    <div class="backend-sidebar-toggle-wrapper d-none d-lg-flex">
+        <button type="button" class="backend-sidebar-toggle" data-tippy-content="Comută meniul">
+            <i class="fas fa-angle-double-left"></i>
+        </button>
+    </div>
+
     <div class="backend-sidebar-brand">
         <img src="<?= base_url(
             'assets/img/logo.png',

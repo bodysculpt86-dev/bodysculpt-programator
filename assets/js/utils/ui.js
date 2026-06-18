@@ -39,14 +39,7 @@ window.App.Utils.UI = (function () {
      * @return {String}
      */
     function getTimeFormat() {
-        switch (vars('time_format')) {
-            case 'regular':
-                return 'h:i K';
-            case 'military':
-                return 'H:i';
-            default:
-                throw new Error('Invalid date format value.');
-        }
+        return 'H:i';
     }
 
     /**
@@ -131,12 +124,11 @@ window.App.Utils.UI = (function () {
             weekAbbreviation: lang('week_short'),
             scrollTitle: lang('scroll_to_increment'),
             toggleTitle: lang('click_to_toggle'),
-            amPM: ['am', 'pm'],
             yearAriaLabel: lang('year'),
             monthAriaLabel: lang('month'),
             hourAriaLabel: lang('hour'),
             minuteAriaLabel: lang('minute'),
-            time_24hr: false,
+            time_24hr: true,
         };
     }
 
@@ -154,7 +146,7 @@ window.App.Utils.UI = (function () {
             allowInput: true,
             static: true,
             dateFormat: `${getDateFormat()} ${getTimeFormat()}`,
-            time_24hr: vars('time_format') === 'military',
+            time_24hr: true,
             locale: getFlatpickrLocale(),
             ...params,
         });
@@ -192,7 +184,7 @@ window.App.Utils.UI = (function () {
             enableTime: true,
             allowInput: true,
             dateFormat: getTimeFormat(),
-            time_24hr: vars('time_format') === 'military',
+            time_24hr: true,
             locale: getFlatpickrLocale(),
             static: true,
             ...params,

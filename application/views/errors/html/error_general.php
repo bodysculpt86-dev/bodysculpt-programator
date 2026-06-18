@@ -74,7 +74,7 @@
     <p>
         <small>
             Powered by
-            <a href="https://easyappointments.org">Bookings by Revclar</a>
+            <a href="https://www.bookings.revclar.com">Bookings by Revclar</a>
         </small>
     </p>
 </div>

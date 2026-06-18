@@ -202,7 +202,7 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-9 offset-lg-1 py-3">
-                Powered by <a href="https://easyappointments.org">Bookings by Revclar</a>        
+                Powered by <a href="https://www.bookings.revclar.com">Bookings by Revclar</a>        
             </div>
         </div>
     </div>

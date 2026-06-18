@@ -19,6 +19,8 @@ window.App.Layouts.Backend = (function () {
     const $notification = $('#notification');
     const $loading = $('#loading');
     const $footer = $('#footer');
+    const $sidebarToggleSelector = '.backend-sidebar-toggle';
+    const SIDEBAR_COLLAPSED_KEY = 'backend-sidebar-collapsed';
 
     const DB_SLUG_ADMIN = 'admin';
     const DB_SLUG_PROVIDER = 'provider';
@@ -96,6 +98,11 @@ window.App.Layouts.Backend = (function () {
         tippy('[data-tippy-content]');
 
         App.Utils.Lang.enableLanguageSelection($selectLanguage);
+
+        $(document).on('click', $sidebarToggleSelector, function () {
+            const isCollapsed = document.documentElement.classList.toggle('backend-sidebar-collapsed');
+            localStorage.setItem(SIDEBAR_COLLAPSED_KEY, isCollapsed ? 'true' : 'false');
+        });
     }
 
     document.addEventListener('DOMContentLoaded', initialize);
