@@ -195,15 +195,23 @@ class Admins_model extends EA_Model
     ): array {
         $role_id = $this->get_admin_role_id();
 
+        $this->db->where('id_roles', $role_id);
+
         if ($where !== null) {
             $this->db->where($where);
+        }
+
+        $super_admin_email = $this->get_super_admin_email();
+
+        if ($super_admin_email !== null) {
+            $this->db->where('email !=', $super_admin_email);
         }
 
         if ($order_by !== null) {
             $this->db->order_by($this->quote_order_by($order_by));
         }
 
-        $admins = $this->db->get_where('users', ['id_roles' => $role_id], $limit, $offset)->result_array();
+        $admins = $this->db->get('users', $limit, $offset)->result_array();
 
         foreach ($admins as &$admin) {
             $this->cast($admin);
@@ -211,6 +219,32 @@ class Admins_model extends EA_Model
         }
 
         return $admins;
+    }
+
+    /**
+     * Get the super-admin email from the environment.
+     *
+     * @return string|null
+     */
+    private function get_super_admin_email(): ?string
+    {
+        $email = getenv('SUPERADMIN_EMAIL');
+
+        return !empty($email) ? $email : null;
+    }
+
+    /**
+     * Check whether the provided email belongs to the env-managed super-admin.
+     *
+     * @param string $email Email address to check.
+     *
+     * @return bool
+     */
+    public function is_super_admin_email(string $email): bool
+    {
+        $super_admin_email = $this->get_super_admin_email();
+
+        return $super_admin_email !== null && $email === $super_admin_email;
     }
 
     /**
@@ -372,6 +406,12 @@ class Admins_model extends EA_Model
     {
         $role_id = $this->get_admin_role_id();
 
+        $admin = $this->db->get_where('users', ['id' => $admin_id])->row_array();
+
+        if (!empty($admin) && $this->is_super_admin_email($admin['email'])) {
+            throw new RuntimeException('The super-admin account cannot be deleted.');
+        }
+
         $count = $this->db->get_where('users', ['id_roles' => $role_id])->num_rows();
 
         if ($count <= 1) {
@@ -488,10 +528,15 @@ class Admins_model extends EA_Model
     {
         $role_id = $this->get_admin_role_id();
 
+        $this->db->select()->from('users')->where('id_roles', $role_id);
+
+        $super_admin_email = $this->get_super_admin_email();
+
+        if ($super_admin_email !== null) {
+            $this->db->where('email !=', $super_admin_email);
+        }
+
         $admins = $this->db
-            ->select()
-            ->from('users')
-            ->where('id_roles', $role_id)
             ->group_start()
             ->like('first_name', $keyword)
             ->or_like('last_name', $keyword)
@@ -530,14 +575,19 @@ class Admins_model extends EA_Model
     {
         $role_id = $this->get_admin_role_id();
 
+        $this->db->select('id, first_name, last_name')->from('users')->where('id_roles', $role_id);
+
         if ($where !== null) {
             $this->db->where($where);
         }
 
+        $super_admin_email = $this->get_super_admin_email();
+
+        if ($super_admin_email !== null) {
+            $this->db->where('email !=', $super_admin_email);
+        }
+
         $admins = $this->db
-            ->select('id, first_name, last_name')
-            ->from('users')
-            ->where('id_roles', $role_id)
             ->order_by('first_name, last_name')
             ->get()
             ->result_array();

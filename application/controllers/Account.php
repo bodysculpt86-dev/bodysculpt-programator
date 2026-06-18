@@ -133,6 +133,18 @@ class Account extends EA_Controller
                 unset($account['password']);
             }
 
+            $super_admin_email = getenv('SUPERADMIN_EMAIL');
+
+            $current_user = $this->users_model->find(session('user_id'));
+
+            if (!empty($super_admin_email) && $current_user['email'] === $super_admin_email) {
+                throw new RuntimeException('This account is managed via environment variables and cannot be modified.');
+            }
+
+            if (!empty($super_admin_email) && !empty($account['email']) && $account['email'] === $super_admin_email) {
+                throw new RuntimeException('This email address is reserved for the super-admin account.');
+            }
+
             $account['timezone'] = setting('default_timezone');
 
             $this->users_model->save($account);

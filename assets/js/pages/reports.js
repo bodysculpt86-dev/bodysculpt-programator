@@ -53,6 +53,51 @@ App.Pages.Reports = (function () {
             event.preventDefault();
             loadReport();
         });
+
+        $('#reports-page').on('click', '.range-btn', (event) => {
+            const range = $(event.currentTarget).data('range');
+            applyRange(range);
+            loadReport();
+        });
+    }
+
+    /**
+     * Apply a predefined date range to the filter inputs.
+     *
+     * @param {string} range
+     */
+    function applyRange(range) {
+        const today = moment();
+        let start = today.clone();
+        let end = today.clone();
+
+        switch (range) {
+            case 'today':
+                start = today.clone();
+                end = today.clone();
+                break;
+            case 'last_7_days':
+                start = today.clone().subtract(6, 'days');
+                end = today.clone();
+                break;
+            case 'last_30_days':
+                start = today.clone().subtract(29, 'days');
+                end = today.clone();
+                break;
+            case 'last_month':
+                start = today.clone().subtract(1, 'month').startOf('month');
+                end = today.clone().subtract(1, 'month').endOf('month');
+                break;
+            case 'current_month':
+                start = today.clone().startOf('month');
+                end = today.clone();
+                break;
+            default:
+                return;
+        }
+
+        $startDate[0]._flatpickr.setDate(start.format('YYYY-MM-DD'));
+        $endDate[0]._flatpickr.setDate(end.format('YYYY-MM-DD'));
     }
 
     /**

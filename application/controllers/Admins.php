@@ -163,6 +163,10 @@ class Admins extends EA_Controller
 
             $this->admins_model->optional($admin['settings'], $this->optional_admin_setting_fields);
 
+            if (!empty($admin['email']) && $this->is_super_admin_email($admin['email'])) {
+                throw new RuntimeException('This email address is reserved for the super-admin account.');
+            }
+
             $admin['timezone'] = setting('default_timezone');
 
             $admin_id = $this->admins_model->save($admin);
@@ -203,6 +207,10 @@ class Admins extends EA_Controller
 
             $admin = $this->admins_model->find($admin_id);
 
+            if ($this->is_super_admin_email($admin['email'])) {
+                throw new RuntimeException('This account is managed via environment variables and cannot be viewed.');
+            }
+
             json_response($admin);
         } catch (Throwable $e) {
             json_exception($e);
@@ -232,6 +240,18 @@ class Admins extends EA_Controller
             $this->admins_model->only($admin['settings'], $this->allowed_admin_setting_fields);
 
             $this->admins_model->optional($admin['settings'], $this->optional_admin_setting_fields);
+
+            if (!empty($admin['id'])) {
+                $existing_admin = $this->admins_model->find((int) $admin['id']);
+
+                if ($this->is_super_admin_email($existing_admin['email'])) {
+                    throw new RuntimeException('This account is managed via environment variables and cannot be modified.');
+                }
+            }
+
+            if (!empty($admin['email']) && $this->is_super_admin_email($admin['email'])) {
+                throw new RuntimeException('This email address is reserved for the super-admin account.');
+            }
 
             $admin['timezone'] = setting('default_timezone');
 
@@ -278,6 +298,10 @@ class Admins extends EA_Controller
 
             $admin = $this->admins_model->find($admin_id);
 
+            if ($this->is_super_admin_email($admin['email'])) {
+                throw new RuntimeException('This account is managed via environment variables and cannot be deleted.');
+            }
+
             $this->admins_model->delete($admin_id);
 
             $this->webhooks_client->trigger(WEBHOOK_ADMIN_DELETE, $admin);
@@ -288,5 +312,31 @@ class Admins extends EA_Controller
         } catch (Throwable $e) {
             json_exception($e);
         }
+    }
+
+    /**
+     * Get the super-admin email from the environment.
+     *
+     * @return string|null
+     */
+    private function get_super_admin_email(): ?string
+    {
+        $email = getenv('SUPERADMIN_EMAIL');
+
+        return !empty($email) ? $email : null;
+    }
+
+    /**
+     * Check whether the provided email belongs to the env-managed super-admin.
+     *
+     * @param string $email Email address to check.
+     *
+     * @return bool
+     */
+    private function is_super_admin_email(string $email): bool
+    {
+        $super_admin_email = $this->get_super_admin_email();
+
+        return $super_admin_email !== null && $email === $super_admin_email;
     }
 }

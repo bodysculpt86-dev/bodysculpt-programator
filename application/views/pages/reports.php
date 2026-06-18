@@ -17,6 +17,24 @@
 
     <div class="row">
         <div class="col-12 col-lg-10 col-xl-8 mb-4">
+            <div class="btn-group flex-wrap mb-3 w-100" role="group" aria-label="<?= lang('revenue_report') ?>">
+                <button type="button" class="btn btn-outline-secondary range-btn" data-range="today">
+                    <?= lang('today') ?>
+                </button>
+                <button type="button" class="btn btn-outline-secondary range-btn" data-range="last_7_days">
+                    <?= lang('last_7_days') ?>
+                </button>
+                <button type="button" class="btn btn-outline-secondary range-btn" data-range="last_30_days">
+                    <?= lang('last_30_days') ?>
+                </button>
+                <button type="button" class="btn btn-outline-secondary range-btn" data-range="last_month">
+                    <?= lang('last_month') ?>
+                </button>
+                <button type="button" class="btn btn-outline-secondary range-btn" data-range="current_month">
+                    <?= lang('current_month') ?>
+                </button>
+            </div>
+
             <form id="revenue-filter-form" class="row g-3 align-items-end">
                 <div class="col-12 col-md-4">
                     <label for="start-date" class="form-label">

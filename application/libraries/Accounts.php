@@ -143,6 +143,10 @@ class Accounts
 
         $user = $query->row_array();
 
+        if ($this->is_super_admin_email($user['email'] ?? null)) {
+            throw new RuntimeException('This account is managed via environment variables and cannot be modified.');
+        }
+
         // Generate a new password for the user.
         $new_password = random_string('alnum', 12);
 
@@ -217,6 +221,10 @@ class Accounts
 
         $user = $query->row_array();
 
+        if ($this->is_super_admin_email($user['email'] ?? null)) {
+            throw new RuntimeException('This account is managed via environment variables and cannot be modified.');
+        }
+
         // Generate a secure random token
         $token = bin2hex(random_bytes(32));
 
@@ -286,6 +294,10 @@ class Accounts
             throw new RuntimeException('Invalid or expired password reset token.');
         }
 
+        if ($this->is_super_admin_email($user['email'] ?? null)) {
+            throw new RuntimeException('This account is managed via environment variables and cannot be modified.');
+        }
+
         $salt = $this->get_salt_by_username($user['username']);
 
         $hash_password = hash_password($salt, $new_password);
@@ -301,5 +313,19 @@ class Accounts
             ['id_users' => $user['id']],
         );
         return true;
+    }
+
+    /**
+     * Check whether the provided email belongs to the env-managed super-admin.
+     *
+     * @param string|null $email Email address to check.
+     *
+     * @return bool
+     */
+    private function is_super_admin_email(?string $email): bool
+    {
+        $super_admin_email = getenv('SUPERADMIN_EMAIL');
+
+        return !empty($super_admin_email) && !empty($email) && $email === $super_admin_email;
     }
 }
