@@ -484,12 +484,17 @@ class Booking extends EA_Controller
             if ($this->customers_model->exists($customer)) {
                 $customer['id'] = $this->customers_model->find_record_id($customer);
 
-                $existing_appointments = $this->appointments_model->get([
-                    'id !=' => $manage_mode ? $appointment['id'] : null,
-                    'id_users_customer' => $customer['id'],
-                    'start_datetime <=' => $appointment['start_datetime'],
-                    'end_datetime >=' => $appointment['end_datetime'],
-                ]);
+                $this->db
+                    ->where('id !=', $manage_mode ? $appointment['id'] : null)
+                    ->where('id_users_customer', $customer['id'])
+                    ->where('start_datetime <=', $appointment['start_datetime'])
+                    ->where('end_datetime >=', $appointment['end_datetime']);
+
+                if (!empty(APPOINTMENT_NON_BLOCKING_STATUSES)) {
+                    $this->db->where_not_in('status', APPOINTMENT_NON_BLOCKING_STATUSES);
+                }
+
+                $existing_appointments = $this->db->get_where('appointments', ['is_unavailability' => false])->result_array();
 
                 if (count($existing_appointments)) {
                     throw new RuntimeException(lang('customer_is_already_booked'));

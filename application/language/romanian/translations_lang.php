@@ -585,4 +585,7 @@ $lang['download_template'] = 'Descarcă șablon';
 $lang['select_file'] = 'Selectează fișierul';
 $lang['customers_imported'] = 'clienți importați';
 $lang['customers_import_failed'] = 'clienți eșuați';
+$lang['appointment_confirmed_by_client_message'] = 'Multumim! Programarea ta a fost confirmata. Te asteptam la Body Sculpt Clinique.';
+$lang['appointment_cancelled_by_client_message'] = 'Programarea ta a fost anulata. Te asteptam cu drag data viitoare!';
+$lang['appointment_link_invalid'] = 'Linkul de programare este invalid sau a expirat.';
 // End

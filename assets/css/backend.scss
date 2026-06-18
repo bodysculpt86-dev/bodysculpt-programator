@@ -883,6 +883,20 @@ body .modal.full-screen .modal-push {
     color: #fff !important;
 }
 
+.fc-event.status-anulat-de-client,
+#calendar-table .appointment-event.status-anulat-de-client {
+    background-color: #ef4444 !important;
+    border-color: #b91c1c !important;
+    color: #fff !important;
+}
+
+.fc-event.status-confirmat-de-client,
+#calendar-table .appointment-event.status-confirmat-de-client {
+    background-color: #6366F1 !important;
+    border-color: #4F46E5 !important;
+    color: #fff !important;
+}
+
 /* Optional left-border stripe marker for closing statuses */
 .fc-event.status-cash::before,
 .fc-event.status-card::before,
@@ -891,7 +905,9 @@ body .modal.full-screen .modal-push {
 .fc-event.status-banca-op::before,
 .fc-event.status-consum-abonament::before,
 .fc-event.status-voucher::before,
-.fc-event.status-nu-s-a-prezentat::before {
+.fc-event.status-nu-s-a-prezentat::before,
+.fc-event.status-anulat-de-client::before,
+.fc-event.status-confirmat-de-client::before {
     content: '';
     position: absolute;
     left: 0;
@@ -929,6 +945,14 @@ body .modal.full-screen .modal-push {
 
 .popover-status-nu-s-a-prezentat {
     color: #ef4444;
+}
+
+.popover-status-anulat-de-client {
+    color: #ef4444;
+}
+
+.popover-status-confirmat-de-client {
+    color: #6366F1;
 }
 
 /* -------------------------------------------------------------------------

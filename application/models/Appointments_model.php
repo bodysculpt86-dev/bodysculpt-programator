@@ -217,6 +217,13 @@ class Appointments_model extends EA_Model
         $appointment['update_datetime'] = date('Y-m-d H:i:s');
         $appointment['hash'] = random_string('alnum', 12);
 
+        do {
+            $appointment['confirmation_token'] = $this->generate_confirmation_token();
+            $existing = $this->db->get_where('appointments', [
+                'confirmation_token' => $appointment['confirmation_token'],
+            ])->row_array();
+        } while ($existing !== null);
+
         if (!$this->db->insert('appointments', $appointment)) {
             throw new RuntimeException('Could not insert appointment.');
         }
@@ -424,7 +431,7 @@ class Appointments_model extends EA_Model
             $this->db->where('id !=', $exclude_appointment_id);
         }
 
-        $result = $this->db
+        $this->db
             ->select('count(*) AS attendants_number')
             ->from('appointments')
             ->group_start()
@@ -438,9 +445,13 @@ class Appointments_model extends EA_Model
             ->group_end()
             ->group_end()
             ->where('id_services', $service_id)
-            ->where('id_users_provider', $provider_id)
-            ->get()
-            ->row_array();
+            ->where('id_users_provider', $provider_id);
+
+        if (!empty(APPOINTMENT_NON_BLOCKING_STATUSES)) {
+            $this->db->where_not_in('status', APPOINTMENT_NON_BLOCKING_STATUSES);
+        }
+
+        $result = $this->db->get()->row_array();
 
         return $result['attendants_number'];
     }
@@ -468,7 +479,7 @@ class Appointments_model extends EA_Model
             $this->db->where('id !=', $exclude_appointment_id);
         }
 
-        $result = $this->db
+        $this->db
             ->select('count(*) AS attendants_number')
             ->from('appointments')
             ->group_start()
@@ -482,9 +493,13 @@ class Appointments_model extends EA_Model
             ->group_end()
             ->group_end()
             ->where('id_services !=', $service_id)
-            ->where('id_users_provider', $provider_id)
-            ->get()
-            ->row_array();
+            ->where('id_users_provider', $provider_id);
+
+        if (!empty(APPOINTMENT_NON_BLOCKING_STATUSES)) {
+            $this->db->where_not_in('status', APPOINTMENT_NON_BLOCKING_STATUSES);
+        }
+
+        $result = $this->db->get()->row_array();
 
         return $result['attendants_number'];
     }
@@ -736,6 +751,37 @@ class Appointments_model extends EA_Model
     }
 
     /**
+     * Generate a new URL-safe confirmation token.
+     *
+     * @return string
+     */
+    public function generate_confirmation_token(): string
+    {
+        return rtrim(strtr(base64_encode(random_bytes(16)), '+/', '-_'), '=');
+    }
+
+    /**
+     * Generate a unique confirmation token for an existing appointment and persist it.
+     *
+     * @param int $appointment_id
+     *
+     * @return string
+     */
+    public function regenerate_confirmation_token(int $appointment_id): string
+    {
+        do {
+            $token = $this->generate_confirmation_token();
+            $existing = $this->db->get_where('appointments', [
+                'confirmation_token' => $token,
+            ])->row_array();
+        } while ($existing !== null);
+
+        $this->db->update('appointments', ['confirmation_token' => $token], ['id' => $appointment_id]);
+
+        return $token;
+    }
+
+    /**
      * Calculate the end date time of an appointment based on the selected service.
      *
      * @param array $appointment Appointment data.
@@ -775,6 +821,10 @@ class Appointments_model extends EA_Model
 
         if ($exclude_appointment_id) {
             $this->db->where('id !=', $exclude_appointment_id);
+        }
+
+        if (!empty(APPOINTMENT_NON_BLOCKING_STATUSES)) {
+            $this->db->where_not_in('status', APPOINTMENT_NON_BLOCKING_STATUSES);
         }
 
         // Check for overlapping appointments:

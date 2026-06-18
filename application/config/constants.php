@@ -94,6 +94,13 @@ const EVENT_MINIMUM_DURATION = 5; // Minutes
 
 const DEFAULT_COMPANY_COLOR = '#ffffff';
 
+const APPOINTMENT_STATUS_CONFIRMED_BY_CLIENT = 'Confirmat de client';
+const APPOINTMENT_STATUS_CANCELLED_BY_CLIENT = 'Anulat de client';
+const APPOINTMENT_NON_BLOCKING_STATUSES = [
+    APPOINTMENT_STATUS_CANCELLED_BY_CLIENT,
+    'Cancelled',
+];
+
 const LDAP_DEFAULT_FILTER = '(&(objectClass=*)(|(cn={{KEYWORD}})(sn={{KEYWORD}})(mail={{KEYWORD}})(givenName={{KEYWORD}})(uid={{KEYWORD}})))';
 
 const LDAP_WHITELISTED_ATTRIBUTES = [

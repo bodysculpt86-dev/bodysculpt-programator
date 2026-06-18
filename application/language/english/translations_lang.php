@@ -585,4 +585,7 @@ $lang['download_template'] = 'Download Template';
 $lang['select_file'] = 'Select File';
 $lang['customers_imported'] = 'customers imported';
 $lang['customers_import_failed'] = 'customers failed';
+$lang['appointment_confirmed_by_client_message'] = 'Thank you! Your appointment has been confirmed. We look forward to seeing you at Body Sculpt Clinique.';
+$lang['appointment_cancelled_by_client_message'] = 'Your appointment has been cancelled. We look forward to welcoming you next time!';
+$lang['appointment_link_invalid'] = 'The appointment link is invalid or has expired.';
 // End

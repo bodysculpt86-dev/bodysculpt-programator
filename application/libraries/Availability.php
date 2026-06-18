@@ -368,6 +368,12 @@ class Availability
             ),
         );
 
+        $appointments = array_values(
+            array_filter($appointments, function ($appointment) {
+                return !in_array($appointment['status'] ?? '', APPOINTMENT_NON_BLOCKING_STATUSES, true);
+            }),
+        );
+
         // Find the empty spaces on the plan. The first split between the plan is due to a break (if any). After that
         // every reserved appointment is considered to be a taken space in the plan.
         $working_day = strtolower(date('l', strtotime($date)));

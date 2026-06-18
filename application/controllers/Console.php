@@ -199,6 +199,12 @@ class Console extends EA_Controller
         $appointments = $this->appointments_model->get_pending_sms_reminders($from, $until, $excludedStatuses);
 
         foreach ($appointments as $appointment) {
+            if (empty($appointment['confirmation_token'])) {
+                $appointment['confirmation_token'] = $this->appointments_model->regenerate_confirmation_token(
+                    $appointment['id'],
+                );
+            }
+
             try {
                 $customer = $this->customers_model->find($appointment['id_users_customer']);
             } catch (Throwable $e) {

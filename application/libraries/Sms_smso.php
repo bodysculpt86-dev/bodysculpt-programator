@@ -267,6 +267,10 @@ class Sms_smso
 
         $message = 'Reminder: aveti programare la BodySculpt maine, ' . $date . ' la ' . $time . '. Va asteptam!';
 
+        if (!empty($appointment['confirmation_token'])) {
+            $message .= ' Confirmi/anulezi: ' . base_url('p/' . $appointment['confirmation_token']);
+        }
+
         return $this->removeDiacritics($message);
     }
 

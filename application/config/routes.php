@@ -208,5 +208,9 @@ $route['api/v1/availabilities']['get'] = 'api/v1/availabilities_api_v1/get';
 |
 */
 
+$route['p/([^/]+)/confirm'] = 'appointment_link/confirm/$1';
+$route['p/([^/]+)/cancel'] = 'appointment_link/cancel/$1';
+$route['p/([^/]+)'] = 'appointment_link/index/$1';
+
 /* End of file routes.php */
 /* Location: ./application/config/routes.php */
