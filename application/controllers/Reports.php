@@ -56,6 +56,7 @@ class Reports extends EA_Controller
         script_vars([
             'date_format' => setting('date_format'),
             'time_format' => setting('time_format'),
+            'first_weekday' => setting('first_weekday'),
             'currency' => setting('currency'),
         ]);
 

@@ -22,14 +22,14 @@
                     <label for="start-date" class="form-label">
                         <?= lang('start') ?>
                     </label>
-                    <input type="date" id="start-date" class="form-control" required>
+                    <input type="text" id="start-date" class="form-control" required>
                 </div>
 
                 <div class="col-12 col-md-4">
                     <label for="end-date" class="form-label">
                         <?= lang('end') ?>
                     </label>
-                    <input type="date" id="end-date" class="form-control" required>
+                    <input type="text" id="end-date" class="form-control" required>
                 </div>
 
                 <div class="col-12 col-md-4">
@@ -107,6 +107,7 @@
 
 <?php section('scripts'); ?>
 
+<script src="<?= asset_url('assets/js/utils/ui.js') ?>"></script>
 <script src="<?= asset_url('assets/js/pages/reports.js') ?>"></script>
 
 <?php end_section('scripts'); ?>

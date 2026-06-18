@@ -32,10 +32,13 @@ App.Pages.Reports = (function () {
      * Initialize the page.
      */
     function init() {
+        App.Utils.UI.initializeDatePicker($startDate, { dateFormat: 'Y-m-d' });
+        App.Utils.UI.initializeDatePicker($endDate, { dateFormat: 'Y-m-d' });
+
         const today = moment();
 
-        $startDate.val(today.clone().startOf('month').format('YYYY-MM-DD'));
-        $endDate.val(today.format('YYYY-MM-DD'));
+        $startDate[0]._flatpickr.setDate(today.clone().startOf('month').format('YYYY-MM-DD'));
+        $endDate[0]._flatpickr.setDate(today.format('YYYY-MM-DD'));
 
         addEventListeners();
 
