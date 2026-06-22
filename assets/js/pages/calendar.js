@@ -136,6 +136,83 @@ App.Pages.Calendar = (function () {
     }
 
     /**
+     * Scale only the calendar grid so it fits the mobile viewport width.
+     *
+     * Layout, fonts and column sizes are left untouched; the calendar block is
+     * scaled uniformly with CSS zoom. Header, toolbar and modals stay at their
+     * normal size. This is applied once on load only — it does NOT recalculate
+     * on pinch-zoom or window resize, so the user remains in full control of
+     * manual zoom.
+     */
+    function fitCalendarToViewport() {
+        const $calendar = $('#calendar');
+
+        if (!$calendar.length) {
+            return;
+        }
+
+        const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+
+        if (!isMobile) {
+            $calendar.css('zoom', '');
+            return;
+        }
+
+        // The table view renders inside a scrollable container, so its natural
+        // width is not reflected in document scroll width. Measure the inner
+        // wrapper directly.
+        const innerWrapper = $calendar[0].querySelector('.calendar-view > div');
+
+        if (!innerWrapper) {
+            $calendar.css('zoom', '');
+            return;
+        }
+
+        const calendarWidth = innerWrapper.scrollWidth;
+        const viewportWidth = window.innerWidth;
+
+        if (calendarWidth <= viewportWidth) {
+            $calendar.css('zoom', '');
+        } else {
+            $calendar.css('zoom', viewportWidth / calendarWidth);
+        }
+    }
+
+    /**
+     * Apply the mobile calendar fit once, after the table view has finished
+     * rendering. We wait for the inner table wrapper to appear so the scale is
+     * calculated from the real content width, not from the empty skeleton.
+     */
+    function initCalendarFit() {
+        if (!$('#calendar').length) {
+            return;
+        }
+
+        if (!window.matchMedia('(max-width: 767.98px)').matches) {
+            return;
+        }
+
+        let attempts = 0;
+        const maxAttempts = 30;
+
+        const interval = setInterval(() => {
+            attempts++;
+
+            const innerWrapper = document.querySelector('#calendar .calendar-view > div');
+
+            if (innerWrapper && innerWrapper.scrollWidth > 0) {
+                fitCalendarToViewport();
+                clearInterval(interval);
+                return;
+            }
+
+            if (attempts >= maxAttempts) {
+                clearInterval(interval);
+            }
+        }, 100);
+    }
+
+    /**
      * Initialize the module.
      *
      * This function makes the necessary initialization for the default backend calendar page.
@@ -151,6 +228,7 @@ App.Pages.Calendar = (function () {
         }
 
         App.Pages.Calendar.addEventListeners();
+        initCalendarFit();
     }
 
     document.addEventListener('DOMContentLoaded', initialize);
