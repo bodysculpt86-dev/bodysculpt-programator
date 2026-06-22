@@ -797,6 +797,20 @@ body .modal.full-screen .modal-push {
     }
 }
 
+/* Mobile zoom for the calendar content (keeps hit-testing intact).
+   Use zoom instead of transform:scale so FullCalendar drag/select still works. */
+@media (max-width: 767.98px) {
+    #calendar-page {
+        overflow-x: hidden;
+    }
+
+    #calendar {
+        zoom: 0.75;
+        width: 133.3333%;
+        transform-origin: top left;
+    }
+}
+
 /* ----------------------------------------------------------------------------
  * Appointment closing status colors
  * ----------------------------------------------------------------------------
