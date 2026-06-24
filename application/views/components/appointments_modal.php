@@ -38,7 +38,7 @@
                                         <?= lang('service') ?>
                                         <span class="text-danger">*</span>
                                     </label>
-                                    <select id="select-service" class="required form-select">
+                                    <select id="select-service" class="required form-select select2">
                                         <?php
                                         // Group services by category, only if there is at least one service
                                         // with a parent category.

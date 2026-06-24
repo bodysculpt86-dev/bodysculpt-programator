@@ -849,6 +849,11 @@ App.Components.AppointmentsModal = (function () {
      * Initialize the module.
      */
     function initialize() {
+        App.Utils.UI.initializeDropdown($selectService, {
+            width: '100%',
+            dropdownParent: $appointmentsModal,
+        });
+
         addEventListeners();
     }
 
