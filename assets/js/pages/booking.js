@@ -338,6 +338,12 @@ App.Pages.Booking = (function () {
             const serviceId = $selectService.val();
             const previousProviderId = $selectProvider.val();
 
+            // Keep the visible category selects in sync with the hidden master service select.
+            $('.select-service-category').val('');
+            if (serviceId) {
+                $('.select-service-category option[value="' + serviceId + '"]').parent('select').val(serviceId);
+            }
+
             $selectProvider.parent().prop('hidden', !Boolean(serviceId));
 
             $selectProvider.empty();
@@ -385,6 +391,16 @@ App.Pages.Booking = (function () {
             App.Pages.Booking.updateConfirmFrame();
 
             App.Pages.Booking.updateServiceDescription(serviceId);
+        });
+
+        /**
+         * Event: Category Service Dropdown "Changed"
+         *
+         * A visible category dropdown drives the hidden master service select.
+         */
+        $(document).on('change', '.select-service-category', function () {
+            const serviceId = $(this).val();
+            $selectService.val(serviceId).trigger('change');
         });
 
         /**
