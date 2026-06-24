@@ -132,6 +132,11 @@ App.Utils.CalendarDefaultView = (function () {
 
         $appointmentsModal.find('.modal-header h3').text(lang('edit_appointment_title'));
         $appointmentsModal.find('#appointment-id').val(appointment.id);
+        const service = vars('available_services').find(
+            (availableService) => Number(availableService.id) === Number(appointment.id_services),
+        );
+        const serviceCategoryName = service?.service_category_name || 'uncategorized';
+        $appointmentsModal.find('#select-service-category').val(serviceCategoryName).trigger('change');
         $appointmentsModal.find('#select-service').val(appointment.id_services).trigger('change');
         $appointmentsModal.find('#select-provider').val(appointment.id_users_provider);
 

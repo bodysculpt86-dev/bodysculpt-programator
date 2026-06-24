@@ -42,6 +42,7 @@ App.Components.AppointmentsModal = (function () {
     const $appointmentNotes = $('#appointment-notes');
     const $reloadAppointments = $('#reload-appointments');
     const $selectFilterItem = $('#select-filter-item');
+    const $selectServiceCategory = $('#select-service-category');
     const $selectService = $('#select-service');
     const $selectProvider = $('#select-provider');
     const $appointmentPrice = $('#appointment-price');
@@ -574,6 +575,32 @@ App.Components.AppointmentsModal = (function () {
             }
         });
 
+        $selectServiceCategory.on('change', () => {
+            const categoryName = $selectServiceCategory.val();
+
+            $selectService.empty();
+            $selectService.append(new Option(lang('please_select'), ''));
+
+            if (!categoryName) {
+                $selectService.trigger('change');
+                return;
+            }
+
+            vars('available_services').forEach((service) => {
+                const serviceCategoryName = service.service_category_name || '';
+                const isUncategorized = !service.service_category_id;
+
+                if (
+                    serviceCategoryName === categoryName ||
+                    (categoryName === 'uncategorized' && isUncategorized)
+                ) {
+                    $selectService.append(new Option(service.name, service.id));
+                }
+            });
+
+            $selectService.trigger('change');
+        });
+
         $selectService.on('change', () => {
             const serviceId = $selectService.val();
 
@@ -729,7 +756,8 @@ App.Components.AppointmentsModal = (function () {
         $appointmentColor.find('.color-selection-option:first').trigger('click');
 
         // Prepare service and provider select boxes.
-        $selectService.val($selectService.eq(0).attr('value'));
+        $selectServiceCategory.val('');
+        $selectService.empty().append(new Option(lang('please_select'), ''));
 
         // Fill the providers list box with providers that can serve the appointment's service and then select the
         // user's provider.
@@ -849,11 +877,6 @@ App.Components.AppointmentsModal = (function () {
      * Initialize the module.
      */
     function initialize() {
-        App.Utils.UI.initializeDropdown($selectService, {
-            width: '100%',
-            dropdownParent: $appointmentsModal,
-        });
-
         addEventListeners();
     }
 
