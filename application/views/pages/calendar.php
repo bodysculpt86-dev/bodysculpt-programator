@@ -1,5 +1,18 @@
 <?php extend('layouts/backend_layout'); ?>
 
+<?php section('meta'); ?>
+<script>
+(function () {
+    if (window.innerWidth < 768) {
+        var vp = document.querySelector('meta[name="viewport"]');
+        if (vp) {
+            vp.setAttribute('content', 'width=device-width, initial-scale=0.7, user-scalable=yes, minimum-scale=0.3, maximum-scale=3');
+        }
+    }
+}());
+</script>
+<?php end_section('meta'); ?>
+
 <?php section('content'); ?>
 
 <div class="container-fluid backend-page pt-0 pb-0" id="calendar-page">
