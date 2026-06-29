@@ -6,7 +6,7 @@
     if (window.innerWidth < 768) {
         var vp = document.querySelector('meta[name="viewport"]');
         if (vp) {
-            vp.setAttribute('content', 'width=device-width, initial-scale=0.7, user-scalable=yes, minimum-scale=0.3, maximum-scale=3');
+            vp.setAttribute('content', 'width=device-width, initial-scale=0.5, user-scalable=yes, minimum-scale=0.3, maximum-scale=3');
         }
     }
 }());

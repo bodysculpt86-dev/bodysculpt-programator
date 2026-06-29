@@ -345,12 +345,19 @@
      * ------------------------------------------------------------------------- */
 
     /* Calendar chrome: light, clean background */
-    #calendar,
     #calendar .fc-scrollgrid,
     #calendar .fc-timegrid-body,
     #calendar .fc-timegrid-slots table,
     #calendar .fc-timegrid-cols table {
         background-color: #E8F6F0 !important;
+    }
+
+    /* Calendar filter header: dark background so near-white labels remain readable */
+    #calendar .calendar-header {
+        background-color: #1F2937 !important;
+        padding: 12px 15px !important;
+        border-radius: 6px;
+        margin-bottom: 8px;
     }
 
     /* Provider / day column headers */
@@ -717,12 +724,12 @@
         height: auto !important;
     }
 
-    /* Time slot labels: full hours bold and large, quarters small and light */
+    /* Time slot labels: full hours bold and large, quarters small */
     #calendar .fc-timegrid-slot-label-cushion,
     #calendar .fc-timegrid-axis-cushion {
         font-size: 0.75rem;
         line-height: 1;
-        color: #6B7280;
+        color: #374151;
     }
 
     /* Full hours: bold, bigger, dark */
@@ -732,13 +739,13 @@
         color: #1F2937;
     }
 
-    /* Quarter hours: smaller, lighter */
+    /* Quarter hours: smaller, but dark enough to be readable on mint background */
     #calendar .fc-timegrid-slot[data-time$=":15:00"] .fc-timegrid-slot-label-cushion,
     #calendar .fc-timegrid-slot[data-time$=":30:00"] .fc-timegrid-slot-label-cushion,
     #calendar .fc-timegrid-slot[data-time$=":45:00"] .fc-timegrid-slot-label-cushion {
         font-size: 0.7rem;
         font-weight: 400;
-        color: #9CA3AF;
+        color: #4B5563;
     }
 
     /* Horizontal separators: strong at full hours, subtle dotted at quarters */
@@ -757,7 +764,7 @@
     }
 
     #calendar .fc-timegrid-axis-cushion {
-        color: #6B7280;
+        color: #374151;
     }
 
     #calendar .fc-event-main,
