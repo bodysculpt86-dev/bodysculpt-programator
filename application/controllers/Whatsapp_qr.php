@@ -27,6 +27,38 @@ class Whatsapp_qr extends EA_Controller
     }
 
     /**
+     * Read an environment variable with an optional default value.
+     *
+     * Falls back to the Config class constants for local development
+     * (e.g. Config::EVOLUTION_API_URL) when the env var is not set.
+     *
+     * @param string $key Environment variable / Config constant name.
+     * @param string $default Default value if neither source is set.
+     *
+     * @return string
+     */
+    private function evo_conf(string $key, string $default = ''): string
+    {
+        $value = getenv($key);
+
+        if ($value !== false && $value !== '') {
+            return $value;
+        }
+
+        $configConstant = "Config::$key";
+
+        if (defined($configConstant)) {
+            $configValue = constant($configConstant);
+
+            if ($configValue !== '' && $configValue !== null) {
+                return (string) $configValue;
+            }
+        }
+
+        return $default;
+    }
+
+    /**
      * Ensure the current user is an authenticated admin.
      *
      * @return bool
@@ -56,7 +88,7 @@ class Whatsapp_qr extends EA_Controller
      */
     private function evo_call(string $method, string $path): array
     {
-        $url = rtrim(Config::EVOLUTION_API_URL, '/') . $path;
+        $url = rtrim($this->evo_conf('EVOLUTION_API_URL'), '/') . $path;
 
         $ch = curl_init($url);
 
@@ -66,7 +98,7 @@ class Whatsapp_qr extends EA_Controller
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json',
             'Accept: application/json',
-            'apikey: ' . Config::EVOLUTION_API_KEY,
+            'apikey: ' . $this->evo_conf('EVOLUTION_API_KEY'),
         ]);
 
         $response = curl_exec($ch);
@@ -119,7 +151,7 @@ class Whatsapp_qr extends EA_Controller
             return;
         }
 
-        $res = $this->evo_call('GET', '/instance/connect/' . rawurlencode(Config::EVOLUTION_INSTANCE));
+        $res = $this->evo_call('GET', '/instance/connect/' . rawurlencode($this->evo_conf('EVOLUTION_INSTANCE', 'Bodysculpt')));
 
         json_response([
             'success' => $res['ok'],
@@ -138,7 +170,7 @@ class Whatsapp_qr extends EA_Controller
             return;
         }
 
-        $res = $this->evo_call('GET', '/instance/connectionState/' . rawurlencode(Config::EVOLUTION_INSTANCE));
+        $res = $this->evo_call('GET', '/instance/connectionState/' . rawurlencode($this->evo_conf('EVOLUTION_INSTANCE', 'Bodysculpt')));
 
         $state = $res['data']['instance']['state'] ?? ($res['data']['state'] ?? 'unknown');
 

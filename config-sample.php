@@ -80,9 +80,9 @@ class Config
     // ------------------------------------------------------------------------
     // EVOLUTION API WHATSAPP INTEGRATION (Optional)
     // ------------------------------------------------------------------------
-    // Set EVOLUTION_API_URL to your Evolution API public URL.
-    // Set EVOLUTION_API_KEY to your Evolution API authentication key.
-    // Set EVOLUTION_INSTANCE to the instance name shown in Evolution Manager.
+    // In production these values are read from environment variables
+    // (EVOLUTION_API_URL, EVOLUTION_API_KEY, EVOLUTION_INSTANCE) set in Railway.
+    // The constants below are an optional local fallback for development only.
     //
     // const EVOLUTION_API_URL = '';
     // const EVOLUTION_API_KEY = '';
