@@ -44,6 +44,30 @@
                     <div class="card h-100">
                         <div class="card-header">
                             <h5 class="fw-light mb-0">
+                                <i class="fab fa-whatsapp me-2"></i>
+                                <?= lang('whatsapp_qr') ?>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3 integration-info">
+                                <small>
+                                    <?= lang('whatsapp_qr_info') ?>
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-footer border-0">
+                            <a href="<?= site_url('whatsapp_qr') ?>" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-qrcode me-2"></i>
+                                <?= lang('configure') ?>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="fw-light mb-0">
                                 <?= lang('google_analytics') ?>
                             </h5>
                         </div>

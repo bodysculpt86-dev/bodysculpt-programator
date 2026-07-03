@@ -63,4 +63,28 @@ class Config
     //
     // const SMSO_API_KEY = '';
     // const SMSO_SENDER_ID = '';
+
+    // ------------------------------------------------------------------------
+    // FLAXXA WHATSAPP NOTIFICATIONS (Optional)
+    // ------------------------------------------------------------------------
+    // Set FLAXXA_API_TOKEN to your Flaxxa WAPI token to enable WhatsApp notifications.
+    // Set FLAXXA_CONFIRMATION_TEMPLATE and FLAXXA_REMINDER_TEMPLATE to the approved template names.
+    // Set FLAXXA_TEMPLATE_LANGUAGE to the template language code (default: ro).
+    // Use FLAXXA_API_TOKEN=LOG_ONLY to log messages without sending real WhatsApp messages.
+    //
+    // const FLAXXA_API_TOKEN = '';
+    // const FLAXXA_CONFIRMATION_TEMPLATE = '';
+    // const FLAXXA_REMINDER_TEMPLATE = '';
+    // const FLAXXA_TEMPLATE_LANGUAGE = 'ro';
+
+    // ------------------------------------------------------------------------
+    // EVOLUTION API WHATSAPP INTEGRATION (Optional)
+    // ------------------------------------------------------------------------
+    // Set EVOLUTION_API_URL to your Evolution API public URL.
+    // Set EVOLUTION_API_KEY to your Evolution API authentication key.
+    // Set EVOLUTION_INSTANCE to the instance name shown in Evolution Manager.
+    //
+    // const EVOLUTION_API_URL = '';
+    // const EVOLUTION_API_KEY = '';
+    // const EVOLUTION_INSTANCE = '';
 }
