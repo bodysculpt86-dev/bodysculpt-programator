@@ -61,6 +61,7 @@ $lang['reports'] = 'Reports';
 $lang['revenue_report'] = 'Revenue Report';
 $lang['revenue_report_hint'] = 'View daily and monthly revenue.';
 $lang['activity_report'] = 'Activity report';
+$lang['activity_matrix_report'] = 'Activity matrix';
 $lang['employee_report'] = 'Report / employee';
 $lang['employee_report_hint'] = 'View revenue per employee.';
 $lang['select_employee'] = 'Select employee';

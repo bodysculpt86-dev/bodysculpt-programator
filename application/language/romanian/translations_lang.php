@@ -61,6 +61,7 @@ $lang['reports'] = 'Rapoarte';
 $lang['revenue_report'] = 'Raport încasări';
 $lang['revenue_report_hint'] = 'Vizualizează încasările zilnice și lunare.';
 $lang['activity_report'] = 'Raport activitate';
+$lang['activity_matrix_report'] = 'Raport activitate (matrice)';
 $lang['employee_report'] = 'Raport / angajat';
 $lang['employee_report_hint'] = 'Vizualizează încasările per angajat.';
 $lang['select_employee'] = 'Selectează angajat';

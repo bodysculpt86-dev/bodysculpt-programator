@@ -960,4 +960,85 @@ class Appointments_model extends EA_Model
 
         return array_values($result);
     }
+
+    /**
+     * Get an activity matrix grouped by month and provider.
+     *
+     * Only appointments whose status is in the configured closing statuses (excluding
+     * "Nu s-a prezentat") and that are not unavailability entries are counted.
+     *
+     * @param string $start_date Start date (Y-m-d).
+     * @param string $end_date End date (Y-m-d).
+     *
+     * @return array Activity matrix with periods, provider totals and grand total.
+     */
+    public function get_activity_matrix(string $start_date, string $end_date): array
+    {
+        $closing_statuses = json_decode(setting('appointment_closing_statuses'), true) ?? [];
+
+        $revenue_statuses = array_values(array_diff($closing_statuses, ['Nu s-a prezentat']));
+
+        if (empty($revenue_statuses)) {
+            return [
+                'periods' => [],
+                'provider_totals' => [],
+                'grand_total' => ['cnt' => 0, 'total' => 0.0],
+            ];
+        }
+
+        $rows = $this->db
+            ->select("DATE_FORMAT(start_datetime, '%Y-%m') as period, id_users_provider, COUNT(*) as cnt, SUM(price) as total", false)
+            ->from('appointments')
+            ->where('is_unavailability', 0)
+            ->where_in('status', $revenue_statuses)
+            ->where('start_datetime >=', $start_date . ' 00:00:00')
+            ->where('start_datetime <=', $end_date . ' 23:59:59')
+            ->group_by("DATE_FORMAT(start_datetime, '%Y-%m'), id_users_provider")
+            ->order_by('period', 'ASC')
+            ->get()
+            ->result_array();
+
+        $periods = [];
+        $provider_totals = [];
+        $grand_total = ['cnt' => 0, 'total' => 0.0];
+
+        foreach ($rows as $row) {
+            $period = $row['period'];
+            $provider_id = (int) $row['id_users_provider'];
+            $cnt = (int) $row['cnt'];
+            $total = (float) $row['total'];
+
+            if (!isset($periods[$period])) {
+                $periods[$period] = [
+                    'period' => $period,
+                    'cells' => [],
+                    'row_count' => 0,
+                    'row_total' => 0.0,
+                ];
+            }
+
+            $periods[$period]['cells'][$provider_id] = [
+                'cnt' => $cnt,
+                'total' => $total,
+            ];
+            $periods[$period]['row_count'] += $cnt;
+            $periods[$period]['row_total'] += $total;
+
+            if (!isset($provider_totals[$provider_id])) {
+                $provider_totals[$provider_id] = ['cnt' => 0, 'total' => 0.0];
+            }
+
+            $provider_totals[$provider_id]['cnt'] += $cnt;
+            $provider_totals[$provider_id]['total'] += $total;
+
+            $grand_total['cnt'] += $cnt;
+            $grand_total['total'] += $total;
+        }
+
+        return [
+            'periods' => array_values($periods),
+            'provider_totals' => $provider_totals,
+            'grand_total' => $grand_total,
+        ];
+    }
 }

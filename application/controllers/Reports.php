@@ -197,4 +197,66 @@ class Reports extends EA_Controller
             json_exception($e);
         }
     }
+
+    /**
+     * Render the activity matrix report page (admin only).
+     */
+    public function activity(): void
+    {
+        method('get');
+
+        session(['dest_url' => site_url('reports/activity')]);
+
+        $user_id = session('user_id');
+
+        if (session('role_slug') !== DB_SLUG_ADMIN) {
+            if ($user_id) {
+                abort(403, 'Forbidden');
+            }
+
+            redirect('login');
+
+            return;
+        }
+
+        script_vars([
+            'date_format' => setting('date_format'),
+            'time_format' => setting('time_format'),
+            'first_weekday' => setting('first_weekday'),
+            'currency' => setting('currency'),
+        ]);
+
+        html_vars([
+            'page_title' => lang('activity_matrix_report'),
+            'active_menu' => 'reports',
+            'user_display_name' => $this->accounts->get_user_display_name($user_id),
+            'providers' => $this->providers_model->get_available_providers(),
+        ]);
+
+        $this->load->view('pages/reports_activity');
+    }
+
+    /**
+     * Return the activity matrix data for the requested date range (admin only).
+     */
+    public function get_activity(): void
+    {
+        try {
+            method('post');
+
+            if (session('role_slug') !== DB_SLUG_ADMIN) {
+                throw new RuntimeException('You do not have the required permissions for this task.');
+            }
+
+            check('start_date', 'date');
+            check('end_date', 'date');
+
+            $start_date = request('start_date');
+            $end_date = request('end_date');
+
+            json_response($this->appointments_model->get_activity_matrix($start_date, $end_date));
+        } catch (Throwable $e) {
+            json_exception($e);
+        }
+    }
 }

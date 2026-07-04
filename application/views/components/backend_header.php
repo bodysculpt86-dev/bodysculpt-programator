@@ -66,6 +66,11 @@
                             <?= lang('employee_report') ?>
                         </a>
                     </li>
+                    <li>
+                        <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('reports/activity') ?>">
+                            <?= lang('activity_matrix_report') ?>
+                        </a>
+                    </li>
                 </ul>
             </div>
         <?php endif; ?>
@@ -237,6 +242,9 @@
                         <?php endif; ?>
                         <a class="backend-sidebar-sublink" href="<?= site_url('reports/by_employee') ?>">
                             <?= lang('employee_report') ?>
+                        </a>
+                        <a class="backend-sidebar-sublink" href="<?= site_url('reports/activity') ?>">
+                            <?= lang('activity_matrix_report') ?>
                         </a>
                     </div>
                 </div>
