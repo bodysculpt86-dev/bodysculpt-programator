@@ -62,7 +62,7 @@ jobs:
         env:
           RESTORE_MYSQL_URL: ${{ steps.restore_url.outputs.url }}
           BACKUP_FILE: ${{ github.event.inputs.backup_file }}
-        run: ./scripts/restore-db.sh
+        run: bash scripts/restore-db.sh
 
       - name: Report failure
         if: failure()
