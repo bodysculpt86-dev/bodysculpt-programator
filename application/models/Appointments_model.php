@@ -999,29 +999,29 @@ class Appointments_model extends EA_Model
         }
 
         $this->db
-            ->from('appointments')
-            ->where('appointments.is_unavailability', 0)
-            ->where_in('appointments.status', $revenue_statuses)
-            ->where('appointments.start_datetime >=', $start_date . ' 00:00:00')
-            ->where('appointments.start_datetime <=', $end_date . ' 23:59:59');
+            ->from('appointments a')
+            ->where('a.is_unavailability', 0)
+            ->where_in('a.status', $revenue_statuses)
+            ->where('a.start_datetime >=', $start_date . ' 00:00:00')
+            ->where('a.start_datetime <=', $end_date . ' 23:59:59');
 
         if ($group_by === 'category') {
             $uncategorizedLabel = addslashes(lang('uncategorized'));
 
             $this->db
-                ->select("COALESCE(service_categories.name, '{$uncategorizedLabel}') as period, appointments.id_users_provider, COUNT(*) as cnt, SUM(appointments.price) as total", false)
-                ->join('services', 'services.id = appointments.id_services', 'left')
-                ->join('service_categories', 'service_categories.id = services.id_service_categories', 'left')
-                ->group_by("period, appointments.id_users_provider");
+                ->select("COALESCE(sc.name, '{$uncategorizedLabel}') AS period, a.id_users_provider, COUNT(*) AS cnt, SUM(a.price) AS total", false)
+                ->join('services s', 's.id = a.id_services', 'left')
+                ->join('service_categories sc', 'sc.id = s.id_service_categories', 'left')
+                ->group_by("COALESCE(sc.name, '{$uncategorizedLabel}'), a.id_users_provider");
         } elseif ($group_by === 'service') {
             $this->db
-                ->select("services.name as period, appointments.id_users_provider, COUNT(*) as cnt, SUM(appointments.price) as total", false)
-                ->join('services', 'services.id = appointments.id_services', 'left')
-                ->group_by("services.name, appointments.id_users_provider");
+                ->select("s.name AS period, a.id_users_provider, COUNT(*) AS cnt, SUM(a.price) AS total", false)
+                ->join('services s', 's.id = a.id_services', 'left')
+                ->group_by("s.name, a.id_users_provider");
         } else {
             $this->db
-                ->select("DATE_FORMAT(appointments.start_datetime, '%Y-%m') as period, appointments.id_users_provider, COUNT(*) as cnt, SUM(appointments.price) as total", false)
-                ->group_by("period, appointments.id_users_provider");
+                ->select("DATE_FORMAT(a.start_datetime, '%Y-%m') AS period, a.id_users_provider, COUNT(*) AS cnt, SUM(a.price) AS total", false)
+                ->group_by("DATE_FORMAT(a.start_datetime, '%Y-%m'), a.id_users_provider");
         }
 
         $rows = $this->db
