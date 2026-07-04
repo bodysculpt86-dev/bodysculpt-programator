@@ -17,6 +17,40 @@
         </div>
     </div>
 
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="dropdown payment-filter-dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                        id="payment-filter-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <?= lang('payment_type') ?>
+                </button>
+                <div class="dropdown-menu payment-filter-dropdown-menu" aria-labelledby="payment-filter-toggle">
+                    <div class="dropdown-item">
+                        <div class="form-check">
+                            <input class="form-check-input payment-filter-select-all" type="checkbox"
+                                   id="payment-filter-select-all" checked>
+                            <label class="form-check-label" for="payment-filter-select-all">
+                                <?= lang('select_all') ?>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <?php foreach (vars('payment_options') as $status): ?>
+                        <div class="dropdown-item">
+                            <div class="form-check">
+                                <input class="form-check-input payment-filter" type="checkbox"
+                                       value="<?= e($status) ?>" id="payment-filter-<?= md5($status) ?>" checked>
+                                <label class="form-check-label" for="payment-filter-<?= md5($status) ?>">
+                                    <?= e($status) ?>
+                                </label>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row" id="reports-empty-hint">
         <div class="col-12">
             <p class="text-muted"><?= lang('select_range_first') ?></p>

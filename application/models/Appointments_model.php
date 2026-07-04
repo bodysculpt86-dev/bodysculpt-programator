@@ -972,11 +972,15 @@ class Appointments_model extends EA_Model
      *
      * @return array Activity matrix with periods, provider totals and grand total.
      */
-    public function get_activity_matrix(string $start_date, string $end_date): array
+    public function get_activity_matrix(string $start_date, string $end_date, ?array $payment_statuses = null): array
     {
         $closing_statuses = json_decode(setting('appointment_closing_statuses'), true) ?? [];
 
         $revenue_statuses = array_values(array_diff($closing_statuses, ['Nu s-a prezentat']));
+
+        if (!empty($payment_statuses)) {
+            $revenue_statuses = array_values(array_intersect($revenue_statuses, $payment_statuses));
+        }
 
         if (empty($revenue_statuses)) {
             return [

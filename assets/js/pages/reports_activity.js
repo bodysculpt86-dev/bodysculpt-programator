@@ -12,44 +12,100 @@
 /**
  * Activity matrix report page.
  *
- * Fetches a month × provider matrix of appointment counts and revenue.
+ * Fetches a month × provider matrix of appointment counts and revenue,
+ * filtered by payment method.
  */
 App.Pages.ReportsActivity = (function () {
     const $emptyHint = $('#reports-empty-hint');
     const $matrixSection = $('#activity-matrix-section');
     const $matrixBody = $('#activity-matrix-body');
     const $matrixFoot = $('#activity-matrix-foot');
+    const $paymentFilters = $('.payment-filter');
+    const $selectAll = $('.payment-filter-select-all');
 
     const moment = window.moment;
     const currency = vars('currency') || '';
+
+    let currentStartDate = '';
+    let currentEndDate = '';
 
     /**
      * Initialize the page.
      */
     function init() {
         App.Utils.DateRangeSelector.init($('#reports-activity-page .date-range-selector'), (startDate, endDate) => {
-            loadMatrix(startDate, endDate);
+            currentStartDate = startDate;
+            currentEndDate = endDate;
+            loadMatrix();
+        });
+
+        // Keep the payment filter dropdown open when clicking inside it.
+        $('.payment-filter-dropdown-menu').on('click', (event) => {
+            event.stopPropagation();
+        });
+
+        $paymentFilters.on('change', () => {
+            updateSelectAllState();
+            loadMatrix();
+        });
+
+        $selectAll.on('change', () => {
+            const isChecked = $selectAll.is(':checked');
+            $paymentFilters.prop('checked', isChecked);
+            loadMatrix();
         });
     }
 
     /**
-     * Fetch and render the activity matrix.
-     *
-     * @param {string} startDate
-     * @param {string} endDate
+     * Update the "select all" checkbox state based on individual checkboxes.
      */
-    function loadMatrix(startDate, endDate) {
-        if (!startDate || !endDate) {
+    function updateSelectAllState() {
+        const total = $paymentFilters.length;
+        const checked = $paymentFilters.filter(':checked').length;
+
+        if (checked === 0) {
+            $selectAll.prop('checked', false).prop('indeterminate', false);
+        } else if (checked === total) {
+            $selectAll.prop('checked', true).prop('indeterminate', false);
+        } else {
+            $selectAll.prop('checked', false).prop('indeterminate', true);
+        }
+    }
+
+    /**
+     * Collect the currently selected payment statuses.
+     *
+     * @return {Array}
+     */
+    function getSelectedPaymentStatuses() {
+        return $paymentFilters
+            .filter(':checked')
+            .map((_, element) => $(element).val())
+            .get();
+    }
+
+    /**
+     * Fetch and render the activity matrix.
+     */
+    function loadMatrix() {
+        if (!currentStartDate || !currentEndDate) {
             return;
         }
 
         const url = App.Utils.Url.siteUrl('reports/get_activity');
+        const paymentStatuses = getSelectedPaymentStatuses();
 
-        $.post(url, {
+        const requestData = {
             csrf_token: vars('csrf_token'),
-            start_date: startDate,
-            end_date: endDate,
-        })
+            start_date: currentStartDate,
+            end_date: currentEndDate,
+        };
+
+        if (paymentStatuses.length) {
+            requestData.payment_statuses = paymentStatuses;
+        }
+
+        $.post(url, requestData)
             .done((response) => {
                 $emptyHint.addClass('d-none');
                 $matrixSection.removeClass('d-none');

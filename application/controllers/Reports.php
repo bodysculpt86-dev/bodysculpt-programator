@@ -219,6 +219,9 @@ class Reports extends EA_Controller
             return;
         }
 
+        $closing_statuses = json_decode(setting('appointment_closing_statuses'), true) ?? [];
+        $payment_options = array_values(array_diff($closing_statuses, ['Nu s-a prezentat']));
+
         script_vars([
             'date_format' => setting('date_format'),
             'time_format' => setting('time_format'),
@@ -231,6 +234,7 @@ class Reports extends EA_Controller
             'active_menu' => 'reports',
             'user_display_name' => $this->accounts->get_user_display_name($user_id),
             'providers' => $this->providers_model->get_available_providers(),
+            'payment_options' => $payment_options,
         ]);
 
         $this->load->view('pages/reports_activity');
@@ -254,7 +258,13 @@ class Reports extends EA_Controller
             $start_date = request('start_date');
             $end_date = request('end_date');
 
-            json_response($this->appointments_model->get_activity_matrix($start_date, $end_date));
+            $payment_statuses = request('payment_statuses');
+
+            if (!is_array($payment_statuses)) {
+                $payment_statuses = null;
+            }
+
+            json_response($this->appointments_model->get_activity_matrix($start_date, $end_date, $payment_statuses));
         } catch (Throwable $e) {
             json_exception($e);
         }
