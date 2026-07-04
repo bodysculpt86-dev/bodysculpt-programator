@@ -39,7 +39,15 @@
         </div>
     </div>
 
-    <div class="row" id="daily-revenue-section">
+    <div class="row" id="reports-empty-hint">
+        <div class="col-12 col-lg-10 col-xl-8">
+            <p class="text-muted" id="reports-empty-hint-text">
+                <?= vars('is_admin') ? lang('select_employee_first') : lang('select_range_first') ?>
+            </p>
+        </div>
+    </div>
+
+    <div class="row d-none" id="daily-revenue-section">
         <div class="col-12 col-lg-10 col-xl-8 mb-4">
             <h5 class="fw-light"><?= lang('daily') ?></h5>
 
@@ -69,7 +77,7 @@
         </div>
     </div>
 
-    <div class="row" id="monthly-revenue-section">
+    <div class="row d-none" id="monthly-revenue-section">
         <div class="col-12 col-lg-10 col-xl-8 mb-4">
             <h5 class="fw-light"><?= lang('monthly') ?></h5>
 

@@ -65,6 +65,7 @@ $lang['employee_report'] = 'Raport / angajat';
 $lang['employee_report_hint'] = 'Vizualizează încasările per angajat.';
 $lang['select_employee'] = 'Selectează angajat';
 $lang['select_employee_first'] = 'Selectează un angajat pentru a vedea raportul.';
+$lang['select_range_first'] = 'Selectează o perioadă pentru a vedea încasările.';
 $lang['daily'] = 'Zilnic';
 $lang['monthly'] = 'Lunar';
 $lang['users'] = 'Utilizatori';

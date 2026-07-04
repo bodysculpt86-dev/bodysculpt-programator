@@ -72,11 +72,12 @@ App.Utils.DateRangeSelector = (function () {
         }
 
         /**
-         * Apply a predefined date range to the inputs and notify the callback.
+         * Apply a predefined date range to the inputs and optionally notify the callback.
          *
          * @param {string} range
+         * @param {boolean} triggerCallback Whether to invoke the onChange callback.
          */
-        function applyRange(range) {
+        function applyRange(range, triggerCallback = true) {
             const today = moment();
             let start = today.clone();
             let end = today.clone();
@@ -129,12 +130,14 @@ App.Utils.DateRangeSelector = (function () {
             $endInput[0]._flatpickr.setDate(endDate);
             isApplyingRange = false;
 
-            onChange(startDate, endDate);
+            if (triggerCallback) {
+                onChange(startDate, endDate);
+            }
         }
 
         $presetButtons.on('click', function () {
             const $button = $(this);
-            applyRange($button.data('range'));
+            applyRange($button.data('range'), true);
             setActivePreset($button);
         });
 
@@ -151,8 +154,8 @@ App.Utils.DateRangeSelector = (function () {
             }
         });
 
-        // Default selection: current month.
-        applyRange('current_month');
+        // Default selection: current month (prefill inputs only, do not trigger the callback).
+        applyRange('current_month', false);
         setActivePreset($presetButtons.filter('[data-range="current_month"]'));
     }
 

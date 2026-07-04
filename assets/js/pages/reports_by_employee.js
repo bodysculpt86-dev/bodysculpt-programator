@@ -18,9 +18,13 @@ App.Pages.ReportsByEmployee = (function () {
     const $page = $('#reports-by-employee-page');
     const $dateRangeSelector = $page.find('.date-range-selector');
     const $employeeSelect = $('#employee-select');
+    const $emptyHint = $('#reports-empty-hint');
+    const $emptyHintText = $('#reports-empty-hint-text');
+    const $dailySection = $('#daily-revenue-section');
     const $dailyBody = $('#daily-revenue-body');
     const $dailyFoot = $('#daily-revenue-foot');
     const $dailyTotal = $('#daily-revenue-total');
+    const $monthlySection = $('#monthly-revenue-section');
     const $monthlyBody = $('#monthly-revenue-body');
     const $monthlyFoot = $('#monthly-revenue-foot');
     const $monthlyTotal = $('#monthly-revenue-total');
@@ -42,13 +46,6 @@ App.Pages.ReportsByEmployee = (function () {
             loadReport();
         });
 
-        addEventListeners();
-    }
-
-    /**
-     * Add the page event listeners.
-     */
-    function addEventListeners() {
         if ($employeeSelect.length) {
             $employeeSelect.on('change', () => {
                 loadReport();
@@ -61,11 +58,12 @@ App.Pages.ReportsByEmployee = (function () {
      */
     function loadReport() {
         if (isAdmin && (!$employeeSelect.length || !$employeeSelect.val())) {
-            showPlaceholder();
+            showHint('select_employee_first');
             return;
         }
 
         if (!currentStartDate || !currentEndDate) {
+            showHint('select_range_first');
             return;
         }
 
@@ -82,6 +80,10 @@ App.Pages.ReportsByEmployee = (function () {
 
         $.post(url, requestData)
             .done((response) => {
+                $emptyHint.addClass('d-none');
+                $dailySection.removeClass('d-none');
+                $monthlySection.removeClass('d-none');
+
                 renderDaily(response.daily || []);
                 renderMonthly(response.monthly || []);
             })
@@ -91,26 +93,15 @@ App.Pages.ReportsByEmployee = (function () {
     }
 
     /**
-     * Show the "select an employee first" placeholder in both tables.
+     * Show the placeholder hint and hide the tables.
+     *
+     * @param {string} translationKey
      */
-    function showPlaceholder() {
-        $dailyBody.html(`
-            <tr>
-                <td colspan="2" class="text-muted text-center">
-                    ${lang('select_employee_first')}
-                </td>
-            </tr>
-        `);
-        $dailyFoot.addClass('d-none');
-
-        $monthlyBody.html(`
-            <tr>
-                <td colspan="2" class="text-muted text-center">
-                    ${lang('select_employee_first')}
-                </td>
-            </tr>
-        `);
-        $monthlyFoot.addClass('d-none');
+    function showHint(translationKey) {
+        $emptyHintText.text(lang(translationKey));
+        $emptyHint.removeClass('d-none');
+        $dailySection.addClass('d-none');
+        $monthlySection.addClass('d-none');
     }
 
     /**

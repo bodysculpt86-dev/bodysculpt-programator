@@ -17,50 +17,17 @@
 
     <div class="row">
         <div class="col-12 col-lg-10 col-xl-8 mb-4">
-            <div class="btn-group flex-wrap mb-3 w-100" role="group" aria-label="<?= lang('revenue_report') ?>">
-                <button type="button" class="btn btn-outline-secondary range-btn" data-range="today">
-                    <?= lang('today') ?>
-                </button>
-                <button type="button" class="btn btn-outline-secondary range-btn" data-range="last_7_days">
-                    <?= lang('last_7_days') ?>
-                </button>
-                <button type="button" class="btn btn-outline-secondary range-btn" data-range="last_30_days">
-                    <?= lang('last_30_days') ?>
-                </button>
-                <button type="button" class="btn btn-outline-secondary range-btn" data-range="last_month">
-                    <?= lang('last_month') ?>
-                </button>
-                <button type="button" class="btn btn-outline-secondary range-btn" data-range="current_month">
-                    <?= lang('current_month') ?>
-                </button>
-            </div>
-
-            <form id="revenue-filter-form" class="row g-3 align-items-end">
-                <div class="col-12 col-md-4">
-                    <label for="start-date" class="form-label">
-                        <?= lang('start') ?>
-                    </label>
-                    <input type="text" id="start-date" class="form-control" required>
-                </div>
-
-                <div class="col-12 col-md-4">
-                    <label for="end-date" class="form-label">
-                        <?= lang('end') ?>
-                    </label>
-                    <input type="text" id="end-date" class="form-control" required>
-                </div>
-
-                <div class="col-12 col-md-4">
-                    <button type="submit" id="generate-report" class="btn btn-primary w-100">
-                        <i class="fas fa-sync-alt me-2"></i>
-                        <?= lang('generate') ?>
-                    </button>
-                </div>
-            </form>
+            <?php component('date_range_selector'); ?>
         </div>
     </div>
 
-    <div class="row" id="daily-revenue-section">
+    <div class="row" id="reports-empty-hint">
+        <div class="col-12 col-lg-10 col-xl-8">
+            <p class="text-muted"><?= lang('select_range_first') ?></p>
+        </div>
+    </div>
+
+    <div class="row d-none" id="daily-revenue-section">
         <div class="col-12 col-lg-10 col-xl-8 mb-4">
             <h5 class="fw-light"><?= lang('daily') ?></h5>
 
@@ -90,7 +57,7 @@
         </div>
     </div>
 
-    <div class="row" id="monthly-revenue-section">
+    <div class="row d-none" id="monthly-revenue-section">
         <div class="col-12 col-lg-10 col-xl-8 mb-4">
             <h5 class="fw-light"><?= lang('monthly') ?></h5>
 
@@ -126,6 +93,7 @@
 <?php section('scripts'); ?>
 
 <script src="<?= asset_url('assets/js/utils/ui.js') ?>"></script>
+<script src="<?= asset_url('assets/js/utils/date_range_selector.js') ?>"></script>
 <script src="<?= asset_url('assets/js/pages/reports.js') ?>"></script>
 
 <?php end_section('scripts'); ?>

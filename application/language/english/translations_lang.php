@@ -65,6 +65,7 @@ $lang['employee_report'] = 'Report / employee';
 $lang['employee_report_hint'] = 'View revenue per employee.';
 $lang['select_employee'] = 'Select employee';
 $lang['select_employee_first'] = 'Select an employee to view the report.';
+$lang['select_range_first'] = 'Select a period to view the revenue.';
 $lang['daily'] = 'Daily';
 $lang['monthly'] = 'Monthly';
 $lang['users'] = 'Users';

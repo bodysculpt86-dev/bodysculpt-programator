@@ -15,9 +15,6 @@
  * Fetches daily and monthly revenue for a selected date range.
  */
 App.Pages.Reports = (function () {
-    const $startDate = $('#start-date');
-    const $endDate = $('#end-date');
-    const $form = $('#revenue-filter-form');
     const $dailyBody = $('#daily-revenue-body');
     const $dailyFoot = $('#daily-revenue-foot');
     const $dailyTotal = $('#daily-revenue-total');
@@ -32,81 +29,18 @@ App.Pages.Reports = (function () {
      * Initialize the page.
      */
     function init() {
-        App.Utils.UI.initializeDatePicker($startDate, { dateFormat: 'Y-m-d' });
-        App.Utils.UI.initializeDatePicker($endDate, { dateFormat: 'Y-m-d' });
-
-        const today = moment();
-
-        $startDate[0]._flatpickr.setDate(today.clone().startOf('month').format('YYYY-MM-DD'));
-        $endDate[0]._flatpickr.setDate(today.format('YYYY-MM-DD'));
-
-        addEventListeners();
-
-        loadReport();
-    }
-
-    /**
-     * Add the page event listeners.
-     */
-    function addEventListeners() {
-        $form.on('submit', (event) => {
-            event.preventDefault();
-            loadReport();
-        });
-
-        $('#reports-page').on('click', '.range-btn', (event) => {
-            const range = $(event.currentTarget).data('range');
-            applyRange(range);
-            loadReport();
+        App.Utils.DateRangeSelector.init($('#reports-page .date-range-selector'), (startDate, endDate) => {
+            loadReport(startDate, endDate);
         });
     }
 
     /**
-     * Apply a predefined date range to the filter inputs.
+     * Fetch revenue data for the given date range.
      *
-     * @param {string} range
+     * @param {string} startDate
+     * @param {string} endDate
      */
-    function applyRange(range) {
-        const today = moment();
-        let start = today.clone();
-        let end = today.clone();
-
-        switch (range) {
-            case 'today':
-                start = today.clone();
-                end = today.clone();
-                break;
-            case 'last_7_days':
-                start = today.clone().subtract(6, 'days');
-                end = today.clone();
-                break;
-            case 'last_30_days':
-                start = today.clone().subtract(29, 'days');
-                end = today.clone();
-                break;
-            case 'last_month':
-                start = today.clone().subtract(1, 'month').startOf('month');
-                end = today.clone().subtract(1, 'month').endOf('month');
-                break;
-            case 'current_month':
-                start = today.clone().startOf('month');
-                end = today.clone();
-                break;
-            default:
-                return;
-        }
-
-        $startDate[0]._flatpickr.setDate(start.format('YYYY-MM-DD'));
-        $endDate[0]._flatpickr.setDate(end.format('YYYY-MM-DD'));
-    }
-
-    /**
-     * Fetch revenue data for the current date range.
-     */
-    function loadReport() {
-        const startDate = $startDate.val();
-        const endDate = $endDate.val();
-
+    function loadReport(startDate, endDate) {
         if (!startDate || !endDate) {
             return;
         }
@@ -119,6 +53,10 @@ App.Pages.Reports = (function () {
             end_date: endDate,
         })
             .done((response) => {
+                $('#reports-empty-hint').addClass('d-none');
+                $('#daily-revenue-section').removeClass('d-none');
+                $('#monthly-revenue-section').removeClass('d-none');
+
                 renderDaily(response.daily || []);
                 renderMonthly(response.monthly || []);
             })
@@ -150,7 +88,7 @@ App.Pages.Reports = (function () {
         let total = 0;
 
         rows.forEach((row) => {
-            total += row.total;
+            total += Number(row.total);
 
             $dailyBody.append(`
                 <tr>
@@ -187,7 +125,7 @@ App.Pages.Reports = (function () {
         let total = 0;
 
         rows.forEach((row) => {
-            total += row.total;
+            total += Number(row.total);
 
             $monthlyBody.append(`
                 <tr>
