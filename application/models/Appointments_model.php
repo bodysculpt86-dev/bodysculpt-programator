@@ -962,18 +962,26 @@ class Appointments_model extends EA_Model
     }
 
     /**
-     * Get an activity matrix grouped by month and provider.
+     * Get an activity matrix grouped by month/category/service and provider.
      *
      * Only appointments whose status is in the configured closing statuses (excluding
      * "Nu s-a prezentat") and that are not unavailability entries are counted.
      *
      * @param string $start_date Start date (Y-m-d).
      * @param string $end_date End date (Y-m-d).
+     * @param array|null $payment_statuses Optional payment status filter.
+     * @param string $group_by Dimension to group rows by: 'month', 'category' or 'service'.
      *
      * @return array Activity matrix with periods, provider totals and grand total.
      */
-    public function get_activity_matrix(string $start_date, string $end_date, ?array $payment_statuses = null): array
+    public function get_activity_matrix(string $start_date, string $end_date, ?array $payment_statuses = null, string $group_by = 'month'): array
     {
+        $allowed = ['month', 'category', 'service'];
+
+        if (!in_array($group_by, $allowed, true)) {
+            $group_by = 'month';
+        }
+
         $closing_statuses = json_decode(setting('appointment_closing_statuses'), true) ?? [];
 
         $revenue_statuses = array_values(array_diff($closing_statuses, ['Nu s-a prezentat']));
@@ -990,14 +998,33 @@ class Appointments_model extends EA_Model
             ];
         }
 
-        $rows = $this->db
-            ->select("DATE_FORMAT(start_datetime, '%Y-%m') as period, id_users_provider, COUNT(*) as cnt, SUM(price) as total", false)
+        $this->db
             ->from('appointments')
-            ->where('is_unavailability', 0)
-            ->where_in('status', $revenue_statuses)
-            ->where('start_datetime >=', $start_date . ' 00:00:00')
-            ->where('start_datetime <=', $end_date . ' 23:59:59')
-            ->group_by("DATE_FORMAT(start_datetime, '%Y-%m'), id_users_provider")
+            ->where('appointments.is_unavailability', 0)
+            ->where_in('appointments.status', $revenue_statuses)
+            ->where('appointments.start_datetime >=', $start_date . ' 00:00:00')
+            ->where('appointments.start_datetime <=', $end_date . ' 23:59:59');
+
+        if ($group_by === 'category') {
+            $uncategorizedLabel = addslashes(lang('uncategorized'));
+
+            $this->db
+                ->select("COALESCE(service_categories.name, '{$uncategorizedLabel}') as period, appointments.id_users_provider, COUNT(*) as cnt, SUM(appointments.price) as total", false)
+                ->join('services', 'services.id = appointments.id_services', 'left')
+                ->join('service_categories', 'service_categories.id = services.id_service_categories', 'left')
+                ->group_by("period, appointments.id_users_provider");
+        } elseif ($group_by === 'service') {
+            $this->db
+                ->select("services.name as period, appointments.id_users_provider, COUNT(*) as cnt, SUM(appointments.price) as total", false)
+                ->join('services', 'services.id = appointments.id_services', 'left')
+                ->group_by("services.name, appointments.id_users_provider");
+        } else {
+            $this->db
+                ->select("DATE_FORMAT(appointments.start_datetime, '%Y-%m') as period, appointments.id_users_provider, COUNT(*) as cnt, SUM(appointments.price) as total", false)
+                ->group_by("period, appointments.id_users_provider");
+        }
+
+        $rows = $this->db
             ->order_by('period', 'ASC')
             ->get()
             ->result_array();

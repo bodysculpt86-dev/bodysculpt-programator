@@ -264,7 +264,9 @@ class Reports extends EA_Controller
                 $payment_statuses = null;
             }
 
-            json_response($this->appointments_model->get_activity_matrix($start_date, $end_date, $payment_statuses));
+            $group_by = request('group_by') ?: 'month';
+
+            json_response($this->appointments_model->get_activity_matrix($start_date, $end_date, $payment_statuses, $group_by));
         } catch (Throwable $e) {
             json_exception($e);
         }

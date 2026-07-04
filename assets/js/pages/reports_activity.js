@@ -12,7 +12,7 @@
 /**
  * Activity matrix report page.
  *
- * Fetches a month × provider matrix of appointment counts and revenue,
+ * Fetches a month/category/service × provider matrix of appointment counts and revenue,
  * filtered by payment method.
  */
 App.Pages.ReportsActivity = (function () {
@@ -20,14 +20,22 @@ App.Pages.ReportsActivity = (function () {
     const $matrixSection = $('#activity-matrix-section');
     const $matrixBody = $('#activity-matrix-body');
     const $matrixFoot = $('#activity-matrix-foot');
+    const $matrixRowHeader = $('#matrix-row-header');
     const $paymentFilters = $('.payment-filter');
     const $selectAll = $('.payment-filter-select-all');
+    const $groupBySelect = $('#group-by-select');
 
     const moment = window.moment;
     const currency = vars('currency') || '';
 
     let currentStartDate = '';
     let currentEndDate = '';
+
+    const groupByLabels = {
+        month: lang('month'),
+        category: lang('category'),
+        service: lang('service'),
+    };
 
     /**
      * Initialize the page.
@@ -52,6 +60,10 @@ App.Pages.ReportsActivity = (function () {
         $selectAll.on('change', () => {
             const isChecked = $selectAll.is(':checked');
             $paymentFilters.prop('checked', isChecked);
+            loadMatrix();
+        });
+
+        $groupBySelect.on('change', () => {
             loadMatrix();
         });
     }
@@ -94,11 +106,13 @@ App.Pages.ReportsActivity = (function () {
 
         const url = App.Utils.Url.siteUrl('reports/get_activity');
         const paymentStatuses = getSelectedPaymentStatuses();
+        const groupBy = $groupBySelect.val();
 
         const requestData = {
             csrf_token: vars('csrf_token'),
             start_date: currentStartDate,
             end_date: currentEndDate,
+            group_by: groupBy,
         };
 
         if (paymentStatuses.length) {
@@ -110,7 +124,14 @@ App.Pages.ReportsActivity = (function () {
                 $emptyHint.addClass('d-none');
                 $matrixSection.removeClass('d-none');
 
-                renderMatrix(response.periods || [], response.provider_totals || {}, response.grand_total || { cnt: 0, total: 0.0 });
+                $matrixRowHeader.text(groupByLabels[groupBy] || lang('month'));
+
+                renderMatrix(
+                    response.periods || [],
+                    response.provider_totals || {},
+                    response.grand_total || { cnt: 0, total: 0.0 },
+                    groupBy,
+                );
             })
             .fail(() => {
                 App.Utils.Message.show('An error occurred while fetching the report.');
@@ -123,8 +144,9 @@ App.Pages.ReportsActivity = (function () {
      * @param {Array} periods
      * @param {Object} providerTotals
      * @param {Object} grandTotal
+     * @param {string} groupBy
      */
-    function renderMatrix(periods, providerTotals, grandTotal) {
+    function renderMatrix(periods, providerTotals, grandTotal, groupBy) {
         const columns = $('#activity-head tr:last-child th[data-provider-id]')
             .toArray()
             .map((th) => ({
@@ -146,7 +168,7 @@ App.Pages.ReportsActivity = (function () {
             periods.forEach((period) => {
                 const row = $('<tr></tr>');
 
-                row.append(`<td class="fw-light">${formatPeriod(period.period)}</td>`);
+                row.append(`<td class="fw-light">${formatRowLabel(period.period, groupBy)}</td>`);
 
                 columns.forEach((column) => {
                     let value;
@@ -216,15 +238,20 @@ App.Pages.ReportsActivity = (function () {
     }
 
     /**
-     * Format a YYYY-MM period for display.
+     * Format a row label based on the active grouping.
      *
      * @param {string} period
+     * @param {string} groupBy
      *
      * @return {string}
      */
-    function formatPeriod(period) {
-        const value = moment(period, 'YYYY-MM');
-        return value.isValid() ? value.format('MMMM YYYY') : period;
+    function formatRowLabel(period, groupBy) {
+        if (groupBy === 'month') {
+            const value = moment(period, 'YYYY-MM');
+            return value.isValid() ? value.format('MMMM YYYY') : period;
+        }
+
+        return period;
     }
 
     /**

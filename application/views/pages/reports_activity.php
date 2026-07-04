@@ -17,8 +17,8 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-12 mb-4">
+    <div class="row align-items-end">
+        <div class="col-12 col-md-6 col-lg-4 mb-4">
             <div class="dropdown payment-filter-dropdown">
                 <button class="btn btn-outline-secondary dropdown-toggle" type="button"
                         id="payment-filter-toggle" data-bs-toggle="dropdown" aria-expanded="false">
@@ -49,6 +49,16 @@
                 </div>
             </div>
         </div>
+        <div class="col-12 col-md-6 col-lg-4 mb-4">
+            <label for="group-by-select" class="form-label">
+                <?= lang('group_by') ?>
+            </label>
+            <select id="group-by-select" class="form-select">
+                <option value="month"><?= lang('group_by_month') ?></option>
+                <option value="category"><?= lang('group_by_category') ?></option>
+                <option value="service"><?= lang('group_by_service') ?></option>
+            </select>
+        </div>
     </div>
 
     <div class="row" id="reports-empty-hint">
@@ -63,7 +73,7 @@
                 <table class="table table-striped table-hover" id="activity-matrix-table">
                     <thead id="activity-head">
                         <tr>
-                            <th rowspan="2" class="align-middle"><?= lang('month') ?></th>
+                            <th rowspan="2" class="align-middle" id="matrix-row-header"><?= lang('month') ?></th>
                             <?php foreach (vars('providers') as $provider): ?>
                                 <th colspan="2" class="text-center" data-provider-id="<?= (int) $provider['id'] ?>">
                                     <?= e($provider['first_name'] . ' ' . $provider['last_name']) ?>
