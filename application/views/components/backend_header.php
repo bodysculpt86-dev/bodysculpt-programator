@@ -44,14 +44,30 @@
             <span><?= lang('customers') ?></span>
         </a>
 
-        <?php if (session('role_slug') === DB_SLUG_ADMIN): ?>
+        <?php if (session('role_slug') === DB_SLUG_ADMIN || session('role_slug') === DB_SLUG_PROVIDER): ?>
             <?php $active = $active_menu === 'reports' ? 'active' : ''; ?>
-            <a href="<?= site_url('reports') ?>"
-               class="backend-sidebar-link <?= $active ?>"
-               data-tippy-content="<?= lang('revenue_report_hint') ?>">
-                <i class="fas fa-chart-line backend-sidebar-icon"></i>
-                <span><?= lang('reports') ?></span>
-            </a>
+            <div class="backend-sidebar-dropdown dropend <?= $active ?>">
+                <a class="backend-sidebar-link dropdown-toggle" href="#"
+                   data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-chart-line backend-sidebar-icon"></i>
+                    <span><?= lang('reports') ?></span>
+                    <i class="fas fa-chevron-right backend-sidebar-caret ms-auto"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark backend-sidebar-dropdown-menu">
+                    <?php if (session('role_slug') === DB_SLUG_ADMIN): ?>
+                        <li>
+                            <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('reports') ?>">
+                                <?= lang('activity_report') ?>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                    <li>
+                        <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('reports/by_employee') ?>">
+                            <?= lang('employee_report') ?>
+                        </a>
+                    </li>
+                </ul>
+            </div>
         <?php endif; ?>
 
         <?php if (can('view', PRIV_SERVICES)): ?>
@@ -203,14 +219,27 @@
                 <span><?= lang('customers') ?></span>
             </a>
 
-            <?php if (session('role_slug') === DB_SLUG_ADMIN): ?>
+            <?php if (session('role_slug') === DB_SLUG_ADMIN || session('role_slug') === DB_SLUG_PROVIDER): ?>
                 <?php $active = $active_menu === 'reports' ? 'active' : ''; ?>
-                <a href="<?= site_url('reports') ?>"
-                   class="backend-sidebar-link <?= $active ?>"
-                   data-tippy-content="<?= lang('revenue_report_hint') ?>">
-                    <i class="fas fa-chart-line backend-sidebar-icon"></i>
-                    <span><?= lang('reports') ?></span>
-                </a>
+                <div class="backend-sidebar-dropdown <?= $active ?>">
+                    <a class="backend-sidebar-link dropdown-toggle" href="#"
+                       data-bs-toggle="collapse" data-bs-target="#sidebar-reports-submenu-mobile"
+                       aria-expanded="<?= $active ? 'true' : 'false' ?>">
+                        <i class="fas fa-chart-line backend-sidebar-icon"></i>
+                        <span><?= lang('reports') ?></span>
+                        <i class="fas fa-chevron-down backend-sidebar-caret ms-auto"></i>
+                    </a>
+                    <div class="collapse backend-sidebar-submenu <?= $active ? 'show' : '' ?>" id="sidebar-reports-submenu-mobile">
+                        <?php if (session('role_slug') === DB_SLUG_ADMIN): ?>
+                            <a class="backend-sidebar-sublink" href="<?= site_url('reports') ?>">
+                                <?= lang('activity_report') ?>
+                            </a>
+                        <?php endif; ?>
+                        <a class="backend-sidebar-sublink" href="<?= site_url('reports/by_employee') ?>">
+                            <?= lang('employee_report') ?>
+                        </a>
+                    </div>
+                </div>
             <?php endif; ?>
 
             <?php if (can('view', PRIV_SERVICES)): ?>
