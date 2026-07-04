@@ -1,0 +1,70 @@
+name: Test Restore from R2
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_file:
+        description: 'Specific R2 backup key to restore (leave empty for latest)'
+        required: false
+        default: ''
+
+env:
+  MYSQL_PUBLIC_URL: ${{ secrets.MYSQL_PUBLIC_URL }}
+  R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+  R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+  R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+  R2_BUCKET: ${{ secrets.R2_BUCKET }}
+
+jobs:
+  restore-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq mysql-client unzip curl
+          # Install AWS CLI v2 (R2-compatible)
+          curl -sSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
+          unzip -q awscliv2.zip
+          sudo ./aws/install --update
+          rm -rf aws awscliv2.zip
+          aws --version
+
+      - name: Build restore URL for test database
+        id: restore_url
+        run: |
+          python3 - <<'PY'
+          import os
+          import urllib.parse
+
+          url = os.environ['MYSQL_PUBLIC_URL']
+          parsed = urllib.parse.urlparse(url)
+
+          db = urllib.parse.unquote(parsed.path.lstrip('/').split('?')[0])
+          test_db = db + '_restore_test'
+
+          test_url = urllib.parse.urlunparse(parsed._replace(path='/' + test_db))
+
+          if parsed.password:
+              print(f'::add-mask::{urllib.parse.unquote(parsed.password)}')
+
+          output = os.environ['GITHUB_OUTPUT']
+          with open(output, 'a') as f:
+              f.write(f'url={test_url}\n')
+
+          print(f'Target test database: {test_db}')
+          PY
+
+      - name: Run restore test
+        env:
+          RESTORE_MYSQL_URL: ${{ steps.restore_url.outputs.url }}
+          BACKUP_FILE: ${{ github.event.inputs.backup_file }}
+        run: ./scripts/restore-db.sh
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "::error::Restore test failed. Check the logs above."

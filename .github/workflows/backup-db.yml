@@ -1,0 +1,121 @@
+name: Daily MySQL Backup to Cloudflare R2
+
+on:
+  schedule:
+    # Run every day at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  MYSQL_PUBLIC_URL: ${{ secrets.MYSQL_PUBLIC_URL }}
+  R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+  R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+  R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+  R2_BUCKET: ${{ secrets.R2_BUCKET }}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq mysql-client unzip curl
+          pip install --quiet boto3 python-dateutil
+          # Install AWS CLI v2 (R2-compatible)
+          curl -sSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
+          unzip -q awscliv2.zip
+          sudo ./aws/install --update
+          rm -rf aws awscliv2.zip
+          aws --version
+
+      - name: Parse MySQL public URL
+        id: mysql
+        run: |
+          python3 - <<'PY'
+          import os
+          import urllib.parse
+
+          url = os.environ['MYSQL_PUBLIC_URL']
+          parsed = urllib.parse.urlparse(url)
+
+          if parsed.scheme not in ('mysql', 'mysql2'):
+              raise ValueError(f'Unsupported MySQL URL scheme: {parsed.scheme}')
+
+          host = parsed.hostname or 'localhost'
+          port = parsed.port or 3306
+          user = urllib.parse.unquote(parsed.username or '')
+          password = urllib.parse.unquote(parsed.password or '')
+          database = urllib.parse.unquote(parsed.path.lstrip('/').split('?')[0])
+
+          if not all([host, user, password, database]):
+              raise ValueError('MySQL URL is missing required components')
+
+          # Mask the password in logs
+          print(f'::add-mask::{password}')
+
+          output = os.environ['GITHUB_OUTPUT']
+          with open(output, 'a') as f:
+              f.write(f'host={host}\n')
+              f.write(f'port={port}\n')
+              f.write(f'user={user}\n')
+              f.write(f'password={password}\n')
+              f.write(f'database={database}\n')
+          PY
+
+      - name: Create compressed MySQL dump
+        env:
+          DB_HOST: ${{ steps.mysql.outputs.host }}
+          DB_PORT: ${{ steps.mysql.outputs.port }}
+          DB_USER: ${{ steps.mysql.outputs.user }}
+          DB_PASSWORD: ${{ steps.mysql.outputs.password }}
+          DB_NAME: ${{ steps.mysql.outputs.database }}
+        run: |
+          TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
+          FILENAME="bookings-backup-${TIMESTAMP}.sql.gz"
+          echo "filename=$FILENAME" >> "$GITHUB_ENV"
+
+          mysqldump \
+            --host="$DB_HOST" \
+            --port="$DB_PORT" \
+            --user="$DB_USER" \
+            --password="$DB_PASSWORD" \
+            --ssl-mode=REQUIRED \
+            --single-transaction \
+            --routines \
+            --triggers \
+            --no-tablespaces \
+            --set-gtid-purged=OFF \
+            "$DB_NAME" | gzip > "$FILENAME"
+
+          SIZE=$(stat -c %s "$FILENAME")
+          echo "Backup created: $FILENAME ($SIZE bytes)"
+
+          if [ "$SIZE" -lt 1024 ]; then
+            echo "ERROR: Backup is empty or too small. Aborting upload."
+            exit 1
+          fi
+
+      - name: Configure AWS CLI for Cloudflare R2
+        run: |
+          aws configure set aws_access_key_id "$R2_ACCESS_KEY_ID"
+          aws configure set aws_secret_access_key "$R2_SECRET_ACCESS_KEY"
+          aws configure set default.region auto
+          aws configure set default.s3.signature_version s3v4
+          aws configure set default.output json
+
+      - name: Upload backup to R2
+        run: |
+          aws s3 cp "$FILENAME" "s3://$R2_BUCKET/$FILENAME" --endpoint-url "$R2_ENDPOINT"
+          echo "Uploaded s3://$R2_BUCKET/$FILENAME"
+
+      - name: Apply retention policy
+        run: python3 .github/scripts/prune-r2-backups.py
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Backup workflow failed. Check the logs above."
