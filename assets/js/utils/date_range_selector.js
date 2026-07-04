@@ -29,6 +29,8 @@ App.Utils.DateRangeSelector = (function () {
     function init($container, onChange) {
         onChange = onChange || function () {};
 
+        const $toggle = $container.find('.date-range-toggle');
+        const $label = $container.find('.date-range-label');
         const $startInput = $container.find('.date-range-start');
         const $endInput = $container.find('.date-range-end');
         const $form = $container.find('.date-range-form');
@@ -69,6 +71,29 @@ App.Utils.DateRangeSelector = (function () {
         function setActivePreset($button) {
             $presetButtons.removeClass('active');
             $button.addClass('active');
+        }
+
+        /**
+         * Update the toggle label with the selected range.
+         *
+         * @param {string} startDate
+         * @param {string} endDate
+         * @param {string|null} label
+         */
+        function updateLabel(startDate, endDate, label) {
+            const text = label || formatDateRange(startDate, endDate);
+            $label.text(text);
+        }
+
+        /**
+         * Close the dropdown drawer.
+         */
+        function closeDropdown() {
+            const dropdown = bootstrap.Dropdown.getInstance($toggle[0]);
+
+            if (dropdown) {
+                dropdown.hide();
+            }
         }
 
         /**
@@ -131,8 +156,11 @@ App.Utils.DateRangeSelector = (function () {
             $endInput[0]._flatpickr.setDate(endDate);
             isApplyingRange = false;
 
+            updateLabel(startDate, endDate, label);
+
             if (triggerCallback) {
                 onChange(startDate, endDate, label);
+                closeDropdown();
             }
         }
 
@@ -164,7 +192,10 @@ App.Utils.DateRangeSelector = (function () {
             const endDate = $endInput.val();
 
             if (startDate && endDate) {
-                onChange(startDate, endDate, formatDateRange(startDate, endDate));
+                const label = formatDateRange(startDate, endDate);
+                updateLabel(startDate, endDate, label);
+                onChange(startDate, endDate, label);
+                closeDropdown();
             }
         });
 

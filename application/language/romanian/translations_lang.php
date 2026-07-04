@@ -67,6 +67,7 @@ $lang['employee_report_hint'] = 'Vizualizează încasările per angajat.';
 $lang['select_employee'] = 'Selectează angajat';
 $lang['select_employee_first'] = 'Selectează un angajat pentru a vedea raportul.';
 $lang['select_range_first'] = 'Selectează o perioadă pentru a vedea încasările.';
+$lang['select_period'] = 'Selectează perioada';
 $lang['payment_type'] = 'Tip plată';
 $lang['select_all'] = 'Selectează-le pe toate';
 $lang['group_by'] = 'Grupaj';

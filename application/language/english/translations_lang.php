@@ -67,6 +67,7 @@ $lang['employee_report_hint'] = 'View revenue per employee.';
 $lang['select_employee'] = 'Select employee';
 $lang['select_employee_first'] = 'Select an employee to view the report.';
 $lang['select_range_first'] = 'Select a period to view the revenue.';
+$lang['select_period'] = 'Select period';
 $lang['payment_type'] = 'Payment type';
 $lang['select_all'] = 'Select all';
 $lang['group_by'] = 'Group by';
