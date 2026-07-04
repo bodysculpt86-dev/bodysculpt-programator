@@ -76,7 +76,7 @@ jobs:
         run: |
           TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
           FILENAME="bookings-backup-${TIMESTAMP}.sql.gz"
-          echo "filename=$FILENAME" >> "$GITHUB_ENV"
+          echo "FILENAME=$FILENAME" >> "$GITHUB_ENV"
 
           mysqldump \
             --host="$DB_HOST" \
