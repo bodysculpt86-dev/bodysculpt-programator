@@ -28,6 +28,7 @@ class Reports extends EA_Controller
         parent::__construct();
 
         $this->load->model('appointments_model');
+        $this->load->model('providers_model');
 
         $this->load->library('accounts');
     }
@@ -90,6 +91,107 @@ class Reports extends EA_Controller
             json_response([
                 'daily' => $this->appointments_model->get_daily_revenue($start_date, $end_date),
                 'monthly' => $this->appointments_model->get_monthly_revenue($start_date, $end_date),
+            ]);
+        } catch (Throwable $e) {
+            json_exception($e);
+        }
+    }
+
+    /**
+     * Render the per-employee revenue report page.
+     */
+    public function by_employee(): void
+    {
+        method('get');
+
+        session(['dest_url' => site_url('reports/by_employee')]);
+
+        $user_id = session('user_id');
+        $role_slug = session('role_slug');
+
+        // Only admins and providers may access this report.
+        if ($role_slug !== DB_SLUG_ADMIN && $role_slug !== DB_SLUG_PROVIDER) {
+            if ($user_id) {
+                abort(403, 'Forbidden');
+            }
+
+            redirect('login');
+
+            return;
+        }
+
+        $is_admin = $role_slug === DB_SLUG_ADMIN;
+
+        // The provider list is only needed for the admin dropdown.
+        $providers = $is_admin ? $this->providers_model->get_available_providers() : [];
+
+        script_vars([
+            'date_format' => setting('date_format'),
+            'time_format' => setting('time_format'),
+            'first_weekday' => setting('first_weekday'),
+            'currency' => setting('currency'),
+            'is_admin' => $is_admin,
+        ]);
+
+        html_vars([
+            'page_title' => lang('employee_report'),
+            'active_menu' => 'reports',
+            'user_display_name' => $this->accounts->get_user_display_name($user_id),
+            'providers' => $providers,
+            'is_admin' => $is_admin,
+        ]);
+
+        $this->load->view('pages/reports_by_employee');
+    }
+
+    /**
+     * Return daily and monthly revenue for the requested employee and date range.
+     */
+    public function get_employee_revenue(): void
+    {
+        try {
+            method('post');
+
+            $role_slug = session('role_slug');
+            $user_id = session('user_id');
+
+            // Only admins and providers may access this report.
+            if ($role_slug !== DB_SLUG_ADMIN && $role_slug !== DB_SLUG_PROVIDER) {
+                throw new RuntimeException('You do not have the required permissions for this task.');
+            }
+
+            check('start_date', 'date');
+            check('end_date', 'date');
+
+            $start_date = request('start_date');
+            $end_date = request('end_date');
+
+            if ($role_slug === DB_SLUG_ADMIN) {
+                // Admins may request any provider, but we verify it is a real provider.
+                $requested = (int) request('employee_id');
+
+                if ($requested <= 0) {
+                    throw new InvalidArgumentException('Invalid employee.');
+                }
+
+                $valid_ids = array_column(
+                    $this->providers_model->get_available_providers(),
+                    'id',
+                );
+
+                if (!in_array($requested, array_map('intval', $valid_ids), true)) {
+                    throw new InvalidArgumentException('Invalid employee.');
+                }
+
+                $provider_id = $requested;
+            } else {
+                // Providers are strictly locked to their own user ID, ignoring any request value.
+                $provider_id = (int) $user_id;
+            }
+
+            json_response([
+                'daily' => $this->appointments_model->get_daily_revenue($start_date, $end_date, $provider_id),
+                'monthly' => $this->appointments_model->get_monthly_revenue($start_date, $end_date, $provider_id),
             ]);
         } catch (Throwable $e) {
             json_exception($e);

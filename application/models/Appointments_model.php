@@ -850,7 +850,7 @@ class Appointments_model extends EA_Model
      *
      * @return array List of daily revenue entries.
      */
-    public function get_daily_revenue(string $start_date, string $end_date): array
+    public function get_daily_revenue(string $start_date, string $end_date, ?int $provider_id = null): array
     {
         $closing_statuses = json_decode(setting('appointment_closing_statuses'), true) ?? [];
 
@@ -860,10 +860,16 @@ class Appointments_model extends EA_Model
             return [];
         }
 
-        $rows = $this->db
+        $this->db
             ->select("DATE(start_datetime) as date, status, SUM(price) as total", false)
             ->from('appointments')
-            ->where('is_unavailability', 0)
+            ->where('is_unavailability', 0);
+
+        if ($provider_id !== null) {
+            $this->db->where('id_users_provider', $provider_id);
+        }
+
+        $rows = $this->db
             ->where_in('status', $revenue_statuses)
             ->where('start_datetime >=', $start_date . ' 00:00:00')
             ->where('start_datetime <=', $end_date . ' 23:59:59')
@@ -905,7 +911,7 @@ class Appointments_model extends EA_Model
      *
      * @return array List of monthly revenue entries.
      */
-    public function get_monthly_revenue(string $start_date, string $end_date): array
+    public function get_monthly_revenue(string $start_date, string $end_date, ?int $provider_id = null): array
     {
         $closing_statuses = json_decode(setting('appointment_closing_statuses'), true) ?? [];
 
@@ -915,10 +921,16 @@ class Appointments_model extends EA_Model
             return [];
             }
 
-        $rows = $this->db
+        $this->db
             ->select("DATE_FORMAT(start_datetime, '%Y-%m') as month, status, SUM(price) as total", false)
             ->from('appointments')
-            ->where('is_unavailability', 0)
+            ->where('is_unavailability', 0);
+
+        if ($provider_id !== null) {
+            $this->db->where('id_users_provider', $provider_id);
+        }
+
+        $rows = $this->db
             ->where_in('status', $revenue_statuses)
             ->where('start_datetime >=', $start_date . ' 00:00:00')
             ->where('start_datetime <=', $end_date . ' 23:59:59')
