@@ -12,7 +12,7 @@
 /**
  * Per-employee revenue report page.
  *
- * Fetches daily and monthly revenue for a selected employee and date range.
+ * Fetches daily revenue for a selected employee and date range.
  */
 App.Pages.ReportsByEmployee = (function () {
     const $page = $('#reports-by-employee-page');
@@ -21,13 +21,10 @@ App.Pages.ReportsByEmployee = (function () {
     const $emptyHint = $('#reports-empty-hint');
     const $emptyHintText = $('#reports-empty-hint-text');
     const $dailySection = $('#daily-revenue-section');
+    const $dailyTitle = $('#daily-revenue-title');
     const $dailyBody = $('#daily-revenue-body');
     const $dailyFoot = $('#daily-revenue-foot');
     const $dailyTotal = $('#daily-revenue-total');
-    const $monthlySection = $('#monthly-revenue-section');
-    const $monthlyBody = $('#monthly-revenue-body');
-    const $monthlyFoot = $('#monthly-revenue-foot');
-    const $monthlyTotal = $('#monthly-revenue-total');
 
     const moment = window.moment;
     const currency = vars('currency') || '';
@@ -35,14 +32,16 @@ App.Pages.ReportsByEmployee = (function () {
 
     let currentStartDate = '';
     let currentEndDate = '';
+    let currentLabel = '';
 
     /**
      * Initialize the page.
      */
     function init() {
-        App.Utils.DateRangeSelector.init($dateRangeSelector, (startDate, endDate) => {
+        App.Utils.DateRangeSelector.init($dateRangeSelector, (startDate, endDate, label) => {
             currentStartDate = startDate;
             currentEndDate = endDate;
+            currentLabel = label;
             loadReport();
         });
 
@@ -82,10 +81,10 @@ App.Pages.ReportsByEmployee = (function () {
             .done((response) => {
                 $emptyHint.addClass('d-none');
                 $dailySection.removeClass('d-none');
-                $monthlySection.removeClass('d-none');
+
+                $dailyTitle.text(currentLabel || lang('daily'));
 
                 renderDaily(response.daily || []);
-                renderMonthly(response.monthly || []);
             })
             .fail(() => {
                 App.Utils.Message.show('An error occurred while fetching the report.');
@@ -93,7 +92,7 @@ App.Pages.ReportsByEmployee = (function () {
     }
 
     /**
-     * Show the placeholder hint and hide the tables.
+     * Show the placeholder hint and hide the table.
      *
      * @param {string} translationKey
      */
@@ -101,7 +100,6 @@ App.Pages.ReportsByEmployee = (function () {
         $emptyHintText.text(lang(translationKey));
         $emptyHint.removeClass('d-none');
         $dailySection.addClass('d-none');
-        $monthlySection.addClass('d-none');
     }
 
     /**
@@ -142,43 +140,6 @@ App.Pages.ReportsByEmployee = (function () {
     }
 
     /**
-     * Render the monthly revenue table.
-     *
-     * @param {Array} rows
-     */
-    function renderMonthly(rows) {
-        $monthlyBody.empty();
-
-        if (!rows.length) {
-            $monthlyBody.append(`
-                <tr>
-                    <td colspan="2" class="text-muted text-center">
-                        ${lang('no_records_found')}
-                    </td>
-                </tr>
-            `);
-            $monthlyFoot.addClass('d-none');
-            return;
-        }
-
-        let total = 0;
-
-        rows.forEach((row) => {
-            total += Number(row.total);
-
-            $monthlyBody.append(`
-                <tr>
-                    <td>${formatMonth(row.month)}</td>
-                    <td class="text-end">${formatAmount(row.total)}</td>
-                </tr>
-            `);
-        });
-
-        $monthlyTotal.text(formatAmount(total));
-        $monthlyFoot.removeClass('d-none');
-    }
-
-    /**
      * Format a date value for display.
      *
      * @param {string} date
@@ -188,18 +149,6 @@ App.Pages.ReportsByEmployee = (function () {
     function formatDate(date) {
         const value = moment(date);
         return value.isValid() ? value.format('LL') : date;
-    }
-
-    /**
-     * Format a month value for display.
-     *
-     * @param {string} month
-     *
-     * @return {string}
-     */
-    function formatMonth(month) {
-        const value = moment(month, 'YYYY-MM');
-        return value.isValid() ? value.format('MMMM YYYY') : month;
     }
 
     /**

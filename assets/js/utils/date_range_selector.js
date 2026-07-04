@@ -13,8 +13,8 @@
  * Reusable date range selector.
  *
  * Usage:
- *     App.Utils.DateRangeSelector.init($('.date-range-selector'), function (start, end) {
- *         console.log(start, end);
+ *     App.Utils.DateRangeSelector.init($('.date-range-selector'), function (start, end, label) {
+ *         console.log(start, end, label);
  *     });
  */
 App.Utils.DateRangeSelector = (function () {
@@ -24,7 +24,7 @@ App.Utils.DateRangeSelector = (function () {
      * Initialize a date range selector inside the given container.
      *
      * @param {jQuery} $container
-     * @param {Function} onChange Callback(startDate, endDate) with YYYY-MM-DD strings.
+     * @param {Function} onChange Callback(startDate, endDate, label) with YYYY-MM-DD strings.
      */
     function init($container, onChange) {
         onChange = onChange || function () {};
@@ -76,8 +76,9 @@ App.Utils.DateRangeSelector = (function () {
          *
          * @param {string} range
          * @param {boolean} triggerCallback Whether to invoke the onChange callback.
+         * @param {string|null} label Optional label to pass to the callback.
          */
-        function applyRange(range, triggerCallback = true) {
+        function applyRange(range, triggerCallback = true, label = null) {
             const today = moment();
             let start = today.clone();
             let end = today.clone();
@@ -131,13 +132,26 @@ App.Utils.DateRangeSelector = (function () {
             isApplyingRange = false;
 
             if (triggerCallback) {
-                onChange(startDate, endDate);
+                onChange(startDate, endDate, label);
             }
+        }
+
+        /**
+         * Format a date range for display.
+         *
+         * @param {string} startDate
+         * @param {string} endDate
+         *
+         * @return {string}
+         */
+        function formatDateRange(startDate, endDate) {
+            return moment(startDate).format('LL') + ' – ' + moment(endDate).format('LL');
         }
 
         $presetButtons.on('click', function () {
             const $button = $(this);
-            applyRange($button.data('range'), true);
+            const label = $button.text().trim();
+            applyRange($button.data('range'), true, label);
             setActivePreset($button);
         });
 
@@ -150,7 +164,7 @@ App.Utils.DateRangeSelector = (function () {
             const endDate = $endInput.val();
 
             if (startDate && endDate) {
-                onChange(startDate, endDate);
+                onChange(startDate, endDate, formatDateRange(startDate, endDate));
             }
         });
 
