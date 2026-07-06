@@ -39,6 +39,7 @@ class Console extends EA_Controller
         $this->load->library('instance');
         $this->load->library('cleanup');
         $this->load->library('sms_smso');
+        $this->load->library('whatsapp_flaxxa');
 
         $this->load->model('admins_model');
         $this->load->model('appointments_model');
@@ -191,11 +192,11 @@ class Console extends EA_Controller
     }
 
     /**
-     * Send SMS reminders for appointments that are ~24 hours away.
+     * Send SMS and WhatsApp reminders for appointments that are ~24 hours away.
      *
      * Use this method in a cronjob to automatically remind customers about upcoming
-     * appointments via SMSO.ro. Runs hourly on Railway; selects appointments between
-     * 23 and 25 hours from now that have not been reminded yet.
+     * appointments via SMSO.ro and Flaxxa WAPI. Runs hourly on Railway; selects appointments
+     * between 23 and 25 hours from now that have not been reminded yet.
      *
      * Usage:
      *
@@ -240,6 +241,20 @@ class Console extends EA_Controller
             } catch (Throwable $e) {
                 log_message('error', '[SMSO] Reminder exception for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
                 $this->markReminderAttempted($appointment['id'], $e->getMessage());
+            }
+
+            // Send WhatsApp reminder in parallel (failure isolated, does not affect SMS state).
+            $service = [];
+            try {
+                $service = $this->services_model->find($appointment['id_services']);
+            } catch (Throwable $e) {
+                log_message('error', '[wa-flaxxa] Could not load service for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
+            }
+
+            try {
+                $this->whatsapp_flaxxa->send_reminder($appointment, $customer, $service);
+            } catch (Throwable $e) {
+                log_message('error', '[wa-flaxxa] Reminder exception for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
             }
         }
 

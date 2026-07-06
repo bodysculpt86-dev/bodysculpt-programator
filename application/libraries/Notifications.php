@@ -42,6 +42,7 @@ class Notifications
         $this->CI->load->library('ics_file');
         $this->CI->load->library('timezones');
         $this->CI->load->library('sms_smso');
+        $this->CI->load->library('whatsapp_flaxxa');
     }
 
     /**
@@ -106,6 +107,13 @@ class Notifications
                     $this->CI->sms_smso->send_confirmation($appointment, $customer, $service);
                 } catch (Throwable $e) {
                     $this->log_exception($e, 'appointment-saved sms to customer', $appointment['id'] ?? null);
+                }
+
+                // Send confirmation WhatsApp for new appointments only.
+                try {
+                    $this->CI->whatsapp_flaxxa->send_confirmation($appointment, $customer, $service);
+                } catch (Throwable $e) {
+                    $this->log_exception($e, 'appointment-saved whatsapp to customer', $appointment['id'] ?? null);
                 }
             }
 
