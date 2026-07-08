@@ -67,6 +67,7 @@ const PRIV_DELETE = 8;
 const PRIV_APPOINTMENTS = 'appointments';
 const PRIV_CUSTOMERS = 'customers';
 const PRIV_SERVICES = 'services';
+const PRIV_PACKAGES = 'packages';
 const PRIV_USERS = 'users';
 const PRIV_SYSTEM_SETTINGS = 'system_settings';
 const PRIV_USER_SETTINGS = 'user_settings';

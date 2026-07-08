@@ -99,6 +99,26 @@
             </div>
         <?php endif; ?>
 
+        <?php if (can('view', PRIV_PACKAGES)): ?>
+            <?php $active = $active_menu == PRIV_PACKAGES ? 'active' : ''; ?>
+            <div class="backend-sidebar-dropdown dropend <?= $active ?>">
+                <a class="backend-sidebar-link dropdown-toggle" href="#"
+                   data-bs-toggle="dropdown" aria-expanded="false"
+                   data-tippy-content="<?= lang('manage_packages_hint') ?>">
+                    <i class="fas fa-box-open backend-sidebar-icon"></i>
+                    <span><?= lang('packages') ?></span>
+                    <i class="fas fa-chevron-right backend-sidebar-caret ms-auto"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark backend-sidebar-dropdown-menu">
+                    <li>
+                        <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('packages') ?>">
+                            <?= lang('packages') ?>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        <?php endif; ?>
+
         <?php if (can('view', PRIV_USERS)): ?>
             <?php $active = $active_menu == PRIV_USERS ? 'active' : ''; ?>
             <div class="backend-sidebar-dropdown dropend <?= $active ?>">
@@ -266,6 +286,24 @@
                         </a>
                         <a class="backend-sidebar-sublink" href="<?= site_url('service_categories') ?>">
                             <?= lang('categories') ?>
+                        </a>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if (can('view', PRIV_PACKAGES)): ?>
+                <?php $active = $active_menu == PRIV_PACKAGES ? 'active' : ''; ?>
+                <div class="backend-sidebar-dropdown <?= $active ?>">
+                    <a class="backend-sidebar-link dropdown-toggle" href="#"
+                       data-bs-toggle="collapse" data-bs-target="#sidebar-packages-submenu-mobile"
+                       aria-expanded="<?= $active ? 'true' : 'false' ?>">
+                        <i class="fas fa-box-open backend-sidebar-icon"></i>
+                        <span><?= lang('packages') ?></span>
+                        <i class="fas fa-chevron-down backend-sidebar-caret ms-auto"></i>
+                    </a>
+                    <div class="collapse backend-sidebar-submenu <?= $active ? 'show' : '' ?>" id="sidebar-packages-submenu-mobile">
+                        <a class="backend-sidebar-sublink" href="<?= site_url('packages') ?>">
+                            <?= lang('packages') ?>
                         </a>
                     </div>
                 </div>
