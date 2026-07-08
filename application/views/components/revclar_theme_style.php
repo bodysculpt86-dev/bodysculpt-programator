@@ -702,6 +702,17 @@
         display: flex;
     }
 
+    /* Desktop: enable synchronized horizontal scroll when many provider columns
+       exceed the viewport. The mobile rule above stays untouched. */
+    @media (min-width: 768px) {
+        #calendar .calendar-view > div {
+            display: flex;
+            flex-wrap: nowrap;
+            width: max-content;
+            min-width: 100%;
+        }
+    }
+
     #calendar .date-column {
         display: flex;
         flex-direction: row;
