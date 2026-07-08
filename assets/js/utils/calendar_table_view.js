@@ -48,6 +48,7 @@ App.Utils.CalendarTableView = (function () {
     let $selectDate;
     let $popoverTarget = null;
     let lastFocusedEventData = null;
+    let isSyncingScrollProxy = false;
 
     // Helper Functions
 
@@ -1479,6 +1480,101 @@ App.Utils.CalendarTableView = (function () {
                 fullCalendar.updateSize();
             }
         });
+
+        updateScrollProxy();
+    }
+
+    /**
+     * Horizontal scroll proxy for desktop table view.
+     *
+     * Adds a sticky horizontal scrollbar at the bottom of the viewport that
+     * mirrors the native horizontal scroll of .calendar-view, so users do not
+     * have to scroll to the bottom of a tall calendar to reach it.
+     *
+     * The proxy is desktop-only, recreated/updated on every render, and uses a
+     * synchronization flag to prevent feedback loops.
+     */
+    function isDesktopViewport() {
+        return window.matchMedia('(min-width: 768px)').matches;
+    }
+
+    function destroyScrollProxy() {
+        $('#calendar > .calendar-view-scroll-proxy').remove();
+        isSyncingScrollProxy = false;
+    }
+
+    function updateScrollProxy() {
+        if (!isDesktopViewport()) {
+            destroyScrollProxy();
+            return;
+        }
+
+        const $calendarView = $('#calendar .calendar-view');
+        const $calendarViewDiv = $calendarView.children('div').first();
+
+        if (!$calendarView.length || !$calendarViewDiv.length) {
+            destroyScrollProxy();
+            return;
+        }
+
+        const calendarViewEl = $calendarView[0];
+        const scrollWidth = $calendarViewDiv[0].scrollWidth;
+        const clientWidth = calendarViewEl.clientWidth;
+
+        let $proxy = $('#calendar > .calendar-view-scroll-proxy');
+        let $proxyContent = $proxy.find('.calendar-view-scroll-proxy-content');
+
+        if (!$proxy.length) {
+            $proxy = $('<div/>', {
+                class: 'calendar-view-scroll-proxy',
+            }).appendTo('#calendar');
+
+            $proxyContent = $('<div/>', {
+                class: 'calendar-view-scroll-proxy-content',
+            }).appendTo($proxy);
+
+            $proxy.on('scroll', () => {
+                if (isSyncingScrollProxy) {
+                    return;
+                }
+                const $currentCalendarView = $('#calendar .calendar-view');
+                const sourceLeft = $proxy.scrollLeft();
+                const targetLeft = $currentCalendarView.scrollLeft();
+                if (Math.abs(targetLeft - sourceLeft) <= 0.5) {
+                    return;
+                }
+                isSyncingScrollProxy = true;
+                $currentCalendarView.scrollLeft(sourceLeft);
+                isSyncingScrollProxy = false;
+            });
+        }
+
+        // Re-attach the calendar view scroll listener every time, because
+        // createView() removes and recreates .calendar-view from the DOM.
+        $calendarView.off('scroll.calendarTableViewProxy');
+        $calendarView.on('scroll.calendarTableViewProxy', () => {
+            if (isSyncingScrollProxy) {
+                return;
+            }
+            const $currentProxy = $('#calendar > .calendar-view-scroll-proxy');
+            const sourceLeft = $calendarView.scrollLeft();
+            const targetLeft = $currentProxy.scrollLeft();
+            if (Math.abs(targetLeft - sourceLeft) <= 0.5) {
+                return;
+            }
+            isSyncingScrollProxy = true;
+            $currentProxy.scrollLeft(sourceLeft);
+            isSyncingScrollProxy = false;
+        });
+
+        $proxyContent.css('width', scrollWidth + 'px');
+
+        // Show the proxy only when the calendar view actually overflows horizontally.
+        if (scrollWidth <= clientWidth) {
+            $proxy.hide();
+        } else {
+            $proxy.show();
+        }
     }
 
     // Event Listeners

@@ -713,6 +713,35 @@
         }
     }
 
+    /* -------------------------------------------------------------------------
+     * Sticky horizontal scroll proxy for desktop table view.
+     * Mirrors .calendar-view horizontal scroll so the scrollbar is reachable
+     * without scrolling to the bottom of a tall calendar.
+     * ------------------------------------------------------------------------- */
+    .calendar-view-scroll-proxy {
+        display: none;
+    }
+
+    @media (min-width: 768px) {
+        .calendar-view-scroll-proxy {
+            display: block;
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            height: auto;
+            min-height: 12px;
+            background: transparent;
+            z-index: 100;
+        }
+
+        .calendar-view-scroll-proxy-content {
+            height: 1px;
+        }
+    }
+
     #calendar .date-column {
         display: flex;
         flex-direction: row;
