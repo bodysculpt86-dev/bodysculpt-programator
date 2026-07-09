@@ -167,7 +167,7 @@ App.Components.AppointmentsModal = (function () {
      *
      * @return {Object} jQuery promise
      */
-    function loadCustomerPackages(customerId) {
+    function loadCustomerPackages(customerId, selectedValue = null) {
         $selectCustomerPackage.empty().append(new Option(lang('please_select'), ''));
         customerPackages = [];
 
@@ -175,10 +175,10 @@ App.Components.AppointmentsModal = (function () {
             return $.Deferred().resolve().promise();
         }
 
-        return App.Http.CustomerPackages.searchByCustomer(customerId, 1)
+        return App.Http.CustomerPackages.searchByCustomer(customerId, null)
             .done((response) => {
                 customerPackages = response || [];
-                renderCustomerPackageOptions();
+                renderCustomerPackageOptions(selectedValue);
             })
             .fail(() => {
                 customerPackages = [];
@@ -187,22 +187,42 @@ App.Components.AppointmentsModal = (function () {
 
     /**
      * Render the customer package selector options.
+     *
+     * @param {String|null} selectedValue The currently selected "packageId|serviceId" value (used to keep
+     *                                     consumed items visible while editing an appointment).
      */
-    function renderCustomerPackageOptions() {
+    function renderCustomerPackageOptions(selectedValue = null) {
+        const [selectedPackageId, selectedServiceId] = selectedValue
+            ? selectedValue.split('|').map(Number)
+            : [null, null];
+
         $selectCustomerPackage.empty().append(new Option(lang('please_select'), ''));
 
         customerPackages.forEach((customerPackage) => {
-            if (!customerPackage.is_active || !customerPackage.items) {
+            if (!customerPackage.items) {
+                return;
+            }
+
+            const isSelectedPackage = Number(customerPackage.id) === selectedPackageId;
+
+            // Skip inactive packages unless the appointment is already tied to this package.
+            if (!customerPackage.is_active && !isSelectedPackage) {
                 return;
             }
 
             customerPackage.items.forEach((item) => {
-                if (Number(item.quantity_remaining) <= 0) {
+                const value = `${customerPackage.id}|${item.id_services}`;
+                const isSelected =
+                    isSelectedPackage && Number(item.id_services) === selectedServiceId;
+
+                // Show items with remaining quantity, plus the currently selected item even
+                // if it was already consumed (so the editor does not lose the link).
+                if (Number(item.quantity_remaining) <= 0 && !isSelected) {
                     return;
                 }
 
-                const label = `${customerPackage.package_name} - ${item.service_name} (${item.quantity_remaining} ${lang('remaining')})`;
-                const value = `${customerPackage.id}|${item.id_services}`;
+                const remaining = Number(item.quantity_remaining);
+                const label = `${customerPackage.package_name} - ${item.service_name} (${remaining} ${lang('remaining')})`;
 
                 $selectCustomerPackage.append(new Option(label, value));
             });
@@ -227,10 +247,19 @@ App.Components.AppointmentsModal = (function () {
         if ($selectAppointmentType.val() === 'package') {
             $customerPackageWrapper.slideDown('fast');
             $servicePriceWrapper.slideUp('fast');
+            $appointmentPrice.val(0).trigger('input');
+            clearAdditionalServices();
         } else {
             $customerPackageWrapper.slideUp('fast');
             $servicePriceWrapper.slideDown('fast');
             $selectCustomerPackage.val('').trigger('change');
+
+            // Restore the service default price when switching back to a normal service appointment.
+            const service = findService($selectService.val());
+
+            if (service && service.price !== undefined && service.price !== null) {
+                $appointmentPrice.val(service.price).trigger('input');
+            }
         }
     }
 
@@ -677,9 +706,14 @@ App.Components.AppointmentsModal = (function () {
                 App.Components.ColorSelection.setColor($appointmentColor, service.color);
             }
 
-            // Update the appointment price to the selected service's default price.
+            // Update the appointment price to the selected service's default price,
+            // unless this is a customer package appointment where the price must stay 0.
             if (service && service.price !== undefined && service.price !== null) {
-                $appointmentPrice.val(service.price);
+                if ($selectAppointmentType.val() === 'package') {
+                    $appointmentPrice.val(0);
+                } else {
+                    $appointmentPrice.val(service.price);
+                }
             }
 
             updateAppointmentServicesTotal();
@@ -949,9 +983,13 @@ App.Components.AppointmentsModal = (function () {
 
         $selectAppointmentType.val(appointment.id_customer_packages ? 'package' : 'service').trigger('change');
 
-        loadCustomerPackages(appointment.id_users_customer).always(() => {
-            if (appointment.id_customer_packages) {
-                $selectCustomerPackage.val(`${appointment.id_customer_packages}|${appointment.id_services}`);
+        const selectedPackageValue = appointment.id_customer_packages
+            ? `${appointment.id_customer_packages}|${appointment.id_services}`
+            : null;
+
+        loadCustomerPackages(appointment.id_users_customer, selectedPackageValue).always(() => {
+            if (selectedPackageValue) {
+                $selectCustomerPackage.val(selectedPackageValue);
             }
 
             $appointmentsModal.modal('show');

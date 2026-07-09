@@ -71,19 +71,32 @@ class Appointments_model extends EA_Model
             $old_appointment = $this->find((int) $appointment['id']);
         }
 
-        $appointment_id = empty($appointment['id'])
-            ? $this->insert($appointment)
-            : $this->update($appointment);
+        $this->db->trans_start();
 
-        $this->manage_customer_package_usage(
-            $appointment_id,
-            isset($appointment['id_customer_packages']) ? (int) $appointment['id_customer_packages'] : null,
-            (int) $appointment['id_services'],
-            $appointment['status'] ?? null,
-            $old_appointment['id_customer_packages'] ?? null,
-            $old_appointment['id_services'] ?? null,
-            $old_appointment['status'] ?? null,
-        );
+        try {
+            $appointment_id = empty($appointment['id'])
+                ? $this->insert($appointment)
+                : $this->update($appointment);
+
+            $this->manage_customer_package_usage(
+                $appointment_id,
+                isset($appointment['id_customer_packages']) ? (int) $appointment['id_customer_packages'] : null,
+                (int) $appointment['id_services'],
+                $appointment['status'] ?? null,
+                $old_appointment['id_customer_packages'] ?? null,
+                $old_appointment['id_services'] ?? null,
+                $old_appointment['status'] ?? null,
+            );
+
+            $this->db->trans_complete();
+        } catch (Throwable $e) {
+            $this->db->trans_rollback();
+            throw $e;
+        }
+
+        if ($this->db->trans_status() === false) {
+            throw new RuntimeException('The appointment transaction failed.');
+        }
 
         return $appointment_id;
     }
@@ -261,26 +274,41 @@ class Appointments_model extends EA_Model
                     );
                 }
 
-                if (empty($customer_package['is_active'])) {
-                    throw new InvalidArgumentException('The selected customer package is not active.');
+                // If the appointment already consumed this exact package/service, we must allow the update even
+                // when the package is now inactive or depleted (e.g. the user is moving it back to a non-closing
+                // status, which will release the item).
+                $is_existing_usage = false;
+
+                if (!empty($appointment['id'])) {
+                    $old_appointment = $this->find((int) $appointment['id']);
+
+                    $is_existing_usage =
+                        (int) $old_appointment['id_customer_packages'] === (int) $appointment['id_customer_packages']
+                        && (int) $old_appointment['id_services'] === (int) $appointment['id_services'];
                 }
 
-                $has_remaining = false;
-
-                foreach ($customer_package['items'] as $item) {
-                    if (
-                        (int) $item['id_services'] === (int) $appointment['id_services'] &&
-                        (int) $item['quantity_remaining'] > 0
-                    ) {
-                        $has_remaining = true;
-                        break;
+                if (!$is_existing_usage) {
+                    if (empty($customer_package['is_active'])) {
+                        throw new InvalidArgumentException('The selected customer package is not active.');
                     }
-                }
 
-                if (!$has_remaining) {
-                    throw new InvalidArgumentException(
-                        'The selected customer package has no remaining uses for this service.',
-                    );
+                    $has_remaining = false;
+
+                    foreach ($customer_package['items'] as $item) {
+                        if (
+                            (int) $item['id_services'] === (int) $appointment['id_services'] &&
+                            (int) $item['quantity_remaining'] > 0
+                        ) {
+                            $has_remaining = true;
+                            break;
+                        }
+                    }
+
+                    if (!$has_remaining) {
+                        throw new InvalidArgumentException(
+                            'The selected customer package has no remaining uses for this service.',
+                        );
+                    }
                 }
             }
         }
@@ -526,7 +554,35 @@ class Appointments_model extends EA_Model
      */
     public function delete(int $appointment_id): void
     {
-        $this->db->delete('appointments', ['id' => $appointment_id]);
+        $appointment = $this->find($appointment_id);
+
+        $this->db->trans_start();
+
+        try {
+            if (
+                $appointment
+                && !empty($appointment['id_customer_packages'])
+                && !empty($appointment['id_services'])
+                && $this->is_closing_status($appointment['status'])
+            ) {
+                $this->load->model('customer_packages_model');
+                $this->customer_packages_model->release_item(
+                    (int) $appointment['id_customer_packages'],
+                    (int) $appointment['id_services'],
+                );
+            }
+
+            $this->db->delete('appointments', ['id' => $appointment_id]);
+
+            $this->db->trans_complete();
+        } catch (Throwable $e) {
+            $this->db->trans_rollback();
+            throw $e;
+        }
+
+        if ($this->db->trans_status() === false) {
+            throw new RuntimeException('The appointment deletion transaction failed.');
+        }
     }
 
     /**
