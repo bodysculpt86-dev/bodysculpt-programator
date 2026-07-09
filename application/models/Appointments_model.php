@@ -856,6 +856,9 @@ class Appointments_model extends EA_Model
 
         $revenue_statuses = array_values(array_diff($closing_statuses, ['Nu s-a prezentat']));
 
+        // TODO 2C: 'Consum abonament' NU trebuie contat ca venit — banii se încasează la
+        // vânzarea abonamentului, nu la consum. Altfel se dublează veniturile.
+
         if (empty($revenue_statuses)) {
             return [];
         }
