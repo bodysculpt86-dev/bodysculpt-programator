@@ -65,11 +65,95 @@ class Appointments_model extends EA_Model
     {
         $this->validate($appointment);
 
-        if (empty($appointment['id'])) {
-            return $this->insert($appointment);
-        } else {
-            return $this->update($appointment);
+        $old_appointment = null;
+
+        if (!empty($appointment['id'])) {
+            $old_appointment = $this->find((int) $appointment['id']);
         }
+
+        $appointment_id = empty($appointment['id'])
+            ? $this->insert($appointment)
+            : $this->update($appointment);
+
+        $this->manage_customer_package_usage(
+            $appointment_id,
+            isset($appointment['id_customer_packages']) ? (int) $appointment['id_customer_packages'] : null,
+            (int) $appointment['id_services'],
+            $appointment['status'] ?? null,
+            $old_appointment['id_customer_packages'] ?? null,
+            $old_appointment['id_services'] ?? null,
+            $old_appointment['status'] ?? null,
+        );
+
+        return $appointment_id;
+    }
+
+    /**
+     * Adjust customer package remaining quantities when an appointment is linked or unlinked.
+     *
+     * Consumption happens only when the appointment reaches a closing status, otherwise any
+     * previously consumed item is released.
+     *
+     * @param int $appointment_id
+     * @param int|null $new_customer_package_id
+     * @param int $new_service_id
+     * @param string|null $new_status
+     * @param int|null $old_customer_package_id
+     * @param int|null $old_service_id
+     * @param string|null $old_status
+     */
+    private function manage_customer_package_usage(
+        int $appointment_id,
+        ?int $new_customer_package_id,
+        int $new_service_id,
+        ?string $new_status,
+        ?int $old_customer_package_id,
+        ?int $old_service_id,
+        ?string $old_status,
+    ): void {
+        $this->load->model('customer_packages_model');
+
+        $new_should_consume = $new_customer_package_id && $this->is_closing_status($new_status);
+        $old_was_consumed = $old_customer_package_id && $this->is_closing_status($old_status);
+
+        $same_package = $new_customer_package_id === $old_customer_package_id
+            && $new_service_id === $old_service_id;
+
+        if ($same_package && $new_should_consume && $old_was_consumed) {
+            return;
+        }
+
+        if ($old_was_consumed && (!$same_package || !$new_should_consume)) {
+            $this->customer_packages_model->release_item($old_customer_package_id, $old_service_id);
+        }
+
+        if ($new_should_consume && (!$same_package || !$old_was_consumed)) {
+            $consumed = $this->customer_packages_model->consume_item($new_customer_package_id, $new_service_id);
+
+            if (!$consumed) {
+                throw new RuntimeException(
+                    'Could not consume customer package item for appointment ' . $appointment_id,
+                );
+            }
+        }
+    }
+
+    /**
+     * Check whether the given appointment status is a closing/finalization status.
+     *
+     * @param string|null $status
+     *
+     * @return bool
+     */
+    private function is_closing_status(?string $status): bool
+    {
+        if (!$status) {
+            return false;
+        }
+
+        $closing_statuses = json_decode(setting('appointment_closing_statuses') ?? '[]', true) ?? [];
+
+        return in_array($status, $closing_statuses, true);
     }
 
     /**
@@ -163,6 +247,41 @@ class Appointments_model extends EA_Model
 
             if (!$count) {
                 throw new InvalidArgumentException('Appointment service id is invalid.');
+            }
+
+            // Make sure the selected customer package is valid for this appointment.
+            if (!empty($appointment['id_customer_packages'])) {
+                $this->load->model('customer_packages_model');
+
+                $customer_package = $this->customer_packages_model->find((int) $appointment['id_customer_packages']);
+
+                if ((int) $customer_package['id_users_customer'] !== (int) $appointment['id_users_customer']) {
+                    throw new InvalidArgumentException(
+                        'The selected customer package does not belong to the appointment customer.',
+                    );
+                }
+
+                if (empty($customer_package['is_active'])) {
+                    throw new InvalidArgumentException('The selected customer package is not active.');
+                }
+
+                $has_remaining = false;
+
+                foreach ($customer_package['items'] as $item) {
+                    if (
+                        (int) $item['id_services'] === (int) $appointment['id_services'] &&
+                        (int) $item['quantity_remaining'] > 0
+                    ) {
+                        $has_remaining = true;
+                        break;
+                    }
+                }
+
+                if (!$has_remaining) {
+                    throw new InvalidArgumentException(
+                        'The selected customer package has no remaining uses for this service.',
+                    );
+                }
             }
         }
     }

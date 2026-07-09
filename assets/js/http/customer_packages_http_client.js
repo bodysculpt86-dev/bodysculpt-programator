@@ -82,6 +82,26 @@ App.Http.CustomerPackages = (function () {
     }
 
     /**
+     * Search sold customer packages by customer ID.
+     *
+     * @param {Number} customerId
+     * @param {Number|null} isActive
+     *
+     * @return {Object}
+     */
+    function searchByCustomer(customerId, isActive = 1) {
+        const url = App.Utils.Url.siteUrl('customer_packages/search_by_customer');
+
+        const data = {
+            csrf_token: vars('csrf_token'),
+            customer_id: customerId,
+            is_active: isActive,
+        };
+
+        return $.post(url, data);
+    }
+
+    /**
      * Find a customer package.
      *
      * @param {Number} customerPackageId
@@ -123,6 +143,7 @@ App.Http.CustomerPackages = (function () {
         store,
         destroy,
         search,
+        searchByCustomer,
         find,
         update,
     };

@@ -45,6 +45,10 @@ App.Components.AppointmentsModal = (function () {
     const $selectServiceCategory = $('#select-service-category');
     const $selectService = $('#select-service');
     const $selectProvider = $('#select-provider');
+    const $selectAppointmentType = $('#select-appointment-type');
+    const $customerPackageWrapper = $('#customer-package-wrapper');
+    const $selectCustomerPackage = $('#select-customer-package');
+    const $servicePriceWrapper = $('#service-price-wrapper');
     const $appointmentPrice = $('#appointment-price');
     const $additionalServices = $('#additional-services');
     const $addAdditionalService = $('#add-additional-service');
@@ -59,6 +63,8 @@ App.Components.AppointmentsModal = (function () {
     const $customField5 = $('#custom-field-5');
 
     const moment = window.moment;
+
+    let customerPackages = [];
 
     /**
      * Update the displayed total price for all selected services.
@@ -151,9 +157,106 @@ App.Components.AppointmentsModal = (function () {
      * @returns {Object|undefined}
      */
     function findService(serviceId) {
-        return vars('available_services').find(
-            (availableService) => Number(availableService.id) === Number(serviceId),
-        );
+        return vars('available_services').find((availableService) => Number(availableService.id) === Number(serviceId));
+    }
+
+    /**
+     * Load active customer packages for the selected customer.
+     *
+     * @param {Number} customerId
+     *
+     * @return {Object} jQuery promise
+     */
+    function loadCustomerPackages(customerId) {
+        $selectCustomerPackage.empty().append(new Option(lang('please_select'), ''));
+        customerPackages = [];
+
+        if (!customerId) {
+            return $.Deferred().resolve().promise();
+        }
+
+        return App.Http.CustomerPackages.searchByCustomer(customerId, 1)
+            .done((response) => {
+                customerPackages = response || [];
+                renderCustomerPackageOptions();
+            })
+            .fail(() => {
+                customerPackages = [];
+            });
+    }
+
+    /**
+     * Render the customer package selector options.
+     */
+    function renderCustomerPackageOptions() {
+        $selectCustomerPackage.empty().append(new Option(lang('please_select'), ''));
+
+        customerPackages.forEach((customerPackage) => {
+            if (!customerPackage.is_active || !customerPackage.items) {
+                return;
+            }
+
+            customerPackage.items.forEach((item) => {
+                if (Number(item.quantity_remaining) <= 0) {
+                    return;
+                }
+
+                const label = `${customerPackage.package_name} - ${item.service_name} (${item.quantity_remaining} ${lang('remaining')})`;
+                const value = `${customerPackage.id}|${item.id_services}`;
+
+                $selectCustomerPackage.append(new Option(label, value));
+            });
+        });
+    }
+
+    /**
+     * Handle customer selection / change.
+     */
+    function onCustomerSelected() {
+        const customerId = $customerId.val();
+
+        $selectAppointmentType.val('service').trigger('change');
+
+        loadCustomerPackages(customerId);
+    }
+
+    /**
+     * Toggle package selector visibility based on appointment type.
+     */
+    function onAppointmentTypeChange() {
+        if ($selectAppointmentType.val() === 'package') {
+            $customerPackageWrapper.slideDown('fast');
+            $servicePriceWrapper.slideUp('fast');
+        } else {
+            $customerPackageWrapper.slideUp('fast');
+            $servicePriceWrapper.slideDown('fast');
+            $selectCustomerPackage.val('').trigger('change');
+        }
+    }
+
+    /**
+     * Apply the selected customer package to the appointment form.
+     */
+    function onCustomerPackageChange() {
+        const selectedValue = $selectCustomerPackage.val();
+
+        if (!selectedValue) {
+            return;
+        }
+
+        const [packageId, serviceId] = selectedValue.split('|').map(Number);
+
+        const service = findService(serviceId);
+
+        if (!service) {
+            return;
+        }
+
+        const serviceCategoryName = service?.service_category_name || 'uncategorized';
+        $selectServiceCategory.val(serviceCategoryName).trigger('change');
+        $selectService.val(serviceId).trigger('change');
+
+        $appointmentPrice.val(0).trigger('input');
     }
 
     /**
@@ -184,6 +287,11 @@ App.Components.AppointmentsModal = (function () {
             // otherwise fall back to the regular status dropdown.
             const appointmentStatus = $appointmentCloseStatus.val() || $appointmentStatus.val();
 
+            const customerPackageValue =
+                $selectAppointmentType.val() === 'package'
+                    ? ($selectCustomerPackage.val() || '').split('|')[0] || null
+                    : null;
+
             const baseAppointment = {
                 id_users_provider: $selectProvider.val(),
                 location: $appointmentLocation.val(),
@@ -192,6 +300,7 @@ App.Components.AppointmentsModal = (function () {
                 status: appointmentStatus,
                 notes: $appointmentNotes.val(),
                 is_unavailability: Number(false),
+                id_customer_packages: customerPackageValue,
             };
 
             const buildAppointment = (serviceId, price, start, end) => ({
@@ -321,38 +430,34 @@ App.Components.AppointmentsModal = (function () {
                 ]);
             } else {
                 // New appointment - ask whether to notify users
-                App.Utils.Message.show(
-                    lang('new_appointment_title'),
-                    lang('notify_users_on_create_question'),
-                    [
-                        {
-                            text: lang('no'),
-                            click: (event, messageModal) => {
-                                messageModal.hide();
-                                App.Http.Calendar.saveAppointmentWithConflictHandling(
-                                    appointment,
-                                    customer,
-                                    successCallback,
-                                    errorCallback,
-                                    false,
-                                );
-                            },
+                App.Utils.Message.show(lang('new_appointment_title'), lang('notify_users_on_create_question'), [
+                    {
+                        text: lang('no'),
+                        click: (event, messageModal) => {
+                            messageModal.hide();
+                            App.Http.Calendar.saveAppointmentWithConflictHandling(
+                                appointment,
+                                customer,
+                                successCallback,
+                                errorCallback,
+                                false,
+                            );
                         },
-                        {
-                            text: lang('yes'),
-                            click: (event, messageModal) => {
-                                messageModal.hide();
-                                App.Http.Calendar.saveAppointmentWithConflictHandling(
-                                    appointment,
-                                    customer,
-                                    successCallback,
-                                    errorCallback,
-                                    true,
-                                );
-                            },
+                    },
+                    {
+                        text: lang('yes'),
+                        click: (event, messageModal) => {
+                            messageModal.hide();
+                            App.Http.Calendar.saveAppointmentWithConflictHandling(
+                                appointment,
+                                customer,
+                                successCallback,
+                                errorCallback,
+                                true,
+                            );
                         },
-                    ],
-                );
+                    },
+                ]);
             }
         });
 
@@ -422,6 +527,8 @@ App.Components.AppointmentsModal = (function () {
             }
 
             $selectCustomer.trigger('click'); // Hide the list.
+
+            onCustomerSelected();
         });
 
         let filterExistingCustomersTimeout = null;
@@ -546,10 +653,7 @@ App.Components.AppointmentsModal = (function () {
                 const serviceCategoryName = service.service_category_name || '';
                 const isUncategorized = !service.service_category_id;
 
-                if (
-                    serviceCategoryName === categoryName ||
-                    (categoryName === 'uncategorized' && isUncategorized)
-                ) {
+                if (serviceCategoryName === categoryName || (categoryName === 'uncategorized' && isUncategorized)) {
                     $selectService.append(new Option(service.name, service.id));
                 }
             });
@@ -624,6 +728,20 @@ App.Components.AppointmentsModal = (function () {
         });
 
         /**
+         * Event: Appointment Type "Change"
+         */
+        $selectAppointmentType.on('change', () => {
+            onAppointmentTypeChange();
+        });
+
+        /**
+         * Event: Customer Package "Change"
+         */
+        $selectCustomerPackage.on('change', () => {
+            onCustomerPackageChange();
+        });
+
+        /**
          * Event: Add Additional Service Button "Click"
          */
         $addAdditionalService.on('click', () => {
@@ -648,9 +766,7 @@ App.Components.AppointmentsModal = (function () {
                 (availableService) => Number(availableService.id) === Number(serviceId),
             );
 
-            const $price = $(event.currentTarget)
-                .closest('.additional-service-row')
-                .find('.additional-service-price');
+            const $price = $(event.currentTarget).closest('.additional-service-row').find('.additional-service-price');
 
             if (service && service.price !== undefined && service.price !== null) {
                 $price.val(service.price);
@@ -685,6 +801,10 @@ App.Components.AppointmentsModal = (function () {
             $customField3.val('');
             $customField4.val('');
             $customField5.val('');
+
+            $selectAppointmentType.val('service').trigger('change');
+            customerPackages = [];
+            $selectCustomerPackage.empty().append(new Option(lang('please_select'), ''));
         });
     }
 
@@ -769,11 +889,13 @@ App.Components.AppointmentsModal = (function () {
 
         App.Utils.UI.setDateTimePickerValue($startDatetime, startMoment.toDate());
 
-        const endMoment = options.end
-            ? moment(options.end)
-            : startMoment.clone().add(duration, 'minutes');
+        const endMoment = options.end ? moment(options.end) : startMoment.clone().add(duration, 'minutes');
 
         App.Utils.UI.setDateTimePickerValue($endDatetime, endMoment.toDate());
+
+        if ($customerId.val()) {
+            loadCustomerPackages($customerId.val());
+        }
 
         $appointmentsModal.modal('show');
     }
@@ -825,7 +947,15 @@ App.Components.AppointmentsModal = (function () {
         $appointmentNotes.val(appointment.notes);
         App.Components.ColorSelection.setColor($appointmentColor, appointment.color);
 
-        $appointmentsModal.modal('show');
+        $selectAppointmentType.val(appointment.id_customer_packages ? 'package' : 'service').trigger('change');
+
+        loadCustomerPackages(appointment.id_users_customer).always(() => {
+            if (appointment.id_customer_packages) {
+                $selectCustomerPackage.val(`${appointment.id_customer_packages}|${appointment.id_services}`);
+            }
+
+            $appointmentsModal.modal('show');
+        });
     }
 
     /**
@@ -845,6 +975,11 @@ App.Components.AppointmentsModal = (function () {
         const defaultStatusValue = $appointmentStatus.find('option:first').val();
         $appointmentStatus.val(defaultStatusValue);
         $appointmentCloseStatus.val('');
+
+        $selectAppointmentType.val('service');
+        $customerPackageWrapper.hide();
+        $selectCustomerPackage.empty().append(new Option(lang('please_select'), ''));
+        customerPackages = [];
 
         $language.val(vars('default_language'));
 

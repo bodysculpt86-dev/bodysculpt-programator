@@ -337,6 +337,108 @@ class Customer_packages_model extends EA_Model
     }
 
     /**
+     * Search active customer packages by customer ID.
+     *
+     * @param int $customer_id
+     * @param bool|null $is_active
+     *
+     * @return array
+     */
+    public function search_by_customer(int $customer_id, ?bool $is_active = null): array
+    {
+        $this->db
+            ->select('
+                customer_packages.*,
+                users.first_name AS customer_first_name,
+                users.last_name AS customer_last_name,
+                users.email AS customer_email,
+                packages.name AS package_name,
+                packages.price AS package_price,
+                packages.validity_days AS package_validity_days
+            ')
+            ->from('customer_packages')
+            ->join('users', 'users.id = customer_packages.id_users_customer', 'inner')
+            ->join('packages', 'packages.id = customer_packages.id_packages', 'inner')
+            ->where('customer_packages.id_users_customer', $customer_id);
+
+        if ($is_active !== null) {
+            $this->db->where('customer_packages.is_active', $is_active ? 1 : 0);
+        }
+
+        $customer_packages = $this->db->get()->result_array();
+
+        $this->load->model('customer_package_items_model');
+
+        foreach ($customer_packages as &$customer_package) {
+            $this->cast($customer_package);
+
+            $customer_package['items'] = $this->customer_package_items_model->get_items((int) $customer_package['id']);
+            $customer_package['is_active'] = $this->recalculate_status((int) $customer_package['id']);
+        }
+
+        return $customer_packages;
+    }
+
+    /**
+     * Consume one remaining use from a customer package item.
+     *
+     * @param int $customer_package_id
+     * @param int $service_id
+     *
+     * @return bool True if an item was consumed, false otherwise.
+     */
+    public function consume_item(int $customer_package_id, int $service_id): bool
+    {
+        $item = $this->db
+            ->where('id_customer_packages', $customer_package_id)
+            ->where('id_services', $service_id)
+            ->where('quantity_remaining >', 0)
+            ->order_by('id', 'ASC')
+            ->get('customer_package_items')
+            ->row_array();
+
+        if (!$item) {
+            return false;
+        }
+
+        $this->db->where('id', $item['id']);
+        $this->db->update('customer_package_items', [
+            'quantity_remaining' => (int) $item['quantity_remaining'] - 1,
+        ]);
+
+        $this->recalculate_status($customer_package_id);
+
+        return true;
+    }
+
+    /**
+     * Release one consumed use back to a customer package item.
+     *
+     * @param int $customer_package_id
+     * @param int $service_id
+     */
+    public function release_item(int $customer_package_id, int $service_id): void
+    {
+        $item = $this->db
+            ->where('id_customer_packages', $customer_package_id)
+            ->where('id_services', $service_id)
+            ->order_by('id', 'ASC')
+            ->get('customer_package_items')
+            ->row_array();
+
+        if (!$item) {
+            return;
+        }
+
+        $this->db->where('id', $item['id']);
+        $this->db->update('customer_package_items', [
+            'quantity_remaining' => (int) $item['quantity_remaining'] + 1,
+        ]);
+
+        $this->recalculate_status($customer_package_id);
+    }
+
+    /**
      * Recalculate and persist the is_active flag of a customer package.
      *
      * active = (at least one item remaining > 0) AND (expiry IS NULL OR expiry > now)

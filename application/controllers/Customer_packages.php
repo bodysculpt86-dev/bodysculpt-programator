@@ -118,6 +118,33 @@ class Customer_packages extends EA_Controller
     }
 
     /**
+     * Search active customer packages by customer ID.
+     */
+    public function search_by_customer(): void
+    {
+        try {
+            method('post');
+
+            if (cannot('view', PRIV_CUSTOMER_PACKAGES)) {
+                abort(403, 'Forbidden');
+            }
+
+            check('customer_id', 'numeric');
+            check('is_active', 'bool|int|null');
+
+            $customer_id = (int) request('customer_id');
+            $is_active = request('is_active');
+            $is_active = $is_active !== null && $is_active !== '' ? (bool) (int) $is_active : null;
+
+            $customer_packages = $this->customer_packages_model->search_by_customer($customer_id, $is_active);
+
+            json_response($customer_packages);
+        } catch (Throwable $e) {
+            json_exception($e);
+        }
+    }
+
+    /**
      * Sell a package to a customer.
      */
     public function store(): void
