@@ -1,8 +1,10 @@
 -- ----------------------------------------------------------------------------
--- Easy!Appointments Production SQL for Customer Packages (Etapa 2A)
+-- Easy!Appointments Production SQL for Customer Packages (Etapa 2A + 2B)
 -- Run this manually on the Railway MySQL 8 database.
 -- Each statement ends with ';' and can be executed block by block.
 -- ----------------------------------------------------------------------------
+
+-- === ETAPA 2A ===
 
 -- Create customer_packages table
 CREATE TABLE IF NOT EXISTS `ea_customer_packages` (
@@ -86,3 +88,13 @@ UPDATE `ea_roles` SET `customer_packages` = 7 WHERE `slug` = 'secretary';
 UPDATE `ea_roles` SET `customer_packages` = 0 WHERE `slug` = 'provider';
 
 UPDATE `ea_roles` SET `customer_packages` = 0 WHERE `slug` = 'customer';
+
+-- === SUB-BUCATA 1 (Etapa 2B) ===
+
+-- Add id_customer_packages column to appointments table
+ALTER TABLE `ea_appointments` ADD COLUMN `id_customer_packages` INT(11) DEFAULT NULL AFTER `id_users_customer`;
+
+ALTER TABLE `ea_appointments`
+    ADD CONSTRAINT `ea_appointments_customer_packages`
+    FOREIGN KEY (`id_customer_packages`) REFERENCES `ea_customer_packages` (`id`)
+    ON DELETE SET NULL ON UPDATE CASCADE;

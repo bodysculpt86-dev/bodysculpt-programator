@@ -36,10 +36,11 @@ class Appointments extends EA_Controller
         'id_users_provider',
         'id_users_customer',
         'id_services',
+        'id_customer_packages',
     ];
 
     public array $optional_appointment_fields = [
-        //
+        'id_customer_packages' => null,
     ];
 
     /**

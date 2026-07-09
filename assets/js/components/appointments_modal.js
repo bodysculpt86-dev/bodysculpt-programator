@@ -145,6 +145,18 @@ App.Components.AppointmentsModal = (function () {
     }
 
     /**
+     * Find a service by ID.
+     *
+     * @param {number} serviceId
+     * @returns {Object|undefined}
+     */
+    function findService(serviceId) {
+        return vars('available_services').find(
+            (availableService) => Number(availableService.id) === Number(serviceId),
+        );
+    }
+
+    /**
      * Add the component event listeners.
      */
     function addEventListeners() {
@@ -353,63 +365,7 @@ App.Components.AppointmentsModal = (function () {
         $insertAppointment.on('click', () => {
             $('.popover').remove();
 
-            App.Components.AppointmentsModal.resetModal();
-
-            // Set the selected filter item and find the next appointment time as the default modal values.
-            if ($selectFilterItem.find('option:selected').attr('type') === 'provider') {
-                const providerId = $('#select-filter-item').val();
-
-                const providers = vars('available_providers').filter(
-                    (provider) => Number(provider.id) === Number(providerId),
-                );
-
-                if (providers.length) {
-                    $selectService.val(providers[0].services[0]).trigger('change');
-                    $selectProvider.val(providerId);
-                }
-            } else if ($selectFilterItem.find('option:selected').attr('type') === 'service') {
-                $selectService.find('option[value="' + $selectFilterItem.val() + '"]').prop('selected', true);
-            } else {
-                $selectService.find('option:first').prop('selected', true).trigger('change');
-            }
-
-            $selectProvider.trigger('change');
-
-            const serviceId = $selectService.val();
-
-            const service = vars('available_services').find(
-                (availableService) => Number(availableService.id) === Number(serviceId),
-            );
-
-            const duration = service ? service.duration : 60;
-
-            if (service && service.price !== undefined && service.price !== null && !$appointmentPrice.val()) {
-                $appointmentPrice.val(service.price);
-            }
-
-            updateAppointmentServicesTotal();
-
-            const startMoment = moment();
-
-            const currentMin = parseInt(startMoment.format('mm'));
-
-            if (currentMin > 0 && currentMin < 15) {
-                startMoment.set({minutes: 15});
-            } else if (currentMin > 15 && currentMin < 30) {
-                startMoment.set({minutes: 30});
-            } else if (currentMin > 30 && currentMin < 45) {
-                startMoment.set({minutes: 45});
-            } else {
-                startMoment.add(1, 'hour').set({minutes: 0});
-            }
-
-            App.Utils.UI.setDateTimePickerValue($startDatetime, startMoment.toDate());
-            App.Utils.UI.setDateTimePickerValue($endDatetime, startMoment.add(duration, 'minutes').toDate());
-
-            // Display modal form.
-            $appointmentsModal.find('.modal-header h3').text(lang('new_appointment_title'));
-
-            $appointmentsModal.modal('show');
+            App.Components.AppointmentsModal.add();
         });
 
         /**
@@ -733,6 +689,146 @@ App.Components.AppointmentsModal = (function () {
     }
 
     /**
+     * Open the appointments modal to add a new appointment.
+     *
+     * @param {Object} options Optional preselection values (start, end, serviceId, providerId).
+     */
+    function add(options = {}) {
+        resetModal();
+
+        $appointmentsModal.find('.modal-header h3').text(lang('new_appointment_title'));
+
+        let serviceId = options.serviceId ?? null;
+        let providerId = options.providerId ?? null;
+
+        if (!serviceId && !providerId) {
+            const filterType = $selectFilterItem.find('option:selected').attr('type');
+
+            if (filterType === 'provider') {
+                providerId = $selectFilterItem.val();
+
+                const provider = vars('available_providers').find(
+                    (availableProvider) => Number(availableProvider.id) === Number(providerId),
+                );
+
+                if (provider && provider.services && provider.services.length) {
+                    serviceId = provider.services[0];
+                }
+            } else if (filterType === 'service') {
+                serviceId = $selectFilterItem.val();
+            }
+        }
+
+        if (serviceId) {
+            const service = findService(serviceId);
+            const serviceCategoryName = service?.service_category_name || 'uncategorized';
+            $selectServiceCategory.val(serviceCategoryName).trigger('change');
+            $selectService.val(serviceId).trigger('change');
+        } else {
+            $selectService.find('option:first').prop('selected', true).trigger('change');
+        }
+
+        if (providerId) {
+            $selectProvider.val(providerId);
+        }
+
+        if (!$selectProvider.val()) {
+            $selectProvider.find('option:first').prop('selected', true);
+        }
+
+        $selectProvider.trigger('change');
+
+        const service = findService($selectService.val());
+        const duration = service ? service.duration : 60;
+
+        if (service && service.price !== undefined && service.price !== null && !$appointmentPrice.val()) {
+            $appointmentPrice.val(service.price);
+        }
+
+        updateAppointmentServicesTotal();
+
+        let startMoment;
+
+        if (options.start) {
+            startMoment = moment(options.start);
+        } else {
+            startMoment = moment();
+
+            const currentMin = parseInt(startMoment.format('mm'));
+
+            if (currentMin > 0 && currentMin < 15) {
+                startMoment.set({minutes: 15});
+            } else if (currentMin > 15 && currentMin < 30) {
+                startMoment.set({minutes: 30});
+            } else if (currentMin > 30 && currentMin < 45) {
+                startMoment.set({minutes: 45});
+            } else {
+                startMoment.add(1, 'hour').set({minutes: 0});
+            }
+        }
+
+        App.Utils.UI.setDateTimePickerValue($startDatetime, startMoment.toDate());
+
+        const endMoment = options.end
+            ? moment(options.end)
+            : startMoment.clone().add(duration, 'minutes');
+
+        App.Utils.UI.setDateTimePickerValue($endDatetime, endMoment.toDate());
+
+        $appointmentsModal.modal('show');
+    }
+
+    /**
+     * Open the appointments modal to edit an existing appointment.
+     *
+     * @param {Object} appointment
+     */
+    function edit(appointment) {
+        resetModal();
+
+        $appointmentsModal.find('.modal-header h3').text(lang('edit_appointment_title'));
+
+        $appointmentId.val(appointment.id);
+
+        const service = findService(appointment.id_services);
+        const serviceCategoryName = service?.service_category_name || 'uncategorized';
+        $selectServiceCategory.val(serviceCategoryName).trigger('change');
+        $selectService.val(appointment.id_services).trigger('change');
+        $selectProvider.val(appointment.id_users_provider);
+
+        App.Utils.UI.setDateTimePickerValue($startDatetime, moment(appointment.start_datetime).toDate());
+        App.Utils.UI.setDateTimePickerValue($endDatetime, moment(appointment.end_datetime).toDate());
+
+        const customer = appointment.customer;
+
+        $customerId.val(appointment.id_users_customer);
+        $firstName.val(customer.first_name);
+        $lastName.val(customer.last_name);
+        $email.val(customer.email);
+        $phoneNumber.val(customer.phone_number);
+        $address.val(customer.address);
+        $city.val(customer.city);
+        $zipCode.val(customer.zip_code);
+        $language.val(customer.language);
+        $customerNotes.val(customer.notes);
+        $customField1.val(customer.custom_field_1);
+        $customField2.val(customer.custom_field_2);
+        $customField3.val(customer.custom_field_3);
+        $customField4.val(customer.custom_field_4);
+        $customField5.val(customer.custom_field_5);
+
+        $appointmentLocation.val(appointment.location);
+        $appointmentMeetingLink.val(appointment.meeting_link);
+        $appointmentStatus.val(appointment.status);
+        $appointmentCloseStatus.val(appointment.status);
+        $appointmentPrice.val(appointment.price ?? '').trigger('input');
+        $appointmentNotes.val(appointment.notes);
+        App.Components.ColorSelection.setColor($appointmentColor, appointment.color);
+
+        $appointmentsModal.modal('show');
+    }
+
+    /**
      * Reset Appointment Dialog
      *
      * This method resets the manage appointment dialog modal to its initial state. After that you can make
@@ -883,6 +979,8 @@ App.Components.AppointmentsModal = (function () {
     document.addEventListener('DOMContentLoaded', initialize);
 
     return {
+        add,
+        edit,
         resetModal,
         validateAppointmentForm,
     };

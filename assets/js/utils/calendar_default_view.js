@@ -126,56 +126,7 @@ App.Utils.CalendarDefaultView = (function () {
      * @param {Object} appointment - Appointment data object.
      */
     function populateAppointmentModal(appointment) {
-        const customer = appointment.customer;
-
-        App.Components.AppointmentsModal.resetModal();
-
-        $appointmentsModal.find('.modal-header h3').text(lang('edit_appointment_title'));
-        $appointmentsModal.find('#appointment-id').val(appointment.id);
-        const service = vars('available_services').find(
-            (availableService) => Number(availableService.id) === Number(appointment.id_services),
-        );
-        const serviceCategoryName = service?.service_category_name || 'uncategorized';
-        $appointmentsModal.find('#select-service-category').val(serviceCategoryName).trigger('change');
-        $appointmentsModal.find('#select-service').val(appointment.id_services).trigger('change');
-        $appointmentsModal.find('#select-provider').val(appointment.id_users_provider);
-
-        App.Utils.UI.setDateTimePickerValue(
-            $appointmentsModal.find('#start-datetime'),
-            moment(appointment.start_datetime).toDate(),
-        );
-        App.Utils.UI.setDateTimePickerValue(
-            $appointmentsModal.find('#end-datetime'),
-            moment(appointment.end_datetime).toDate(),
-        );
-
-        // Customer fields
-        $appointmentsModal.find('#customer-id').val(appointment.id_users_customer);
-        $appointmentsModal.find('#first-name').val(customer.first_name);
-        $appointmentsModal.find('#last-name').val(customer.last_name);
-        $appointmentsModal.find('#email').val(customer.email);
-        $appointmentsModal.find('#phone-number').val(customer.phone_number);
-        $appointmentsModal.find('#address').val(customer.address);
-        $appointmentsModal.find('#city').val(customer.city);
-        $appointmentsModal.find('#zip-code').val(customer.zip_code);
-        $appointmentsModal.find('#language').val(customer.language);
-        $appointmentsModal.find('#customer-notes').val(customer.notes);
-        $appointmentsModal.find('#custom-field-1').val(customer.custom_field_1);
-        $appointmentsModal.find('#custom-field-2').val(customer.custom_field_2);
-        $appointmentsModal.find('#custom-field-3').val(customer.custom_field_3);
-        $appointmentsModal.find('#custom-field-4').val(customer.custom_field_4);
-        $appointmentsModal.find('#custom-field-5').val(customer.custom_field_5);
-
-        // Appointment fields
-        $appointmentsModal.find('#appointment-location').val(appointment.location);
-        $appointmentsModal.find('#appointment-meeting-link').val(appointment.meeting_link);
-        $appointmentsModal.find('#appointment-status').val(appointment.status);
-        $appointmentsModal.find('#appointment-close-status').val(appointment.status);
-        $appointmentsModal.find('#appointment-price').val(appointment.price ?? '').trigger('input');
-        $appointmentsModal.find('#appointment-notes').val(appointment.notes);
-        App.Components.ColorSelection.setColor($appointmentsModal.find('#appointment-color'), appointment.color);
-
-        $appointmentsModal.modal('show');
+        App.Components.AppointmentsModal.edit(appointment);
     }
 
     /**
@@ -746,13 +697,10 @@ App.Utils.CalendarDefaultView = (function () {
             {
                 text: lang('appointment'),
                 click: (event, messageModal) => {
-                    $('#insert-appointment').trigger('click');
-                    preselectServiceAndProvider();
-                    App.Utils.UI.setDateTimePickerValue($('#start-datetime'), info.start);
-                    App.Utils.UI.setDateTimePickerValue(
-                        $('#end-datetime'),
-                        App.Pages.Calendar.getSelectionEndDate(info),
-                    );
+                    App.Components.AppointmentsModal.add({
+                        start: info.start,
+                        end: App.Pages.Calendar.getSelectionEndDate(info),
+                    });
                     messageModal.hide();
                 },
             },
@@ -768,46 +716,6 @@ App.Utils.CalendarDefaultView = (function () {
         fullCalendar.unselect();
 
         return false;
-    }
-
-    /**
-     * Preselect service and provider based on current filter.
-     */
-    function preselectServiceAndProvider() {
-        const $serviceSelect = $appointmentsModal.find('#select-service');
-        const $providerSelect = $appointmentsModal.find('#select-provider');
-
-        if (isProviderFilter()) {
-            const provider = findProvider($selectFilterItem.val());
-            if (provider) {
-                const service = vars('available_services').find((s) => provider.services.indexOf(s.id) !== -1);
-                if (service) {
-                    $serviceSelect.val(service.id);
-                }
-            }
-
-            if (!$serviceSelect.val()) {
-                $serviceSelect.find('option:first').prop('selected', true);
-            }
-
-            $serviceSelect.trigger('change');
-
-            if (provider) {
-                $providerSelect.val(provider.id);
-            }
-
-            if (!$providerSelect.val()) {
-                $providerSelect.find('option:first').prop('selected', true);
-            }
-
-            $providerSelect.trigger('change');
-        } else {
-            const service = findService($selectFilterItem.val());
-
-            if (service) {
-                $serviceSelect.val(service.id).trigger('change');
-            }
-        }
     }
 
     /**
