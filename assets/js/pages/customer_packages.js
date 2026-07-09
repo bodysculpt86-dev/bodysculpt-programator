@@ -317,17 +317,22 @@ App.Pages.CustomerPackages = (function () {
         App.Http.CustomerPackages.search(keyword, isActive, filterLimit).then((response) => {
             filterResults = response;
 
-            $filter.find('.results').empty();
+            const $tableBody = $('#customer-packages-table tbody');
+            $tableBody.empty();
 
             response.forEach((customerPackage) => {
-                $filter.find('.results').append(App.Pages.CustomerPackages.getFilterHtml(customerPackage)).append($('<hr/>'));
+                $tableBody.append(App.Pages.CustomerPackages.getFilterHtml(customerPackage));
             });
 
             if (response.length === 0) {
-                $filter.find('.results').append(
-                    $('<em/>', {
-                        text: lang('no_records_found'),
-                    }),
+                $tableBody.append(
+                    $('<tr/>').append(
+                        $('<td/>', {
+                            colspan: '7',
+                            class: 'text-muted text-center',
+                            text: lang('no_records_found'),
+                        }),
+                    ),
                 );
             } else if (response.length === filterLimit) {
                 $('<button/>', {
@@ -356,26 +361,35 @@ App.Pages.CustomerPackages = (function () {
      */
     function getFilterHtml(customerPackage) {
         const customerName = `${customerPackage.customer_first_name || ''} ${customerPackage.customer_last_name || ''}`.trim() || lang('no_name');
-        const statusClass = customerPackage.is_active ? 'text-success' : 'text-danger';
+        const statusBadgeClass = customerPackage.is_active ? 'bg-success' : 'bg-secondary';
         const statusText = customerPackage.is_active ? lang('active') : lang('inactive');
+        const totalRemaining = Number(customerPackage.total_remaining ?? 0);
+        const totalQuantity = Number(customerPackage.total_quantity ?? 0);
+        const sessionsText = `${totalRemaining}/${totalQuantity}`;
+        const expiryText = customerPackage.expiry_date ? formatDate(customerPackage.expiry_date) : '—';
 
-        return $('<div/>', {
+        return $('<tr/>', {
             class: 'customer-package-row entry',
             'data-id': customerPackage.id,
             html: [
-                $('<strong/>', {
-                    text: customerName,
-                }),
-                $('<br/>'),
-                $('<small/>', {
-                    class: 'text-muted',
-                    text: customerPackage.package_name,
-                }),
-                $('<br/>'),
-                $('<small/>', {
-                    class: statusClass,
-                    text: statusText,
-                }),
+                $('<td/>', { text: customerName }),
+                $('<td/>', { text: customerPackage.package_name }),
+                $('<td/>', { class: 'text-center', text: sessionsText }),
+                $('<td/>', { text: formatDate(customerPackage.purchase_date) }),
+                $('<td/>', { text: expiryText }),
+                $('<td/>').append(
+                    $('<span/>', {
+                        class: `badge ${statusBadgeClass}`,
+                        text: statusText,
+                    }),
+                ),
+                $('<td/>', { class: 'text-end' }).append(
+                    $('<button/>', {
+                        type: 'button',
+                        class: 'btn btn-sm btn-outline-secondary view-customer-package',
+                        html: `<i class="fas fa-eye me-1"></i> ${lang('details')}`,
+                    }),
+                ),
             ],
         });
     }
@@ -500,6 +514,29 @@ App.Pages.CustomerPackages = (function () {
         });
 
         return items;
+    }
+
+    /**
+     * Format a date string for display (dd/mm/yyyy).
+     *
+     * @param {String} value
+     *
+     * @return {String}
+     */
+    function formatDate(value) {
+        if (!value) {
+            return '';
+        }
+
+        const date = new Date(value.replace(/ /, 'T'));
+
+        if (isNaN(date.getTime())) {
+            return value;
+        }
+
+        const pad = (number) => String(number).padStart(2, '0');
+
+        return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
     }
 
     /**

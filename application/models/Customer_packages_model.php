@@ -282,6 +282,8 @@ class Customer_packages_model extends EA_Model
         ?int $offset = null,
         ?string $order_by = null,
     ): array {
+        $items_totals_subquery = '(SELECT cpi.id_customer_packages, SUM(cpi.quantity_remaining) AS total_remaining, SUM(cpi.quantity_total) AS total_quantity FROM ' . $this->db->dbprefix('customer_package_items') . ' cpi GROUP BY cpi.id_customer_packages) cpi_totals';
+
         $this->db
             ->select('
                 customer_packages.*,
@@ -290,11 +292,14 @@ class Customer_packages_model extends EA_Model
                 users.email AS customer_email,
                 packages.name AS package_name,
                 packages.price AS package_price,
-                packages.validity_days AS package_validity_days
+                packages.validity_days AS package_validity_days,
+                COALESCE(cpi_totals.total_remaining, 0) AS total_remaining,
+                COALESCE(cpi_totals.total_quantity, 0) AS total_quantity
             ')
             ->from('customer_packages')
             ->join('users', 'users.id = customer_packages.id_users_customer', 'inner')
-            ->join('packages', 'packages.id = customer_packages.id_packages', 'inner');
+            ->join('packages', 'packages.id = customer_packages.id_packages', 'inner')
+            ->join($items_totals_subquery, 'cpi_totals.id_customer_packages = customer_packages.id', 'left');
 
         if ($keyword !== '') {
             $this->db

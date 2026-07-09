@@ -162,6 +162,7 @@ $lang['package_invalid_items'] = 'All rows must have a selected service and a va
 $lang['invalid_price'] = 'The provided price is not valid.';
 $lang['invalid_validity_days'] = 'Validity must be at least one day.';
 $lang['customer_packages'] = 'Customer Packages';
+$lang['sessions'] = 'Sessions';
 $lang['manage_customer_packages_hint'] = 'Manage subscription packages sold to customers';
 $lang['sell_package'] = 'Sell Package';
 $lang['sell'] = 'Sell';

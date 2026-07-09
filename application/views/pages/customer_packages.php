@@ -36,7 +36,22 @@
             </h4>
 
             <div class="results overflow-auto" style="max-height: 650px;">
-                <!-- JS -->
+                <table class="table table-hover table-sm align-middle mb-0" id="customer-packages-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th><?= lang('customer') ?></th>
+                            <th><?= lang('package') ?></th>
+                            <th class="text-center"><?= lang('sessions') ?></th>
+                            <th><?= lang('purchase_date') ?></th>
+                            <th><?= lang('expiry_date') ?></th>
+                            <th><?= lang('status') ?></th>
+                            <th class="text-end"><?= lang('actions') ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- JS -->
+                    </tbody>
+                </table>
             </div>
         </div>
 

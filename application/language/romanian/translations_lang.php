@@ -162,6 +162,7 @@ $lang['package_invalid_items'] = 'Toate liniile trebuie să aibă un serviciu se
 $lang['invalid_price'] = 'Prețul introdus nu este valid.';
 $lang['invalid_validity_days'] = 'Valabilitatea trebuie să fie de cel puțin o zi.';
 $lang['customer_packages'] = 'Abonamente clienți';
+$lang['sessions'] = 'Ședințe';
 $lang['manage_customer_packages_hint'] = 'Gestionează abonamentele vândute clienților';
 $lang['sell_package'] = 'Vinde abonament';
 $lang['sell'] = 'Vinde';
