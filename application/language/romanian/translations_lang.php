@@ -146,6 +146,7 @@ $lang['details'] = 'Detalii';
 $lang['no_records_found'] = 'Nu s-au gasit înregistrari...';
 $lang['services'] = 'Servicii';
 $lang['packages'] = 'Abonamente/Pachete';
+$lang['package'] = 'Abonament';
 $lang['manage_packages_hint'] = 'Gestionează abonamentele și pachetele de servicii';
 $lang['package_saved'] = 'Abonamentul/pachetul a fost salvat.';
 $lang['package_deleted'] = 'Abonamentul/pachetul a fost șters.';

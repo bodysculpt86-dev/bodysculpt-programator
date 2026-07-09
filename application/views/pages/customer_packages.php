@@ -36,7 +36,7 @@
             </h4>
 
             <div class="results overflow-auto" style="max-height: 650px;">
-                <table class="table table-hover table-sm align-middle mb-0" id="customer-packages-table">
+                <table class="table table-hover align-middle mb-0" id="customer-packages-table">
                     <thead class="table-light">
                         <tr>
                             <th><?= lang('customer') ?></th>
@@ -54,6 +54,35 @@
                 </table>
             </div>
         </div>
+
+        <style>
+            #customer-packages-page .filter-records {
+                max-width: 100%;
+            }
+
+            #customer-packages-page #customer-packages-table th,
+            #customer-packages-page #customer-packages-table td {
+                padding: 13px 16px;
+                font-size: 0.95rem;
+                vertical-align: middle;
+            }
+
+            #customer-packages-page #customer-packages-table tbody tr {
+                min-height: 54px;
+            }
+
+            #customer-packages-page .customer-package-row {
+                cursor: pointer;
+            }
+
+            @media (max-width: 767.98px) {
+                #customer-packages-page #customer-packages-table th,
+                #customer-packages-page #customer-packages-table td {
+                    padding: 10px 12px;
+                    font-size: 0.9rem;
+                }
+            }
+        </style>
 
         <div class="record-details column col-12 mb-4">
             <div class="btn-toolbar mb-4">

@@ -146,6 +146,7 @@ $lang['details'] = 'Details';
 $lang['no_records_found'] = 'No records found...';
 $lang['services'] = 'Services';
 $lang['packages'] = 'Packages';
+$lang['package'] = 'Package';
 $lang['manage_packages_hint'] = 'Manage subscription packages and service bundles';
 $lang['package_saved'] = 'Package saved successfully.';
 $lang['package_deleted'] = 'Package deleted successfully.';
