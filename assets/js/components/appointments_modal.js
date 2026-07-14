@@ -1086,6 +1086,37 @@ App.Components.AppointmentsModal = (function () {
     }
 
     /**
+     * Check whether the raw value typed into a flatpickr input can be parsed
+     * with the configured date/time format. Empty values are considered invalid
+     * here because the datetime fields are required.
+     *
+     * The check is strict: values such as "25:99" that flatpickr would silently
+     * roll over to a different date/time are rejected.
+     *
+     * @param {jQuery} $target
+     *
+     * @return {Boolean}
+     */
+    function isDateTimeInputValueValid($target) {
+        const flatpickrInstance = $target[0]._flatpickr;
+        const inputValue = $target.val();
+
+        if (!inputValue) {
+            return false;
+        }
+
+        const parsedDate = flatpickrInstance.parseDate(inputValue, flatpickrInstance.config.dateFormat);
+
+        if (!parsedDate) {
+            return false;
+        }
+
+        const formattedDate = flatpickrInstance.formatDate(parsedDate, flatpickrInstance.config.dateFormat);
+
+        return formattedDate === inputValue;
+    }
+
+    /**
      * Validate the manage appointment dialog data.
      *
      * Validation checks need to run every time the data are going to be saved.
@@ -1122,8 +1153,37 @@ App.Components.AppointmentsModal = (function () {
             }
 
             // Check appointment start and end time.
-            const startDateTimeObject = App.Utils.UI.getDateTimePickerValue($startDatetime);
-            const endDateTimeObject = App.Utils.UI.getDateTimePickerValue($endDatetime);
+            let startDateTimeObject = App.Utils.UI.getDateTimePickerValue($startDatetime);
+            let endDateTimeObject = App.Utils.UI.getDateTimePickerValue($endDatetime);
+
+            if (!startDateTimeObject || !endDateTimeObject) {
+                $startDatetime.addClass('is-invalid');
+                $endDatetime.addClass('is-invalid');
+                throw new Error(lang('invalid_datetime'));
+            }
+
+            if (
+                !isDateTimeInputValueValid($startDatetime) ||
+                !isDateTimeInputValueValid($endDatetime)
+            ) {
+                $startDatetime.addClass('is-invalid');
+                $endDatetime.addClass('is-invalid');
+                throw new Error(lang('invalid_datetime'));
+            }
+
+            // When the user types a new start time directly into the input and
+            // saves without closing the picker, the end datetime may still hold
+            // the previous value. Recalculate it from the service duration so the
+            // appointment remains valid and consistent with the picker behaviour.
+            if (startDateTimeObject > endDateTimeObject) {
+                const serviceId = $selectService.val();
+                const service = vars('available_services').find(
+                    (availableService) => Number(availableService.id) === Number(serviceId),
+                );
+                const duration = service ? service.duration : 60;
+                endDateTimeObject = new Date(startDateTimeObject.getTime() + duration * 60000);
+                App.Utils.UI.setDateTimePickerValue($endDatetime, endDateTimeObject);
+            }
 
             if (startDateTimeObject > endDateTimeObject) {
                 $startDatetime.addClass('is-invalid');

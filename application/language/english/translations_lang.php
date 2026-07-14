@@ -141,6 +141,7 @@ $lang['unavailability_saved'] = 'Unavailability saved successfully.';
 $lang['start_date_before_end_error'] = 'Start date value is latter than end date.';
 $lang['invalid_duration'] = 'Invalid duration.';
 $lang['invalid_email'] = 'Invalid email address.';
+$lang['invalid_datetime'] = 'The provided date/time is not valid.';
 $lang['customers'] = 'Customers';
 $lang['details'] = 'Details';
 $lang['no_records_found'] = 'No records found...';

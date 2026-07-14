@@ -218,16 +218,41 @@ window.App.Utils.UI = (function () {
     /**
      * Get Date, Date-Time or Time picker value.
      *
+     * When allowInput is enabled, the displayed input value may differ from
+     * flatpickr's internal selectedDates until the picker is closed/confirmed.
+     * This method synchronises the input value with flatpickr before returning
+     * the selected date, so typed values are treated as the source of truth.
+     * If the input cannot be parsed, the last valid selected date is kept as a
+     * safe fallback; callers that need to reject invalid input should validate
+     * the raw value themselves.
+     *
      * @param {jQuery} $target
      *
-     * @return {Date}
+     * @return {Date|undefined}
      */
     function getDateTimePickerValue($target) {
         if (!$target?.length) {
             throw new Error('Empty $target argument provided.');
         }
 
-        return $target[0]._flatpickr.selectedDates[0];
+        const flatpickrInstance = $target[0]._flatpickr;
+        const inputValue = $target.val();
+
+        if (inputValue) {
+            const parsedDate = flatpickrInstance.parseDate(inputValue, flatpickrInstance.config.dateFormat);
+
+            // Only sync the picker if the input value round-trips exactly through
+            // flatpickr's parser/formatter. This prevents silent rollover of values
+            // such as "25:99" into a different date/time.
+            if (
+                parsedDate &&
+                flatpickrInstance.formatDate(parsedDate, flatpickrInstance.config.dateFormat) === inputValue
+            ) {
+                flatpickrInstance.setDate(parsedDate, false);
+            }
+        }
+
+        return flatpickrInstance.selectedDates[0];
     }
 
     /**

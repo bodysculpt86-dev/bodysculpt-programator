@@ -141,6 +141,7 @@ $lang['unavailability_saved'] = 'Perioada de indisponibilitate a fost salvata.';
 $lang['start_date_before_end_error'] = 'Data de început se afla dupa data de sfârsit.';
 $lang['invalid_duration'] = 'Durată invalidă.';
 $lang['invalid_email'] = 'Adresa de email este invalida.';
+$lang['invalid_datetime'] = 'Data/ora introdusă nu este validă.';
 $lang['customers'] = 'Clienti';
 $lang['details'] = 'Detalii';
 $lang['no_records_found'] = 'Nu s-au gasit înregistrari...';
