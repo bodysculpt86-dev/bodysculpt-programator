@@ -192,11 +192,12 @@ class Console extends EA_Controller
     }
 
     /**
-     * Send SMS and WhatsApp reminders for appointments that are ~24 hours away.
+     * Send SMS and WhatsApp reminders for all appointments scheduled tomorrow.
      *
      * Use this method in a cronjob to automatically remind customers about upcoming
-     * appointments via SMSO.ro and Flaxxa WAPI. Runs hourly on Railway; selects appointments
-     * between 23 and 25 hours from now that have not been reminded yet.
+     * appointments via SMSO.ro and Flaxxa WAPI. Runs once per day (ideally at 18:00
+     * Europe/Bucharest); selects every appointment whose start_datetime falls in the
+     * next calendar day in the provider timezone and has not been reminded yet.
      *
      * Usage:
      *
@@ -204,14 +205,32 @@ class Console extends EA_Controller
      */
     public function send_sms_reminders(): void
     {
-        $now = new DateTime();
+        // Use the provider/business timezone so "tomorrow" is a real calendar day
+        // for the clinic, not a UTC day. Europe/Bucharest is the current production
+        // timezone; falling back to the PHP default keeps local dev working.
+        $timezone = new DateTimeZone('Europe/Bucharest');
 
-        // Hourly cron: look 23-25 hours ahead so every appointment in the 24h window
-        // gets picked up exactly once, even with small platform timing drifts.
-        $from = (clone $now)->modify('+23 hours')->format('Y-m-d H:i:s');
-        $until = (clone $now)->modify('+25 hours')->format('Y-m-d H:i:s');
+        try {
+            $timezone = new DateTimeZone(setting('default_timezone') ?: 'Europe/Bucharest');
+        } catch (Throwable $e) {
+            log_message('warning', '[SMSO] Invalid default timezone, using Europe/Bucharest: ' . $e->getMessage());
+        }
 
-        $excludedStatuses = ['Anulat', 'Schita', 'Nu s-a prezentat'];
+        $now = new DateTime('now', $timezone);
+        $tomorrow = (clone $now)->modify('+1 day')->setTime(0, 0, 0);
+        $endOfTomorrow = (clone $tomorrow)->setTime(23, 59, 59);
+
+        $from = $tomorrow->format('Y-m-d H:i:s');
+        $until = $endOfTomorrow->format('Y-m-d H:i:s');
+
+        // Exclude cancelled/draft/no-show statuses. The list covers both the provider
+        // values and the client-self-service constants.
+        $excludedStatuses = [
+            'Anulat',
+            APPOINTMENT_STATUS_CANCELLED_BY_CLIENT,
+            'Schita',
+            'Nu s-a prezentat',
+        ];
 
         $appointments = $this->appointments_model->get_pending_sms_reminders($from, $until, $excludedStatuses);
 
