@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'セルフホスティングソフトウェア向�
 $lang['go_premium'] = 'Premium にアップグレード';
 $lang['notify_users_on_create_question'] = 'この新しい予約についてお客様に通知しますか？';
 $lang['notify_users_on_delete_question'] = '予約のキャンセルについてお客様に通知しますか？';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

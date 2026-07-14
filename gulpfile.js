@@ -191,6 +191,11 @@ function vendor(done) {
         .pipe(rename({suffix: '.min'}))
         .pipe(gulp.dest('assets/vendor/flatpickr'));
 
+    // sortablejs
+    gulp.src(['node_modules/sortablejs/Sortable.min.js', 'node_modules/sortablejs/Sortable.js']).pipe(
+        gulp.dest('assets/vendor/sortablejs'),
+    );
+
     done();
 }
 

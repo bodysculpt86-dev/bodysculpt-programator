@@ -12,7 +12,9 @@
 /npm-debug.log
 /assets/js/**/*.min.js
 /assets/css/**/*.css
-/assets/vendor
+/assets/vendor/*
+!/assets/vendor/sortablejs/
+!/assets/vendor/sortablejs/*
 /config.php
 /storage/backups/*
 !/storage/backups/.htaccess

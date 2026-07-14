@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'Pakume täisteenust ise majutatud tarkvarale, seal
 $lang['go_premium'] = 'Go Premium';
 $lang['notify_users_on_create_question'] = 'Kas soovite klienti sellest uuest kohtumisest teavitada?';
 $lang['notify_users_on_delete_question'] = 'Kas soovite klienti kohtumise tühistamisest teavitada?';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

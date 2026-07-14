@@ -18,7 +18,10 @@ App.Pages.BusinessSettings = (function () {
     const $saveSettings = $('#save-settings');
     const $applyGlobalWorkingPlan = $('#apply-global-working-plan');
     const $appointmentStatusOptions = $('#appointment-status-options');
+    const $providerOrderList = $('#provider-order-list');
+    const $saveProviderOrder = $('#save-provider-order');
     let workingPlanManager = null;
+    let providerSortable = null;
 
     /**
      * Check if the form has invalid values.
@@ -153,12 +156,48 @@ App.Pages.BusinessSettings = (function () {
     }
 
     /**
+     * Initialize the provider order drag-and-drop list.
+     */
+    function initializeProviderOrder() {
+        if (!$providerOrderList.length || typeof Sortable === 'undefined') {
+            return;
+        }
+
+        providerSortable = new Sortable($providerOrderList[0], {
+            handle: '.fa-grip-vertical',
+            animation: 150,
+            ghostClass: 'list-group-item-info',
+        });
+    }
+
+    /**
+     * Save the provider order to the server.
+     */
+    function onSaveProviderOrderClick() {
+        if (!providerSortable) {
+            return;
+        }
+
+        const providerOrder = providerSortable.toArray();
+
+        App.Http.BusinessSettings.saveProviderOrder(providerOrder)
+            .done(() => {
+                App.Layouts.Backend.displayNotification(lang('order_saved'));
+            })
+            .fail(() => {
+                App.Layouts.Backend.displayNotification(lang('error_saving_order'));
+            });
+    }
+
+    /**
      * Initialize the module.
      */
     function initialize() {
         const businessSettings = vars('business_settings');
 
         deserialize(businessSettings);
+
+        initializeProviderOrder();
 
         let companyWorkingPlan = {};
         let appointmentStatusOptions = [];
@@ -183,6 +222,8 @@ App.Pages.BusinessSettings = (function () {
         $saveSettings.on('click', onSaveSettingsClick);
 
         $applyGlobalWorkingPlan.on('click', onApplyGlobalWorkingPlan);
+
+        $saveProviderOrder.on('click', onSaveProviderOrderClick);
     }
 
     document.addEventListener('DOMContentLoaded', initialize);

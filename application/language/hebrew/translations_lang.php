@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'אנו מציעים שירותים מקצה לקצ
 $lang['go_premium'] = 'עבור ל-Premium';
 $lang['notify_users_on_create_question'] = 'האם ברצונך להודיע ללקוח על תור חדש זה?';
 $lang['notify_users_on_delete_question'] = 'האם ברצונך להודיע ללקוח על ביטול התור?';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

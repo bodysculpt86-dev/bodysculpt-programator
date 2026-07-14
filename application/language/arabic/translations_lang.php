@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'نقدم خدمات شاملة للبرمجيات 
 $lang['go_premium'] = 'احصل على Premium';
 $lang['notify_users_on_create_question'] = 'هل ترغب في إبلاغ العميل بهذا الموعد الجديد؟';
 $lang['notify_users_on_delete_question'] = 'هل ترغب في إبلاغ العميل بإلغاء الموعد؟';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

@@ -574,4 +574,11 @@ $lang['about_app_premium'] = '我们为自托管软件提供端到端服务，�
 $lang['go_premium'] = '升级 Premium';
 $lang['notify_users_on_create_question'] = '您想通知客户这个新预约吗？';
 $lang['notify_users_on_delete_question'] = '您想通知客户预约取消吗？';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

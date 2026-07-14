@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'Vi tilbyder helhedstjenester for selvhostet softwa
 $lang['go_premium'] = 'Bliv Premium';
 $lang['notify_users_on_create_question'] = 'Vil du give kunden besked om denne nye aftale?';
 $lang['notify_users_on_delete_question'] = 'Vil du give kunden besked om aflysningen af aftalen?';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'Nudimo kompletne usluge za samostalno hostovan sof
 $lang['go_premium'] = 'Postanite Premium';
 $lang['notify_users_on_create_question'] = 'Želite li obavijestiti klijenta o ovom novom terminu?';
 $lang['notify_users_on_delete_question'] = 'Želite li obavijestiti klijenta o otkazivanju termina?';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

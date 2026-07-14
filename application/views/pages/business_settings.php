@@ -140,6 +140,40 @@
                             'attributes' => 'id="appointment-status-options"',
                         ]); ?>
 
+                        <h5 class="mb-3 fw-light mt-5">
+                            <?= lang('provider_order') ?>
+                        </h5>
+
+                        <p class="form-text text-muted mb-4">
+                            <?= lang('provider_order_hint') ?>
+                        </p>
+
+                        <div class="card mb-5">
+                            <div class="card-body">
+                                <ul id="provider-order-list" class="list-group">
+                                    <?php foreach (vars('providers') as $provider): ?>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center"
+                                            data-id="<?= $provider['id'] ?>">
+                                            <span>
+                                                <i class="fas fa-grip-vertical me-3 text-muted"></i>
+                                                <?= e($provider['first_name'] . ' ' . $provider['last_name']) ?>
+                                            </span>
+                                            <small class="text-muted"><?= e($provider['email']) ?></small>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+
+                                <?php if (can('edit', PRIV_SYSTEM_SETTINGS)): ?>
+                                    <div class="text-end mt-3">
+                                        <button type="button" id="save-provider-order" class="btn btn-primary">
+                                            <i class="fas fa-check-square me-2"></i>
+                                            <?= lang('save_order') ?>
+                                        </button>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
                     </fieldset>
                 </form>
             </div>
@@ -152,6 +186,7 @@
 <?php section('scripts'); ?>
 
 <script src="<?= asset_url('assets/vendor/jquery-jeditable/jquery.jeditable.min.js') ?>"></script>
+<script src="<?= asset_url('assets/vendor/sortablejs/Sortable.min.js') ?>"></script>
 <script src="<?= asset_url('assets/js/utils/ui.js') ?>"></script>
 <script src="<?= asset_url('assets/js/utils/working_plan.js') ?>"></script>
 <script src="<?= asset_url('assets/js/http/business_settings_http_client.js') ?>"></script>

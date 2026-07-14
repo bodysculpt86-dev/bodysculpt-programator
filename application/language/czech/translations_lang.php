@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'Nabízíme komplexní služby pro self-hosted soft
 $lang['go_premium'] = 'Přejít na Premium';
 $lang['notify_users_on_create_question'] = 'Chcete zákazníka informovat o této nové schůzce?';
 $lang['notify_users_on_delete_question'] = 'Chcete zákazníka informovat o zrušení schůzky?';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

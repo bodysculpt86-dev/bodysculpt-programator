@@ -27,6 +27,7 @@ class Providers_model extends EA_Model
         'id' => 'integer',
         'is_private' => 'boolean',
         'id_roles' => 'integer',
+        'display_order' => 'integer',
     ];
 
     /**
@@ -49,6 +50,7 @@ class Providers_model extends EA_Model
         'isPrivate' => 'is_private',
         'ldapDn' => 'ldap_dn',
         'roleId' => 'id_roles',
+        'displayOrder' => 'display_order',
     ];
 
     /**
@@ -215,6 +217,8 @@ class Providers_model extends EA_Model
 
         if ($order_by !== null) {
             $this->db->order_by($this->quote_order_by($order_by));
+        } else {
+            $this->db->order_by('display_order ASC, first_name ASC, last_name ASC, email ASC');
         }
 
         $providers = $this->db->get_where('users', ['id_roles' => $role_id], $limit, $offset)->result_array();
@@ -299,6 +303,17 @@ class Providers_model extends EA_Model
         $provider['create_datetime'] = date('Y-m-d H:i:s');
         $provider['update_datetime'] = date('Y-m-d H:i:s');
         $provider['id_roles'] = $this->get_provider_role_id();
+
+        if (!array_key_exists('display_order', $provider) || $provider['display_order'] === null || $provider['display_order'] === '') {
+            $max_display_order = $this->db
+                ->select_max('display_order')
+                ->from('users')
+                ->where('id_roles', $provider['id_roles'])
+                ->get()
+                ->row_array()['display_order'] ?? 0;
+
+            $provider['display_order'] = (int) $max_display_order + 1;
+        }
 
         $service_ids = $provider['services'];
 
@@ -658,7 +673,7 @@ class Providers_model extends EA_Model
             ->join('roles', 'roles.id = users.id_roles', 'inner')
             ->join('services_providers', 'services_providers.id_users = users.id', 'inner')
             ->where('roles.slug', DB_SLUG_PROVIDER)
-            ->order_by('first_name ASC, last_name ASC, email ASC')
+            ->order_by('display_order ASC, first_name ASC, last_name ASC, email ASC')
             ->group_by('users.id')
             ->get()
             ->result_array();
@@ -717,7 +732,7 @@ class Providers_model extends EA_Model
             ->group_end()
             ->limit($limit)
             ->offset($offset)
-            ->order_by($this->quote_order_by($order_by))
+            ->order_by($order_by !== null ? $this->quote_order_by($order_by) : 'display_order ASC, first_name ASC, last_name ASC, email ASC')
             ->get()
             ->result_array();
 
@@ -746,10 +761,10 @@ class Providers_model extends EA_Model
         }
 
         $providers = $this->db
-            ->select('id, first_name, last_name')
+            ->select('id, first_name, last_name, display_order')
             ->from('users')
             ->where('id_roles', $role_id)
-            ->order_by('first_name, last_name')
+            ->order_by('display_order ASC, first_name ASC, last_name ASC')
             ->get()
             ->result_array();
 
@@ -818,6 +833,7 @@ class Providers_model extends EA_Model
             'ldapDn' => $provider['ldap_dn'],
             'timezone' => $provider['timezone'],
             'language' => $provider['language'],
+            'displayOrder' => array_key_exists('display_order', $provider) ? (int) $provider['display_order'] : 0,
         ];
 
         if (array_key_exists('services', $provider)) {
@@ -940,6 +956,10 @@ class Providers_model extends EA_Model
 
         if (array_key_exists('ldapDn', $provider)) {
             $decoded_resource['ldap_dn'] = $provider['ldapDn'];
+        }
+
+        if (array_key_exists('displayOrder', $provider)) {
+            $decoded_resource['display_order'] = (int) $provider['displayOrder'];
         }
 
         if (array_key_exists('settings', $provider)) {

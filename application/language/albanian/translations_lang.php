@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'Ofrojmë shërbime të plota për softuer të vet�
 $lang['go_premium'] = 'Kaloni në Premium';
 $lang['notify_users_on_create_question'] = 'Dëshironi të njoftoni klientin për këtë takim të ri?';
 $lang['notify_users_on_delete_question'] = 'Dëshironi të njoftoni klientin për anulimin e takimit?';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

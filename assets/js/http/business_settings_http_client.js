@@ -51,8 +51,27 @@ App.Http.BusinessSettings = (function () {
         return $.post(url, data);
     }
 
+    /**
+     * Save provider display order.
+     *
+     * @param {Array} providerOrder
+     *
+     * @return {Object}
+     */
+    function saveProviderOrder(providerOrder) {
+        const url = App.Utils.Url.siteUrl('business_settings/save_provider_order');
+
+        const data = {
+            csrf_token: vars('csrf_token'),
+            provider_order: providerOrder,
+        };
+
+        return $.post(url, data);
+    }
+
     return {
         save,
         applyGlobalWorkingPlan,
+        saveProviderOrder,
     };
 })();

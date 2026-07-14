@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'Oferujemy kompleksowe usługi dla samodzielnie hos
 $lang['go_premium'] = 'Przejdź na Premium';
 $lang['notify_users_on_create_question'] = 'Czy chcesz powiadomić klienta o tym nowym spotkaniu?';
 $lang['notify_users_on_delete_question'] = 'Czy chcesz powiadomić klienta o anulowaniu spotkania?';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

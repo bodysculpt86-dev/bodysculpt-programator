@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'Vi erbjuder heltäckande tjänster för egen-hosta
 $lang['go_premium'] = 'Bli Premium';
 $lang['notify_users_on_create_question'] = 'Vill du skicka en avisering om det nya mötet till kunden?';
 $lang['notify_users_on_delete_question'] = 'Vill du skicka en avisering om avbokningen till kunden?';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

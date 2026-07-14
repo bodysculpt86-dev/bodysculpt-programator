@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'Mir bidden End-to-End Servicer fir selbst-gehost S
 $lang['go_premium'] = 'Go Premium';
 $lang['notify_users_on_create_question'] = 'Wëllt Dir de Client iwwer dësen neien Rendez-vous informéieren?';
 $lang['notify_users_on_delete_question'] = 'Wëllt Dir de Client iwwer d\'Annulléierung vum Rendez-vous informéieren?';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

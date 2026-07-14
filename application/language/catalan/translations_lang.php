@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'Oferim serveis d\'extrem a extrem per a programari
 $lang['go_premium'] = 'Passa\'t a Premium';
 $lang['notify_users_on_create_question'] = 'Voleu notificar el client sobre aquesta nova cita?';
 $lang['notify_users_on_delete_question'] = 'Voleu notificar el client sobre la cancel·lació de la cita?';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

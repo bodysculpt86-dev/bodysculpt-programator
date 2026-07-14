@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'Wij bieden uitgebreide diensten voor zelf gehoste 
 $lang['go_premium'] = 'Ga Premium';
 $lang['notify_users_on_create_question'] = 'Wilt u de klant op de hoogte stellen van deze nieuwe afspraak?';
 $lang['notify_users_on_delete_question'] = 'Wilt u de klant op de hoogte stellen van de annulering van de afspraak?';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

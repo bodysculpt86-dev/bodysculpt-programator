@@ -74,6 +74,7 @@ class Business_settings extends EA_Controller
             'user_id' => $user_id,
             'role_slug' => $role_slug,
             'business_settings' => filter_sensitive_settings($this->settings_model->get()),
+            'providers' => $this->providers_model->get(),
             'first_weekday' => setting('first_weekday'),
             'time_format' => setting('time_format'),
         ]);
@@ -143,6 +144,32 @@ class Business_settings extends EA_Controller
 
             foreach ($providers as $provider) {
                 $this->providers_model->set_setting($provider['id'], 'working_plan', $working_plan);
+            }
+
+            response();
+        } catch (Throwable $e) {
+            json_exception($e);
+        }
+    }
+
+    /**
+     * Save the display order of providers.
+     */
+    public function save_provider_order(): void
+    {
+        try {
+            method('post');
+
+            if (cannot('edit', PRIV_SYSTEM_SETTINGS)) {
+                throw new RuntimeException('You do not have the required permissions for this task.');
+            }
+
+            check('provider_order', 'array');
+
+            $provider_order = request('provider_order', []);
+
+            foreach ($provider_order as $index => $provider_id) {
+                $this->db->update('users', ['display_order' => (int) $index + 1], ['id' => (int) $provider_id]);
             }
 
             response();

@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'Kendi sunucunuzda barındırılan yazılımlar iç
 $lang['go_premium'] = 'Premium\'a Geç';
 $lang['notify_users_on_create_question'] = 'Bu yeni randevu hakkında müşteriyi bilgilendirmek ister misiniz?';
 $lang['notify_users_on_delete_question'] = 'Randevu iptali hakkında müşteriyi bilgilendirmek ister misiniz?';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

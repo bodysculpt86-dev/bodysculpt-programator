@@ -574,4 +574,11 @@ $lang['about_app_premium'] = 'Vi tilbyr helhetlige tjenester for selvhostet prog
 $lang['go_premium'] = 'Bli Premium';
 $lang['notify_users_on_create_question'] = 'Vil du varsle kunden om denne nye avtalen?';
 $lang['notify_users_on_delete_question'] = 'Vil du varsle kunden om avbestillingen av avtalen?';
+
+
+$lang['provider_order'] = 'Provider Order';
+$lang['provider_order_hint'] = 'Drag and drop providers to change their display order in the calendar and lists.';
+$lang['save_order'] = 'Save Order';
+$lang['order_saved'] = 'Order saved.';
+$lang['error_saving_order'] = 'Could not save the order.';
 // End

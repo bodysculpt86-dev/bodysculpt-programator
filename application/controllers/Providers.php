@@ -36,6 +36,7 @@ class Providers extends EA_Controller
         'is_private',
         'ldap_dn',
         'id_roles',
+        'display_order',
         'settings',
         'services',
     ];
@@ -153,7 +154,7 @@ class Providers extends EA_Controller
 
             $keyword = request('keyword', '');
 
-            $order_by = request('order_by', 'update_datetime DESC');
+            $order_by = request('order_by', 'display_order ASC, first_name ASC, last_name ASC, email ASC');
 
             $limit = request('limit', 1000);
 

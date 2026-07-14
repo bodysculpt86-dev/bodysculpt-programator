@@ -35,6 +35,9 @@ COPY --from=assets-builder /build/assets/css/themes/ /var/www/html/assets/css/th
 # this repository contains the matching source files for the deployed application code.
 COPY ./assets/js/ /var/www/html/assets/js/
 
+# Copy locally added vendor libraries (e.g. SortableJS) that are not present in the upstream image.
+COPY ./assets/vendor/sortablejs/ /var/www/html/assets/vendor/sortablejs/
+
 # Copy local image assets (including the custom logo) so the deployed image matches
 # the local development build instead of falling back to the upstream default images.
 COPY ./assets/img/ /var/www/html/assets/img/
