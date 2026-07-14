@@ -297,7 +297,7 @@ class Console extends EA_Controller
     private function markReminderAttempted(int $appointmentId, ?string $error = null): void
     {
         $data = [
-            'sms_reminder_sent_at' => date('Y-m-d H:i:s'),
+            'reminder_sent_at' => date('Y-m-d H:i:s'),
         ];
 
         if ($error !== null) {

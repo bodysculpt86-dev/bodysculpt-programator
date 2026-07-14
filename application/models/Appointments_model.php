@@ -411,8 +411,8 @@ class Appointments_model extends EA_Model
     }
 
     /**
-     * Get appointments that are approximately 24 hours away and have not received
-     * an SMS reminder yet.
+     * Get appointments whose start_datetime falls inside the requested window and
+     * whose daily reminder has not been sent yet.
      *
      * @param string $from Start of the target window (Y-m-d H:i:s).
      * @param string $until End of the target window (Y-m-d H:i:s).
@@ -427,7 +427,7 @@ class Appointments_model extends EA_Model
             ->where('is_unavailability', false)
             ->where('start_datetime >=', $from)
             ->where('start_datetime <=', $until)
-            ->where('sms_reminder_sent_at IS NULL', null, false);
+            ->where('reminder_sent_at IS NULL', null, false);
 
         if (!empty($exclude_statuses)) {
             $this->db->where_not_in('status', $exclude_statuses);
