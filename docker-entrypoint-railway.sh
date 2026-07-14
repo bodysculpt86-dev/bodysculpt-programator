@@ -7,9 +7,12 @@
 # disabling conflicting MPM modules and ensuring only mpm_prefork is active.
 # Also teaches Apache/PHP to trust the X-Forwarded-Proto header from Railway's
 # HTTPS proxy so that sessions and redirects work over HTTPS.
-# After that, control is handed back to the upstream image's entrypoint so
-# that the original environment-variable templating and Apache startup are
-# preserved.
+#
+# The upstream entrypoint generates config.php / email.php from environment
+# variables and then runs apache2-foreground. We replace that final
+# apache2-foreground call with a wrapper that either:
+#   - runs the configured RAILWAY_CRON_COMMAND and exits (cron mode), or
+#   - starts Apache normally (web mode).
 # -----------------------------------------------------------------------------
 
 set -e
@@ -37,18 +40,36 @@ CONF
 # email config (and any other upstream templates that contain it).
 sed -i 's/Easy!Appointments/Bookings by Revclar/g' /usr/local/bin/docker-entrypoint.sh
 
-# Inject automatic migration execution into the upstream entrypoint right before
-# Apache starts. The upstream entrypoint generates config.php/email.php first,
-# so migrations can connect to the database. Failures are logged but do not stop
-# startup.
-#
-# When RAILWAY_CRON_COMMAND is set, the container runs that command and exits
-# instead of starting Apache. This lets the same image be used for Railway
-# cron-job services (e.g. hourly SMS reminders).
-perl -0pi -e 's/# Start Apache\n\napache2-foreground/# Start Apache\n\n# Run pending database migrations (safe: failures are logged but do not stop startup).\nphp \/var\/www\/html\/index.php console migrate 2>\&1 || echo "Automatic migrations failed; continuing startup." >\&2\n\n# Bootstrap the super-admin account from Railway env vars (idempotent).\nphp \/var\/www\/html\/index.php console bootstrap 2>\&1 || echo "Super-admin bootstrap failed; continuing startup." >\&2\n\n# Railway cron mode: run the configured one-off command and exit.\nif [ -n "${RAILWAY_CRON_COMMAND}" ]; then\n    echo "Running cron command: ${RAILWAY_CRON_COMMAND}"\n    exec ${RAILWAY_CRON_COMMAND}\nfi\n\napache2-foreground/' /usr/local/bin/docker-entrypoint.sh
+# Install a wrapper script that the upstream entrypoint will call instead of
+# apache2-foreground. The wrapper decides whether to run Apache (normal web
+# service) or the Railway cron command (one-off cron container).
+cat <<'WRAPPER' >/usr/local/bin/docker-apache-or-cron.sh
+#!/bin/bash
+set -e
 
-# Delegate to the original Easy!Appointments entrypoint, which templates
-# config.php / email.php from environment variables and then runs
-# apache2-foreground (or RAILWAY_CRON_COMMAND if set). Using exec preserves
-# signal handling (PID 1).
+# Run pending database migrations (safe: failures are logged but do not stop startup).
+php /var/www/html/index.php console migrate 2>&1 || echo "Automatic migrations failed; continuing startup." >&2
+
+# Bootstrap the super-admin account from Railway env vars (idempotent).
+php /var/www/html/index.php console bootstrap 2>&1 || echo "Super-admin bootstrap failed; continuing startup." >&2
+
+# Railway cron mode: when RAILWAY_CRON_COMMAND is set, run it and exit.
+# This must happen BEFORE Apache starts, so cron containers never launch the web server.
+if [ -n "${RAILWAY_CRON_COMMAND}" ]; then
+    echo "Running cron command: ${RAILWAY_CRON_COMMAND}"
+    exec ${RAILWAY_CRON_COMMAND}
+fi
+
+# Web mode: start Apache in the foreground as usual.
+exec apache2-foreground
+WRAPPER
+chmod +x /usr/local/bin/docker-apache-or-cron.sh
+
+# Patch the upstream entrypoint to call our wrapper instead of apache2-foreground.
+# We match the whole line to avoid partial replacements.
+sed -i 's/^[[:space:]]*apache2-foreground[[:space:]]*$/docker-apache-or-cron.sh/' /usr/local/bin/docker-entrypoint.sh
+
+# Delegate to the patched upstream entrypoint, which generates config.php / email.php
+# from environment variables and then invokes docker-apache-or-cron.sh.
+# Using exec preserves signal handling (PID 1).
 exec /usr/local/bin/docker-entrypoint.sh "$@"
