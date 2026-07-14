@@ -88,10 +88,12 @@ class Sms_smso
      * @param array $appointment Appointment data (must contain start_datetime).
      * @param array $customer Customer data (must contain phone_number and id).
      * @param array $service Service data (must contain name).
+     * @param array|null $provider Provider data (must contain timezone). When provided,
+     *                            the appointment date/time is formatted in this timezone.
      *
      * @return void
      */
-    public function send_confirmation(array $appointment, array $customer, array $service): void
+    public function send_confirmation(array $appointment, array $customer, array $service, ?array $provider = null): void
     {
         try {
             $rawPhone = $customer['phone_number'] ?? null;
@@ -106,7 +108,7 @@ class Sms_smso
                 return;
             }
 
-            $message = $this->buildConfirmationMessage($appointment, $customer, $service);
+            $message = $this->buildConfirmationMessage($appointment, $customer, $service, $provider);
 
             if ($this->logOnly) {
                 $this->log(
@@ -134,37 +136,13 @@ class Sms_smso
      * @param array $appointment Appointment data.
      * @param array $customer Customer data.
      * @param array $service Service data.
+     * @param array|null $provider Provider data (timezone source).
      *
      * @return string
      */
-    private function buildConfirmationMessage(array $appointment, array $customer, array $service): string
+    private function buildConfirmationMessage(array $appointment, array $customer, array $service, ?array $provider = null): string
     {
-        $start = $appointment['start_datetime'] ?? null;
-
-        if (empty($start)) {
-            $date = '-';
-            $time = '-';
-        } else {
-            $timestamp = strtotime($start);
-            $day = date('j', $timestamp);
-            $month = (int) date('n', $timestamp);
-            $romanianMonths = [
-                1 => 'Ianuarie',
-                2 => 'Februarie',
-                3 => 'Martie',
-                4 => 'Aprilie',
-                5 => 'Mai',
-                6 => 'Iunie',
-                7 => 'Iulie',
-                8 => 'August',
-                9 => 'Septembrie',
-                10 => 'Octombrie',
-                11 => 'Noiembrie',
-                12 => 'Decembrie',
-            ];
-            $date = $day . ' ' . ($romanianMonths[$month] ?? date('F', $timestamp));
-            $time = date('H:i', $timestamp);
-        }
+        [$date, $time] = $this->formatDateTime($appointment, $provider);
 
         $firstName = $customer['first_name'] ?? '';
         $lastName = $customer['last_name'] ?? '';
@@ -183,16 +161,65 @@ class Sms_smso
     }
 
     /**
+     * Format the appointment date/time in the provider's timezone.
+     *
+     * @param array $appointment Appointment data.
+     * @param array|null $provider Provider data (timezone source).
+     *
+     * @return array [date, time]
+     */
+    private function formatDateTime(array $appointment, ?array $provider = null): array
+    {
+        $start = $appointment['start_datetime'] ?? null;
+
+        if (empty($start)) {
+            return ['-', '-'];
+        }
+
+        $timezone = !empty($provider['timezone']) ? $provider['timezone'] : date_default_timezone_get();
+
+        try {
+            $dateTime = new DateTime($start, new DateTimeZone($timezone));
+        } catch (Throwable $e) {
+            $this->log('Date formatting failed: ' . $e->getMessage());
+            return ['-', '-'];
+        }
+
+        $day = (int) $dateTime->format('j');
+        $month = (int) $dateTime->format('n');
+        $romanianMonths = [
+            1 => 'Ianuarie',
+            2 => 'Februarie',
+            3 => 'Martie',
+            4 => 'Aprilie',
+            5 => 'Mai',
+            6 => 'Iunie',
+            7 => 'Iulie',
+            8 => 'August',
+            9 => 'Septembrie',
+            10 => 'Octombrie',
+            11 => 'Noiembrie',
+            12 => 'Decembrie',
+        ];
+        $date = $day . ' ' . ($romanianMonths[$month] ?? $dateTime->format('F'));
+        $time = $dateTime->format('H:i');
+
+        return [$date, $time];
+    }
+
+    /**
      * Send a reminder SMS ~24 hours before an appointment.
      *
      * Reuses the same failure isolation as send_confirmation.
      *
      * @param array $appointment Appointment data (must contain start_datetime).
      * @param array $customer Customer data (must contain phone_number and id).
+     * @param array|null $provider Provider data (must contain timezone). When provided,
+     *                            the appointment date/time is formatted in this timezone.
      *
      * @return void
      */
-    public function send_reminder(array $appointment, array $customer): void
+    public function send_reminder(array $appointment, array $customer, ?array $provider = null): void
     {
         try {
             $rawPhone = $customer['phone_number'] ?? null;
@@ -207,7 +234,7 @@ class Sms_smso
                 return;
             }
 
-            $message = $this->buildReminderMessage($appointment);
+            $message = $this->buildReminderMessage($appointment, $provider);
 
             if ($this->logOnly) {
                 $this->log(
@@ -233,37 +260,13 @@ class Sms_smso
      * Build the Romanian reminder message text (no diacritics, 1 SMS segment).
      *
      * @param array $appointment Appointment data.
+     * @param array|null $provider Provider data (timezone source).
      *
      * @return string
      */
-    private function buildReminderMessage(array $appointment): string
+    private function buildReminderMessage(array $appointment, ?array $provider = null): string
     {
-        $start = $appointment['start_datetime'] ?? null;
-
-        if (empty($start)) {
-            $date = '-';
-            $time = '-';
-        } else {
-            $timestamp = strtotime($start);
-            $day = date('j', $timestamp);
-            $month = (int) date('n', $timestamp);
-            $romanianMonths = [
-                1 => 'Ianuarie',
-                2 => 'Februarie',
-                3 => 'Martie',
-                4 => 'Aprilie',
-                5 => 'Mai',
-                6 => 'Iunie',
-                7 => 'Iulie',
-                8 => 'August',
-                9 => 'Septembrie',
-                10 => 'Octombrie',
-                11 => 'Noiembrie',
-                12 => 'Decembrie',
-            ];
-            $date = $day . ' ' . ($romanianMonths[$month] ?? date('F', $timestamp));
-            $time = date('H:i', $timestamp);
-        }
+        [$date, $time] = $this->formatDateTime($appointment, $provider);
 
         $message = 'Reminder: aveti programare la BodySculpt maine, ' . $date . ' la ' . $time . '. Va asteptam!';
 

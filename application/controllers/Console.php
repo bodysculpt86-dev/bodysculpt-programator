@@ -235,8 +235,16 @@ class Console extends EA_Controller
                 continue;
             }
 
+            // Load the provider so the reminder date/time is formatted in the provider's timezone.
+            $provider = [];
             try {
-                $this->sms_smso->send_reminder($appointment, $customer);
+                $provider = $this->providers_model->find($appointment['id_users_provider']);
+            } catch (Throwable $e) {
+                log_message('error', '[SMSO] Could not load provider for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
+            }
+
+            try {
+                $this->sms_smso->send_reminder($appointment, $customer, $provider);
                 $this->markReminderAttempted($appointment['id']);
             } catch (Throwable $e) {
                 log_message('error', '[SMSO] Reminder exception for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
@@ -252,7 +260,7 @@ class Console extends EA_Controller
             }
 
             try {
-                $this->whatsapp_flaxxa->send_reminder($appointment, $customer, $service);
+                $this->whatsapp_flaxxa->send_reminder($appointment, $customer, $service, $provider);
             } catch (Throwable $e) {
                 log_message('error', '[wa-flaxxa] Reminder exception for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
             }

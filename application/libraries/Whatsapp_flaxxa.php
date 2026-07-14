@@ -104,10 +104,12 @@ class Whatsapp_flaxxa
      * @param array $appointment Appointment data (must contain start_datetime).
      * @param array $customer Customer data (must contain phone_number and id).
      * @param array $service Service data (must contain name).
+     * @param array|null $provider Provider data (must contain timezone). When provided,
+     *                            the appointment date/time is formatted in this timezone.
      *
      * @return void
      */
-    public function send_confirmation(array $appointment, array $customer, array $service): void
+    public function send_confirmation(array $appointment, array $customer, array $service, ?array $provider = null): void
     {
         try {
             $rawPhone = $customer['phone_number'] ?? null;
@@ -129,7 +131,7 @@ class Whatsapp_flaxxa
 
             $components = [
                 $this->buildHeaderComponent($customer),
-                $this->buildConfirmationBody($appointment, $service),
+                $this->buildConfirmationBody($appointment, $service, $provider),
             ];
 
             if ($this->logOnly) {
@@ -155,10 +157,12 @@ class Whatsapp_flaxxa
      * @param array $appointment Appointment data (must contain start_datetime).
      * @param array $customer Customer data (must contain phone_number and id).
      * @param array $service Service data (must contain name).
+     * @param array|null $provider Provider data (must contain timezone). When provided,
+     *                            the appointment date/time is formatted in this timezone.
      *
      * @return void
      */
-    public function send_reminder(array $appointment, array $customer, array $service): void
+    public function send_reminder(array $appointment, array $customer, array $service, ?array $provider = null): void
     {
         try {
             $rawPhone = $customer['phone_number'] ?? null;
@@ -180,7 +184,7 @@ class Whatsapp_flaxxa
 
             $components = [
                 $this->buildHeaderComponent($customer),
-                $this->buildReminderBody($appointment, $service),
+                $this->buildReminderBody($appointment, $service, $provider),
             ];
 
             if ($this->logOnly) {
@@ -250,12 +254,13 @@ class Whatsapp_flaxxa
      *
      * @param array $appointment Appointment data.
      * @param array $service Service data.
+     * @param array|null $provider Provider data (timezone source).
      *
      * @return array
      */
-    private function buildConfirmationBody(array $appointment, array $service): array
+    private function buildConfirmationBody(array $appointment, array $service, ?array $provider = null): array
     {
-        [$date, $time] = $this->formatDateTime($appointment);
+        [$date, $time] = $this->formatDateTime($appointment, $provider);
         $serviceName = $service['name'] ?? '-';
 
         return [
@@ -277,12 +282,13 @@ class Whatsapp_flaxxa
      *
      * @param array $appointment Appointment data.
      * @param array $service Service data.
+     * @param array|null $provider Provider data (timezone source).
      *
      * @return array
      */
-    private function buildReminderBody(array $appointment, array $service): array
+    private function buildReminderBody(array $appointment, array $service, ?array $provider = null): array
     {
-        [, $time] = $this->formatDateTime($appointment);
+        [, $time] = $this->formatDateTime($appointment, $provider);
         $serviceName = $service['name'] ?? '-';
 
         return [
@@ -295,13 +301,17 @@ class Whatsapp_flaxxa
     }
 
     /**
-     * Format the appointment date/time exactly like the SMS flow.
+     * Format the appointment date/time in the provider's timezone.
+     *
+     * This mirrors the behaviour of Email_messages.php so that WhatsApp/SMS
+     * show the same date and time as the calendar and emails.
      *
      * @param array $appointment Appointment data.
+     * @param array|null $provider Provider data (timezone source).
      *
      * @return array [date, time]
      */
-    private function formatDateTime(array $appointment): array
+    private function formatDateTime(array $appointment, ?array $provider = null): array
     {
         $start = $appointment['start_datetime'] ?? null;
 
@@ -309,9 +319,17 @@ class Whatsapp_flaxxa
             return ['-', '-'];
         }
 
-        $timestamp = strtotime($start);
-        $day = date('j', $timestamp);
-        $month = (int) date('n', $timestamp);
+        $timezone = !empty($provider['timezone']) ? $provider['timezone'] : date_default_timezone_get();
+
+        try {
+            $dateTime = new DateTime($start, new DateTimeZone($timezone));
+        } catch (Throwable $e) {
+            $this->log('Date formatting failed: ' . $e->getMessage());
+            return ['-', '-'];
+        }
+
+        $day = (int) $dateTime->format('j');
+        $month = (int) $dateTime->format('n');
         $romanianMonths = [
             1 => 'Ianuarie',
             2 => 'Februarie',
@@ -326,8 +344,8 @@ class Whatsapp_flaxxa
             11 => 'Noiembrie',
             12 => 'Decembrie',
         ];
-        $date = $day . ' ' . ($romanianMonths[$month] ?? date('F', $timestamp));
-        $time = date('H:i', $timestamp);
+        $date = $day . ' ' . ($romanianMonths[$month] ?? $dateTime->format('F'));
+        $time = $dateTime->format('H:i');
 
         return [$date, $time];
     }
