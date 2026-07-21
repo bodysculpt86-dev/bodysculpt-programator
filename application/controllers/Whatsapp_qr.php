@@ -105,8 +105,6 @@ class Whatsapp_qr extends EA_Controller
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
 
-        curl_close($ch);
-
         if ($response === false) {
             return ['ok' => false, 'error' => 'cURL error: ' . $curlError, 'http' => 0];
         }

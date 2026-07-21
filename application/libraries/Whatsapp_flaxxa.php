@@ -39,6 +39,11 @@ class Whatsapp_flaxxa
     protected ?string $reminderTemplate = null;
 
     /**
+     * @var string|null Cached marketing template name.
+     */
+    protected ?string $marketingTemplate = null;
+
+    /**
      * @var string Cached template language code.
      */
     protected string $templateLanguage = 'ro';
@@ -58,6 +63,7 @@ class Whatsapp_flaxxa
         $this->apiToken = $this->readEnvOrConfig('FLAXXA_API_TOKEN');
         $this->confirmationTemplate = $this->readEnvOrConfig('FLAXXA_CONFIRMATION_TEMPLATE');
         $this->reminderTemplate = $this->readEnvOrConfig('FLAXXA_REMINDER_TEMPLATE');
+        $this->marketingTemplate = $this->readEnvOrConfig('FLAXXA_MARKETING_TEMPLATE');
 
         $language = $this->readEnvOrConfig('FLAXXA_TEMPLATE_LANGUAGE');
         if (!empty($language)) {
@@ -199,6 +205,76 @@ class Whatsapp_flaxxa
             $this->log(
                 'Reminder failed for customer #' . ($customer['id'] ?? 'N/A') . ': ' . $e->getMessage()
             );
+        }
+    }
+
+    /**
+     * Send a marketing WhatsApp message to a customer.
+     *
+     * Unlike send_confirmation/send_reminder, this method returns a result
+     * array instead of swallowing errors, so the caller (marketing page)
+     * can display per-recipient success/failure.
+     *
+     * Variables of the approved marketing template:
+     *   {{header_1}} = customer full name
+     *   {{body_1}} = procedure name
+     *   {{body_2}} = discount percentage
+     *   {{body_3}} = offer validity date
+     *
+     * @param array $customer Customer data (must contain phone_number and id).
+     * @param string $procedure Procedure/service name promoted in the offer.
+     * @param string $discount Discount percentage (e.g. "20").
+     * @param string $validUntil Offer validity date (free text, e.g. "31 Decembrie").
+     *
+     * @return array Result array: ['success' => bool, 'error' => string|null]
+     */
+    public function send_marketing(array $customer, string $procedure, string $discount, string $validUntil): array
+    {
+        try {
+            $rawPhone = $customer['phone_number'] ?? null;
+            $customerId = $customer['id'] ?? null;
+
+            $phone = $this->normalizePhoneForWhatsapp($rawPhone);
+
+            if ($phone === null) {
+                $this->log(
+                    'Marketing skipped: invalid phone for customer #' . ($customerId ?? 'N/A') . ': ' . ($rawPhone ?: '(empty)')
+                );
+
+                return ['success' => false, 'error' => 'invalid_phone'];
+            }
+
+            $template = $this->marketingTemplate ?: 'bodysculpt_marketing';
+
+            $components = [
+                $this->buildHeaderComponent($customer),
+                [
+                    'type' => 'body',
+                    'parameters' => [
+                        ['type' => 'text', 'text' => $procedure],
+                        ['type' => 'text', 'text' => $discount],
+                        ['type' => 'text', 'text' => $validUntil],
+                    ],
+                ],
+            ];
+
+            if ($this->logOnly) {
+                $this->log(
+                    'LOG_ONLY marketing would send to ' . $phone . ' using template "' . $template . '": ' . json_encode($components)
+                );
+
+                return ['success' => true, 'error' => null, 'log_only' => true];
+            }
+
+            $this->send($phone, $template, $components);
+
+            return ['success' => true, 'error' => null];
+        } catch (Throwable $e) {
+            $this->log(
+                'Marketing failed for customer #' . ($customer['id'] ?? 'N/A') . ': ' . $e->getMessage()
+            );
+
+            return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 
@@ -385,7 +461,6 @@ class Whatsapp_flaxxa
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
-        curl_close($ch);
 
         if ($response === false) {
             throw new Exception('cURL error: ' . $curlError);
