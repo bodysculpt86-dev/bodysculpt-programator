@@ -99,7 +99,7 @@ class Appointment_link extends EA_Controller
             }
 
             $appointment['status'] = APPOINTMENT_STATUS_CONFIRMED_BY_CLIENT;
-            $appointment['sms_reminder_sent_at'] = date('Y-m-d H:i:s');
+            $appointment['reminder_sent_at'] = date('Y-m-d H:i:s');
 
             $this->appointments_model->save($appointment);
 

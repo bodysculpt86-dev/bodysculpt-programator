@@ -400,6 +400,7 @@ class Appointments_model extends EA_Model
             if (!empty($existing) && $existing['start_datetime'] !== $appointment['start_datetime']) {
                 $appointment['sms_reminder_sent_at'] = null;
                 $appointment['sms_reminder_error'] = null;
+                $appointment['reminder_sent_at'] = null;
             }
         }
 
