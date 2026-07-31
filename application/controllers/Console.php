@@ -308,6 +308,140 @@ class Console extends EA_Controller
     }
 
     /**
+     * Process appointments whose deposit payment link was sent more than 24 hours
+     * ago and is still unpaid: auto-cancel the appointment (recoverable 'Anulat'
+     * status, same as a manual cancel from the staff modal) and notify the
+     * CUSTOMER on WhatsApp. Each appointment is processed at most once.
+     *
+     * Usage:
+     *
+     * php index.php console process_unpaid_deposits
+     */
+    public function process_unpaid_deposits(): void
+    {
+        // Use the business timezone, same as the reminder job.
+        $timezone = new DateTimeZone('Europe/Bucharest');
+
+        try {
+            $timezone = new DateTimeZone(setting('default_timezone') ?: 'Europe/Bucharest');
+        } catch (Throwable $e) {
+            log_message('warning', '[unpaid-deposit-cancel] Invalid default timezone, using Europe/Bucharest: ' . $e->getMessage());
+        }
+
+        $now = new DateTime('now', $timezone);
+        $threshold = (clone $now)->modify('-24 hours')->format('Y-m-d H:i:s');
+
+        if (empty($this->readEnvOrConfig('CLIENT_CANCEL_TEMPLATE_NAME'))) {
+            log_message('warning', '[unpaid-deposit-cancel] CLIENT_CANCEL_TEMPLATE_NAME is not configured; skipping run.');
+
+            return;
+        }
+
+        // Exclude already cancelled/draft/no-show statuses (same list as the reminder job).
+        $excludedStatuses = [
+            'Anulat',
+            APPOINTMENT_STATUS_CANCELLED_BY_CLIENT,
+            'Schita',
+            'Nu s-a prezentat',
+        ];
+
+        $appointments = $this->appointments_model->get_pending_unpaid_deposit_alerts(
+            $threshold,
+            $now->format('Y-m-d H:i:s'),
+            $excludedStatuses,
+        );
+
+        foreach ($appointments as $appointment) {
+            try {
+                // Race safety: re-fetch and re-check immediately before acting so a
+                // deposit paid (or already processed) between the query and now is
+                // never auto-cancelled.
+                $fresh = $this->appointments_model->find($appointment['id']);
+
+                if (
+                    empty($fresh)
+                    || ($fresh['deposit_status'] ?? 'none') !== 'unpaid'
+                    || !empty($fresh['deposit_unpaid_alerted_at'])
+                    || in_array($fresh['status'], $excludedStatuses, true)
+                ) {
+                    log_message('debug', '[unpaid-deposit-cancel] Appointment #' . $appointment['id'] . ' no longer eligible; skipping.');
+
+                    continue;
+                }
+
+                // 1) Auto-cancel via the standard, recoverable status change — the
+                // exact same mechanism the staff modal uses (status 'Anulat' +
+                // appointments_model save). NOT a hard-delete; the manager can
+                // revert it from the modal status dropdown.
+                $fresh['status'] = 'Anulat';
+                $fresh['deposit_unpaid_alerted_at'] = date('Y-m-d H:i:s');
+
+                $this->appointments_model->save($fresh);
+
+                log_message('debug', '[unpaid-deposit-cancel] Appointment #' . $fresh['id'] . ' auto-cancelled (unpaid deposit > 24h).');
+
+                // 2) Notify the customer on WhatsApp (failure is logged but does
+                // not roll back the cancellation; the appointment stays excluded
+                // from future runs via deposit_unpaid_alerted_at + status 'Anulat').
+                $customer = [];
+                $service = [];
+                $provider = [];
+
+                try {
+                    $customer = $this->customers_model->find($fresh['id_users_customer']);
+                    $service = $this->services_model->find($fresh['id_services']);
+                    $provider = $this->providers_model->find($fresh['id_users_provider']);
+                } catch (Throwable $e) {
+                    log_message('error', '[unpaid-deposit-cancel] Could not load relations for appointment #' . $fresh['id'] . ': ' . $e->getMessage());
+                }
+
+                $result = $this->whatsapp_flaxxa->send_appointment_cancelled_unpaid(
+                    $fresh,
+                    $customer,
+                    $service,
+                    $provider,
+                );
+
+                if ($result['success']) {
+                    log_message('debug', '[unpaid-deposit-cancel] Customer notified for appointment #' . $fresh['id']);
+                } else {
+                    log_message('error', '[unpaid-deposit-cancel] Customer notification failed for appointment #' . $fresh['id'] . ': ' . ($result['error'] ?? 'unknown'));
+                }
+            } catch (Throwable $e) {
+                // Non-blocking: one failing appointment must not stop the run.
+                log_message('error', '[unpaid-deposit-cancel] Exception for appointment #' . ($appointment['id'] ?? 'N/A') . ': ' . $e->getMessage());
+            }
+        }
+
+        log_message('debug', '[unpaid-deposit-cancel] Run finished. Checked ' . count($appointments) . ' appointment(s).');
+    }
+
+    /**
+     * Read a value from an environment variable or from the Config class.
+     *
+     * Mirrors Whatsapp_flaxxa::readEnvOrConfig().
+     *
+     * @param string $name The environment variable / Config constant name.
+     *
+     * @return string|null
+     */
+    private function readEnvOrConfig(string $name): ?string
+    {
+        $value = getenv($name);
+
+        if ($value !== false && $value !== '') {
+            return $value;
+        }
+
+        if (defined("Config::$name")) {
+            $value = constant("Config::$name");
+            return $value !== '' ? (string) $value : null;
+        }
+
+        return null;
+    }
+
+    /**
      * Show help information about the console capabilities.
      *
      * Use this method to see the available commands.
@@ -339,6 +473,7 @@ class Console extends EA_Controller
             '⇾ php index.php console sync',
             '⇾ php index.php console cleanup        (cleans sessions, logs, cache, and customer data)',
             '⇾ php index.php console send_sms_reminders  (sends ~24h SMS reminders via SMSO.ro)',
+            '⇾ php index.php console process_unpaid_deposits  (auto-cancels deposits unpaid after 24h + notifies the customer)',
             '',
             '',
         ];

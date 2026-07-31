@@ -891,6 +891,8 @@ body .modal.full-screen .modal-push {
     color: #fff !important;
 }
 
+.fc-event.status-anulat,
+#calendar-table .appointment-event.status-anulat,
 .fc-event.status-anulat-de-client,
 #calendar-table .appointment-event.status-anulat-de-client {
     background-color: #ef4444 !important;
@@ -905,6 +907,49 @@ body .modal.full-screen .modal-push {
     color: #fff !important;
 }
 
+/* Deposit payment markers (Stripe avans) */
+.fc-event.deposit-paid::after,
+#calendar-table .appointment-event.deposit-paid::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #22c55e;
+    border: 2px solid #fff;
+    z-index: 2;
+}
+
+.fc-event.deposit-unpaid::after,
+#calendar-table .appointment-event.deposit-unpaid::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #f59e0b;
+    border: 2px solid #fff;
+    z-index: 2;
+}
+
+.fc-event.deposit-auto-cancelled::after,
+#calendar-table .appointment-event.deposit-auto-cancelled::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: transparent;
+    border: 2px solid #ef4444;
+    z-index: 2;
+}
+
 /* Optional left-border stripe marker for closing statuses */
 .fc-event.status-cash::before,
 .fc-event.status-card::before,
@@ -914,6 +959,7 @@ body .modal.full-screen .modal-push {
 .fc-event.status-consum-abonament::before,
 .fc-event.status-voucher::before,
 .fc-event.status-nu-s-a-prezentat::before,
+.fc-event.status-anulat::before,
 .fc-event.status-anulat-de-client::before,
 .fc-event.status-confirmat-de-client::before {
     content: '';

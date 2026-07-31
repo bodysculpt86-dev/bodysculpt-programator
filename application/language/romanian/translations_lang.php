@@ -700,4 +700,15 @@ $lang['provider_order_hint'] = 'Trageți și plasați angajații pentru a schimb
 $lang['save_order'] = 'Salvează ordinea';
 $lang['order_saved'] = 'Ordinea a fost salvată.';
 $lang['error_saving_order'] = 'Nu s-a putut salva ordinea.';
+
+// Stripe deposit payments
+$lang['send_payment_link'] = 'Trimite link plată';
+$lang['resend_payment_link'] = 'Retrimite link plată';
+$lang['sending_payment_link'] = 'Se trimite…';
+$lang['deposit_paid'] = 'Avans plătit';
+$lang['deposit_pending'] = 'Avans în așteptare';
+$lang['deposit_auto_cancelled'] = 'Avans neplătit — anulat automat';
+$lang['payment_link_sent'] = 'Link-ul de plată a fost trimis clientului.';
+$lang['payment_link_error'] = 'Link-ul de plată nu a putut fi creat.';
+$lang['payment_link_whatsapp_error'] = 'Link-ul a fost creat, dar trimiterea pe WhatsApp a eșuat.';
 // End

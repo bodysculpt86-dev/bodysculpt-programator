@@ -87,4 +87,29 @@ class Config
     // const EVOLUTION_API_URL = '';
     // const EVOLUTION_API_KEY = '';
     // const EVOLUTION_INSTANCE = '';
+
+    // ------------------------------------------------------------------------
+    // STRIPE DEPOSIT PAYMENTS (Optional)
+    // ------------------------------------------------------------------------
+    // In production these values are read from environment variables
+    // (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_DEPOSIT_AMOUNT,
+    // STRIPE_PAYMENT_TEMPLATE_NAME) set in Railway. The constants below are an
+    // optional local fallback for development only. Never commit real keys.
+    //
+    // Set STRIPE_DEPOSIT_AMOUNT to the fixed deposit amount (e.g. '100.00').
+    // Set STRIPE_PAYMENT_TEMPLATE_NAME to the approved WhatsApp template used to
+    // deliver the payment link ('payment_link_deposit' once approved by Meta).
+    // Leave STRIPE_SECRET_KEY empty to disable the deposit feature.
+    //
+    // const STRIPE_SECRET_KEY = '';
+    // const STRIPE_WEBHOOK_SECRET = '';
+    // const STRIPE_DEPOSIT_AMOUNT = '100.00';
+    // const STRIPE_PAYMENT_TEMPLATE_NAME = 'payment_link_deposit';
+    //
+    // CLIENT_CANCEL_TEMPLATE_NAME: approved WhatsApp template sent to the
+    // customer when an appointment is auto-cancelled for an unpaid deposit
+    // (see Console::process_unpaid_deposits). Variables: {{header_1}} = customer
+    // name, {{body_1}} = service, {{body_2}} = appointment date/time.
+    //
+    // const CLIENT_CANCEL_TEMPLATE_NAME = 'avans_neplatit';
 }

@@ -768,6 +768,28 @@ App.Utils.CalendarTableView = (function () {
         return 'status-' + normalized;
     }
 
+    /**
+     * Convert the deposit payment state of an appointment to a CSS class name.
+     *
+     * @param {Object} appointment
+     * @returns {string}
+     */
+    function getDepositStatusClass(appointment) {
+        if (appointment.deposit_status === 'paid') {
+            return 'deposit-paid';
+        }
+
+        if (appointment.deposit_status === 'unpaid' && appointment.deposit_unpaid_alerted_at) {
+            return 'deposit-auto-cancelled';
+        }
+
+        if (appointment.deposit_status === 'unpaid') {
+            return 'deposit-unpaid';
+        }
+
+        return '';
+    }
+
     function createAppointments($providerColumn, appointments) {
         if (!appointments.length) {
             return;
@@ -799,7 +821,7 @@ App.Utils.CalendarTableView = (function () {
                     end: moment(appointment.end_datetime).toDate(),
                     allDay: false,
                     color: appointment.color,
-                    className: getAppointmentStatusClass(appointment.status),
+                    className: (getAppointmentStatusClass(appointment.status) + ' ' + getDepositStatusClass(appointment)).trim(),
                     display: 'block',
                     data: appointment,
                 };

@@ -61,10 +61,17 @@ App.Components.AppointmentsModal = (function () {
     const $customField3 = $('#custom-field-3');
     const $customField4 = $('#custom-field-4');
     const $customField5 = $('#custom-field-5');
+    const $depositStatusArea = $('#deposit-status-area');
+    const $depositStatusIcon = $('#deposit-status-icon');
+    const $depositStatusLabel = $('#deposit-status-label');
+    const $depositStatusDetails = $('#deposit-status-details');
+    const $sendPaymentLink = $('#send-payment-link');
 
     const moment = window.moment;
 
     let customerPackages = [];
+
+    let currentDepositStatus = 'none';
 
     /**
      * Update the displayed total price for all selected services.
@@ -488,6 +495,60 @@ App.Components.AppointmentsModal = (function () {
                     },
                 ]);
             }
+        });
+
+        /**
+         * Event: Send Payment Link Button "Click"
+         *
+         * Creates a Stripe Checkout Session for the appointment deposit and sends
+         * the payment link to the customer via WhatsApp.
+         */
+        $sendPaymentLink.on('click', () => {
+            const appointmentId = $appointmentId.val();
+
+            if (!appointmentId) {
+                return;
+            }
+
+            $sendPaymentLink
+                .prop('disabled', true)
+                .html('<span class="spinner-border spinner-border-sm me-2"></span>' + lang('sending_payment_link'));
+
+            App.Http.Payments.createCheckoutSession(appointmentId)
+                .done((response) => {
+                    if (response && response.success) {
+                        if (response.whatsapp && response.whatsapp.success === false) {
+                            App.Layouts.Backend.displayNotification(lang('payment_link_whatsapp_error'));
+                        } else {
+                            App.Layouts.Backend.displayNotification(lang('payment_link_sent'));
+                        }
+
+                        updateDepositUi({
+                            id: appointmentId,
+                            deposit_status: 'unpaid',
+                            payment_link_sent_at: moment().format('YYYY-MM-DD HH:mm:ss'),
+                        });
+                    } else {
+                        $appointmentsModal
+                            .find('.modal-message')
+                            .text((response && response.message) || lang('payment_link_error'))
+                            .addClass('alert-danger')
+                            .removeClass('d-none');
+                        $appointmentsModal.find('.modal-body').scrollTop(0);
+                    }
+                })
+                .fail(() => {
+                    $appointmentsModal
+                        .find('.modal-message')
+                        .text(lang('payment_link_error'))
+                        .addClass('alert-danger')
+                        .removeClass('d-none');
+                    $appointmentsModal.find('.modal-body').scrollTop(0);
+                })
+                .always(() => {
+                    $sendPaymentLink.prop('disabled', false);
+                    setPaymentLinkButtonLabel();
+                });
         });
 
         /**
@@ -935,6 +996,76 @@ App.Components.AppointmentsModal = (function () {
     }
 
     /**
+     * Set the payment link button label according to the current deposit status.
+     */
+    function setPaymentLinkButtonLabel() {
+        const labelKey = currentDepositStatus === 'unpaid' ? 'resend_payment_link' : 'send_payment_link';
+
+        $sendPaymentLink.html('<i class="fas fa-credit-card me-2"></i>' + lang(labelKey));
+    }
+
+    /**
+     * Update the deposit payment UI (badge, payment link button, quick-cancel)
+     * based on the deposit fields of the edited appointment.
+     *
+     * @param {Object} appointment Appointment data (may be empty for new appointments).
+     */
+    function updateDepositUi(appointment) {
+        const depositStatus = appointment.deposit_status || 'none';
+
+        currentDepositStatus = depositStatus;
+
+        $depositStatusArea.addClass('d-none').removeClass('alert-success alert-warning alert-danger');
+        $sendPaymentLink.hide();
+
+        if (!appointment.id) {
+            return;
+        }
+
+        if (depositStatus === 'paid') {
+            const details = [];
+
+            if (appointment.deposit_amount) {
+                details.push(appointment.deposit_amount + ' Lei');
+            }
+
+            if (appointment.deposit_paid_at) {
+                details.push(moment(appointment.deposit_paid_at).format('DD.MM.YYYY HH:mm'));
+            }
+
+            $depositStatusIcon.attr('class', 'fas fa-check-circle me-2');
+            $depositStatusLabel.text(lang('deposit_paid'));
+            $depositStatusDetails.text(details.join(' · '));
+            $depositStatusArea.removeClass('d-none').addClass('alert-success');
+        } else if (depositStatus === 'unpaid' && appointment.deposit_unpaid_alerted_at) {
+            // Auto-cancelled for non-payment (24h unpaid, processed by the cron job).
+            // The payment link button stays available so the manager can resend it
+            // after reverting the cancellation.
+            $depositStatusIcon.attr('class', 'fas fa-ban me-2');
+            $depositStatusLabel.text(lang('deposit_auto_cancelled'));
+            $depositStatusDetails.text(
+                appointment.payment_link_sent_at ? moment(appointment.payment_link_sent_at).format('DD.MM.YYYY HH:mm') : '',
+            );
+            $depositStatusArea.removeClass('d-none').addClass('alert-danger');
+
+            setPaymentLinkButtonLabel();
+            $sendPaymentLink.show();
+        } else {
+            if (depositStatus === 'unpaid') {
+                $depositStatusIcon.attr('class', 'fas fa-hourglass-half me-2');
+                $depositStatusLabel.text(lang('deposit_pending'));
+                $depositStatusDetails.text(
+                    appointment.payment_link_sent_at ? moment(appointment.payment_link_sent_at).format('DD.MM.YYYY HH:mm') : '',
+                );
+                $depositStatusArea.removeClass('d-none').addClass('alert-warning');
+            }
+
+            setPaymentLinkButtonLabel();
+            $sendPaymentLink.show();
+        }
+    }
+
+    /**
      * Open the appointments modal to edit an existing appointment.
      *
      * @param {Object} appointment
@@ -982,6 +1113,8 @@ App.Components.AppointmentsModal = (function () {
         App.Components.ColorSelection.setColor($appointmentColor, appointment.color);
 
         $selectAppointmentType.val(appointment.id_customer_packages ? 'package' : 'service').trigger('change');
+
+        updateDepositUi(appointment);
 
         const selectedPackageValue = appointment.id_customer_packages
             ? `${appointment.id_customer_packages}|${appointment.id_services}`
@@ -1081,6 +1214,8 @@ App.Components.AppointmentsModal = (function () {
         App.Utils.UI.initializeDateTimePicker($endDatetime);
         App.Utils.UI.setDateTimePickerValue($endDatetime, endDatetime);
         $appointmentsModal.find('.modal-message').removeClass('alert-danger').text('').addClass('d-none');
+
+        updateDepositUi({});
 
         updateAppointmentServicesTotal();
     }

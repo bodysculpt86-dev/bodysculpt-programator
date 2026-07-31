@@ -700,4 +700,15 @@ $lang['provider_order_hint'] = 'Drag and drop providers to change their display 
 $lang['save_order'] = 'Save Order';
 $lang['order_saved'] = 'Order saved.';
 $lang['error_saving_order'] = 'Could not save the order.';
+
+// Stripe deposit payments
+$lang['send_payment_link'] = 'Send payment link';
+$lang['resend_payment_link'] = 'Resend payment link';
+$lang['sending_payment_link'] = 'Sending…';
+$lang['deposit_paid'] = 'Deposit paid';
+$lang['deposit_pending'] = 'Deposit pending';
+$lang['deposit_auto_cancelled'] = 'Unpaid deposit — auto-cancelled';
+$lang['payment_link_sent'] = 'The payment link was sent to the customer.';
+$lang['payment_link_error'] = 'The payment link could not be created.';
+$lang['payment_link_whatsapp_error'] = 'The link was created, but the WhatsApp send failed.';
 // End

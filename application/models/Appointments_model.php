@@ -444,6 +444,42 @@ class Appointments_model extends EA_Model
     }
 
     /**
+     * Get appointments whose deposit payment link was sent more than 24 hours ago,
+     * is still unpaid and has not triggered a manager alert yet.
+     *
+     * Past appointments and excluded (cancelled/draft/no-show) statuses are skipped.
+     *
+     * @param string $threshold Datetime (Y-m-d H:i:s); links sent before this count as overdue.
+     * @param string $now Datetime (Y-m-d H:i:s); appointments starting before this are skipped.
+     * @param array $exclude_statuses Statuses to exclude (cancelled, draft, no-show, ...).
+     *
+     * @return array
+     */
+    public function get_pending_unpaid_deposit_alerts(string $threshold, string $now, array $exclude_statuses = []): array
+    {
+        $this->db
+            ->from('appointments')
+            ->where('is_unavailability', false)
+            ->where('deposit_status', 'unpaid')
+            ->where('payment_link_sent_at IS NOT NULL', null, false)
+            ->where('payment_link_sent_at <', $threshold)
+            ->where('deposit_unpaid_alerted_at IS NULL', null, false)
+            ->where('start_datetime >=', $now);
+
+        if (!empty($exclude_statuses)) {
+            $this->db->where_not_in('status', $exclude_statuses);
+        }
+
+        $appointments = $this->db->get()->result_array();
+
+        foreach ($appointments as &$appointment) {
+            $this->cast($appointment);
+        }
+
+        return $appointments;
+    }
+
+    /**
      * Get a specific appointment from the database.
      *
      * @param int $appointment_id The ID of the record to be returned.

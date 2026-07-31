@@ -25,6 +25,12 @@
             <div class="modal-body">
                 <div class="modal-message alert d-none"></div>
 
+                <div id="deposit-status-area" class="alert d-none mb-3 py-2" role="status">
+                    <i id="deposit-status-icon" class="fas me-2"></i>
+                    <strong id="deposit-status-label"></strong>
+                    <span id="deposit-status-details" class="ms-2"></span>
+                </div>
+
                 <form>
                     <input id="appointment-id" type="hidden">
 
@@ -382,6 +388,10 @@
 
             <div class="modal-footer">
 
+                <button id="send-payment-link" class="btn btn-success me-auto" type="button" style="display: none;">
+                    <i class="fas fa-credit-card me-2"></i>
+                    <span id="payment-link-label"><?= lang('send_payment_link') ?></span>
+                </button>
                 <button class="btn btn-outline-secondary" data-bs-dismiss="modal">
                     <?= lang('cancel') ?>
                 </button>
@@ -397,6 +407,7 @@
 <?php section('scripts'); ?>
 
 <script src="<?= asset_url('assets/js/http/customer_packages_http_client.js') ?>"></script>
+<script src="<?= asset_url('assets/js/http/payments_http_client.js') ?>"></script>
 <script src="<?= asset_url('assets/js/components/appointments_modal.js') ?>"></script>
 
 <?php end_section('scripts'); ?>

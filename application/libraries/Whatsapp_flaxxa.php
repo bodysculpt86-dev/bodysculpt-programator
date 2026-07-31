@@ -279,6 +279,182 @@ class Whatsapp_flaxxa
     }
 
     /**
+     * Send a Stripe deposit payment link to the customer.
+     *
+     * Uses the template named by STRIPE_PAYMENT_TEMPLATE_NAME (placeholder:
+     * the approved test template; production: 'link_plata'). The component
+     * layout matches the future 'link_plata' template exactly, so switching
+     * templates later only requires a config change:
+     *   {{header_1}} = customer full name
+     *   {{body_1}} = procedure/service name
+     *   {{body_2}} = appointment date and time ("20 Iunie 14:30")
+     *   {{body_3}} = Stripe payment URL
+     *
+     * Like send_marketing, returns a result array so the caller (payments
+     * endpoint) can report the send status to the staff member.
+     *
+     * @param array $appointment Appointment data (must contain start_datetime).
+     * @param array $customer Customer data (must contain phone_number and id).
+     * @param array $service Service data (must contain name).
+     * @param array|null $provider Provider data (timezone source).
+     * @param string $paymentUrl Stripe Checkout Session URL.
+     *
+     * @return array Result array: ['success' => bool, 'error' => string|null]
+     */
+    public function send_payment_link(array $appointment, array $customer, array $service, ?array $provider, string $paymentUrl): array
+    {
+        try {
+            $rawPhone = $customer['phone_number'] ?? null;
+            $customerId = $customer['id'] ?? null;
+
+            $phone = $this->normalizePhoneForWhatsapp($rawPhone);
+
+            if ($phone === null) {
+                $this->log(
+                    'Payment link skipped: invalid phone for customer #' . ($customerId ?? 'N/A') . ': ' . ($rawPhone ?: '(empty)')
+                );
+
+                return ['success' => false, 'error' => 'invalid_phone'];
+            }
+
+            $template = $this->readEnvOrConfig('STRIPE_PAYMENT_TEMPLATE_NAME');
+
+            if (empty($template)) {
+                $this->log('Payment link skipped: STRIPE_PAYMENT_TEMPLATE_NAME not configured.');
+
+                return ['success' => false, 'error' => 'template_not_configured'];
+            }
+
+            $components = [
+                $this->buildHeaderComponent($customer),
+                $this->buildPaymentLinkBody($appointment, $service, $provider, $paymentUrl),
+            ];
+
+            if ($this->logOnly) {
+                $this->log(
+                    'LOG_ONLY payment link would send to ' . $phone . ' using template "' . $template . '": ' . json_encode($components)
+                );
+
+                return ['success' => true, 'error' => null, 'log_only' => true];
+            }
+
+            $this->send($phone, $template, $components);
+
+            return ['success' => true, 'error' => null];
+        } catch (Throwable $e) {
+            $this->log(
+                'Payment link failed for customer #' . ($customer['id'] ?? 'N/A') . ': ' . $e->getMessage()
+            );
+
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Build the body component for the payment link template.
+     *
+     * Variables:
+     *   {{body_1}} = procedure/service name
+     *   {{body_2}} = appointment date and time ("20 Iunie 14:30")
+     *   {{body_3}} = Stripe payment URL
+     *
+     * @param array $appointment Appointment data.
+     * @param array $service Service data.
+     * @param array|null $provider Provider data (timezone source).
+     * @param string $paymentUrl Stripe Checkout Session URL.
+     *
+     * @return array
+     */
+    private function buildPaymentLinkBody(array $appointment, array $service, ?array $provider, string $paymentUrl): array
+    {
+        [$date, $time] = $this->formatDateTime($appointment, $provider);
+        $serviceName = $service['name'] ?? '-';
+
+        return [
+            'type' => 'body',
+            'parameters' => [
+                ['type' => 'text', 'text' => $serviceName],
+                ['type' => 'text', 'text' => trim($date . ' ' . $time)],
+                ['type' => 'text', 'text' => $paymentUrl],
+            ],
+        ];
+    }
+
+    /**
+     * Notify the CUSTOMER that the appointment was auto-cancelled because the
+     * deposit was not paid within 24 hours of sending the payment link.
+     *
+     * Uses the template named by CLIENT_CANCEL_TEMPLATE_NAME ('avans_neplatit').
+     * Component layout (THREE variables total):
+     *   {{header_1}} = customer full name
+     *   {{body_1}} = procedure/service name
+     *   {{body_2}} = appointment date and time ("20 Iunie 14:30")
+     *
+     * The "cancelled due to unpaid deposit" semantics live in the template text.
+     *
+     * @param array $appointment Appointment data (must contain start_datetime).
+     * @param array $customer Customer data (must contain phone_number and id).
+     * @param array $service Service data (must contain name).
+     * @param array|null $provider Provider data (timezone source).
+     *
+     * @return array Result array: ['success' => bool, 'error' => string|null]
+     */
+    public function send_appointment_cancelled_unpaid(array $appointment, array $customer, array $service, ?array $provider): array
+    {
+        try {
+            $rawPhone = $customer['phone_number'] ?? null;
+            $customerId = $customer['id'] ?? null;
+
+            $phone = $this->normalizePhoneForWhatsapp($rawPhone);
+
+            if ($phone === null) {
+                $this->log(
+                    'Cancel-unpaid notification skipped: invalid phone for customer #' . ($customerId ?? 'N/A') . ': ' . ($rawPhone ?: '(empty)')
+                );
+
+                return ['success' => false, 'error' => 'invalid_phone'];
+            }
+
+            $template = $this->readEnvOrConfig('CLIENT_CANCEL_TEMPLATE_NAME');
+
+            if (empty($template)) {
+                $this->log('Cancel-unpaid notification skipped: CLIENT_CANCEL_TEMPLATE_NAME not configured.');
+
+                return ['success' => false, 'error' => 'template_not_configured'];
+            }
+
+            [$date, $time] = $this->formatDateTime($appointment, $provider);
+
+            $components = [
+                $this->buildHeaderComponent($customer),
+                [
+                    'type' => 'body',
+                    'parameters' => [
+                        ['type' => 'text', 'text' => $service['name'] ?? '-'],
+                        ['type' => 'text', 'text' => trim($date . ' ' . $time)],
+                    ],
+                ],
+            ];
+
+            if ($this->logOnly) {
+                $this->log(
+                    'LOG_ONLY cancel-unpaid notification would send to ' . $phone . ' using template "' . $template . '": ' . json_encode($components)
+                );
+
+                return ['success' => true, 'error' => null, 'log_only' => true];
+            }
+
+            $this->send($phone, $template, $components);
+
+            return ['success' => true, 'error' => null];
+        } catch (Throwable $e) {
+            $this->log('Cancel-unpaid notification failed for appointment #' . ($appointment['id'] ?? 'N/A') . ': ' . $e->getMessage());
+
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
      * Normalize a Romanian phone number to E.164 with leading '+' for Flaxxa.
      *
      * @param string|null $phone Raw phone number.
