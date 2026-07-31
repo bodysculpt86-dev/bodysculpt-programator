@@ -17,9 +17,36 @@ COPY assets/css ./assets/css
 RUN npx gulp styles
 
 # -----------------------------------------------------------------------------
-# Stage 2: Final Easy!Appointments image.
+# Stage 2: Composer dependencies.
+#
+# The upstream image ships its own vendor/ built from the upstream composer.json,
+# which does not include fork additions (stripe/stripe-php). We build the vendor
+# directory fresh from our composer.lock so production matches local dev exactly
+# (this fixes "Class \"Stripe\\StripeClient\" not found").
+#
+# ext-gd is ignored here because it only matters at runtime (the final upstream
+# image has it); the php requirement is ignored because dev-only packages in the
+# lock (phpunit) target a newer PHP than the production runtime.
+# -----------------------------------------------------------------------------
+FROM php:8.2-cli AS vendor-builder
+
+WORKDIR /build
+
+COPY composer.json composer.lock ./
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git unzip \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+    && composer install --no-dev --no-interaction --ignore-platform-req=ext-gd --ignore-platform-req=php
+
+# -----------------------------------------------------------------------------
+# Stage 3: Final Easy!Appointments image.
 # -----------------------------------------------------------------------------
 FROM alextselegidis/easyappointments:1.5.2
+
+# Copy the fork vendor/ (upstream packages + stripe-php) built in the stage above.
+COPY --from=vendor-builder /build/vendor /var/www/html/vendor
 
 # Copy local application changes (including security patches) over the upstream code.
 # The base image serves the app from /var/www/html.

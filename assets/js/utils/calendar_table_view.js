@@ -318,6 +318,46 @@ App.Utils.CalendarTableView = (function () {
     // Event Handlers - Popover Actions
 
     /**
+     * Handle payment link popover button click.
+     *
+     * Creates the Stripe Checkout Session and sends the payment link to the
+     * customer via WhatsApp, directly from the event popover.
+     */
+    function onPaymentLinkPopoverClick() {
+        const data = lastFocusedEventData.extendedProps.data;
+
+        if (isUnavailability(data) || data.hasOwnProperty('id_roles')) {
+            return;
+        }
+
+        const $button = $calendar.find('.payment-link-popover');
+
+        $button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+        App.Http.Payments.createCheckoutSession(data.id)
+            .done((response) => {
+                closePopover();
+
+                if (response && response.success) {
+                    App.Layouts.Backend.displayNotification(
+                        response.whatsapp && response.whatsapp.success === false
+                            ? lang('payment_link_whatsapp_error')
+                            : lang('payment_link_sent'),
+                    );
+
+                    $reloadAppointments.trigger('click');
+                } else {
+                    App.Layouts.Backend.displayNotification((response && response.message) || lang('payment_link_error'));
+                }
+            })
+            .fail(() => {
+                closePopover();
+
+                App.Layouts.Backend.displayNotification(lang('payment_link_error'));
+            });
+    }
+
+    /**
      * Handle edit popover button click.
      */
     function onEditPopoverClick() {
@@ -1656,6 +1696,10 @@ App.Utils.CalendarTableView = (function () {
         // Popover delete button
 
         $calendar.on('click', '.delete-popover', onDeletePopoverClick);
+
+        // Popover payment link button
+
+        $calendar.on('click', '.payment-link-popover', onPaymentLinkPopoverClick);
 
         // listDay button
         $calendar.on('click', '.fc-listDay-button', setCalendarViewSize);

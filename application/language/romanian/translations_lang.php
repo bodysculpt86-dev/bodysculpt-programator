@@ -702,6 +702,7 @@ $lang['order_saved'] = 'Ordinea a fost salvată.';
 $lang['error_saving_order'] = 'Nu s-a putut salva ordinea.';
 
 // Stripe deposit payments
+$lang['deposit'] = 'Avans';
 $lang['send_payment_link'] = 'Trimite link plată';
 $lang['resend_payment_link'] = 'Retrimite link plată';
 $lang['sending_payment_link'] = 'Se trimite…';

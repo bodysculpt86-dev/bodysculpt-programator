@@ -1107,6 +1107,46 @@ App.Utils.CalendarDefaultView = (function () {
     // Event Listeners
 
     /**
+     * Handle payment link popover button click.
+     *
+     * Creates the Stripe Checkout Session and sends the payment link to the
+     * customer via WhatsApp, directly from the event popover.
+     */
+    function onPaymentLinkPopoverClick() {
+        const data = lastFocusedEventData.extendedProps.data;
+
+        if (isUnavailability(data)) {
+            return;
+        }
+
+        const $button = $calendarPage.find('.payment-link-popover');
+
+        $button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+        App.Http.Payments.createCheckoutSession(data.id)
+            .done((response) => {
+                closePopover();
+
+                if (response && response.success) {
+                    App.Layouts.Backend.displayNotification(
+                        response.whatsapp && response.whatsapp.success === false
+                            ? lang('payment_link_whatsapp_error')
+                            : lang('payment_link_sent'),
+                    );
+
+                    $reloadAppointments.trigger('click');
+                } else {
+                    App.Layouts.Backend.displayNotification((response && response.message) || lang('payment_link_error'));
+                }
+            })
+            .fail(() => {
+                closePopover();
+
+                App.Layouts.Backend.displayNotification(lang('payment_link_error'));
+            });
+    }
+
+    /**
      * Add all page event listeners.
      */
     function addEventListeners() {
@@ -1130,6 +1170,9 @@ App.Utils.CalendarDefaultView = (function () {
 
         // Popover delete button
         $calendarPage.on('click', '.delete-popover', onDeletePopoverClick);
+
+        // Popover payment link button
+        $calendarPage.on('click', '.payment-link-popover', onPaymentLinkPopoverClick);
 
         // Filter change
         $selectFilterItem.on('change', () => {

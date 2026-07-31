@@ -151,15 +151,27 @@ App.Utils.CalendarEventPopover = (function () {
      * @param {string} displayDelete - CSS class to show/hide delete button.
      * @returns {jQuery} Button container element.
      */
-    function createPopoverButtons(displayEdit, displayDelete) {
+    function createPopoverButtons(displayEdit, displayDelete, data) {
+        const depositStatus = data?.deposit_status || 'none';
+
+        // Payment link button: visible for appointments whose deposit is not paid yet.
+        const displayPaymentLink = data && depositStatus !== 'paid' ? 'me-2' : 'd-none';
+
+        const paymentLinkLabelKey = depositStatus === 'unpaid' ? 'resend_payment_link' : 'send_payment_link';
+
         return $('<div/>', {
-            class: 'd-flex justify-content-center',
+            class: 'd-flex justify-content-center flex-wrap gap-1',
             html: [
                 createPopoverButton('close-popover btn btn-outline-secondary me-2', 'fas fa-ban', 'close'),
                 createPopoverButton(
                     'delete-popover btn btn-outline-secondary ' + displayDelete,
                     'fas fa-trash-alt',
                     'delete',
+                ),
+                createPopoverButton(
+                    'payment-link-popover btn btn-success ' + displayPaymentLink,
+                    'fas fa-credit-card',
+                    paymentLinkLabelKey,
                 ),
                 createPopoverButton('edit-popover btn btn-primary ' + displayEdit, 'fas fa-edit', 'edit'),
             ],
@@ -209,7 +221,7 @@ App.Utils.CalendarEventPopover = (function () {
                 ...createPopoverRow('notes', getEventNotes(info.event)),
                 renderCustomContent(info),
                 $('<hr/>'),
-                createPopoverButtons(displayEdit, displayDelete),
+                createPopoverButtons(displayEdit, displayDelete, data),
             ],
         });
     }
@@ -306,6 +318,7 @@ App.Utils.CalendarEventPopover = (function () {
                 $('<br/>'),
                 ...createPopoverRow('service', data.service.name),
                 ...createPopoverRow('price', data.price ? data.price + ' Lei' : '-'),
+                ...createDepositPopoverRow(data),
                 $('<strong/>', {class: 'd-inline-block me-2', text: lang('provider')}),
                 renderMapIcon(provider),
                 $('<span/>', {text: provider.first_name + ' ' + provider.last_name}),
@@ -329,6 +342,39 @@ App.Utils.CalendarEventPopover = (function () {
                 createPopoverButtons(displayEdit, displayDelete),
             ],
         });
+    }
+
+    /**
+     * Create the deposit status row for the appointment popover.
+     *
+     * @param {Object} data - Appointment data.
+     * @returns {Array<jQuery>} Array of jQuery elements (empty when no deposit).
+     */
+    function createDepositPopoverRow(data) {
+        const depositStatus = data.deposit_status || 'none';
+
+        if (depositStatus === 'none') {
+            return [];
+        }
+
+        let labelKey = 'deposit_pending';
+        let textClass = 'text-warning';
+        let detail = data.payment_link_sent_at ? ' (' + formatDateTime(moment(data.payment_link_sent_at).toDate()) + ')' : '';
+
+        if (depositStatus === 'paid') {
+            labelKey = 'deposit_paid';
+            textClass = 'text-success';
+            detail = data.deposit_paid_at ? ' (' + formatDateTime(moment(data.deposit_paid_at).toDate()) + ')' : '';
+        } else if (data.deposit_unpaid_alerted_at) {
+            labelKey = 'deposit_auto_cancelled';
+            textClass = 'text-danger';
+        }
+
+        return [
+            $('<strong/>', {class: 'd-inline-block me-2', text: lang('deposit')}),
+            $('<span/>', {class: textClass, text: lang(labelKey) + detail}),
+            $('<br/>'),
+        ];
     }
 
     /**
