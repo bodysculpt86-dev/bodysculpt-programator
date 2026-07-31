@@ -90,7 +90,7 @@ class Payments extends EA_Controller
 
             $stripe = new \Stripe\StripeClient($secret_key);
 
-            $session = $stripe->checkout->sessions->create([
+            $session_params = [
                 'mode' => 'payment',
                 'line_items' => [[
                     'quantity' => 1,
@@ -113,10 +113,20 @@ class Payments extends EA_Controller
                         'appointment_id' => (string) $appointment_id,
                     ],
                 ],
-                'customer_email' => $customer['email'] ?? null,
                 'success_url' => site_url('booking') . '?deposit=success',
                 'cancel_url' => site_url('booking') . '?deposit=cancelled',
-            ]);
+            ];
+
+            // Prefill the customer email only when it is a valid address;
+            // otherwise Stripe rejects the request with "Invalid email address"
+            // (many customers only have a phone number on file).
+            $customer_email = trim((string) ($customer['email'] ?? ''));
+
+            if (filter_var($customer_email, FILTER_VALIDATE_EMAIL)) {
+                $session_params['customer_email'] = $customer_email;
+            }
+
+            $session = $stripe->checkout->sessions->create($session_params);
 
             // Persist the backend-only deposit fields directly (these are NOT
             // part of the calendar $allowed_appointment_fields whitelist).
