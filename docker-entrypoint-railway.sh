@@ -31,12 +31,26 @@ a2enmod setenvif 2>/dev/null || true
 a2enmod rewrite 2>/dev/null || true
 
 # Pretty short payment links: /pay/<slug> -> /index.php/pay/<slug>
-# Allows WhatsApp payment links like https://bodysculpt.ro/pay/abc123XY
+# Allows WhatsApp payment links like https://bookings.bodysculpt.ro/pay/abc123XY
 # while the rest of the app keeps its index.php URLs unchanged.
 cat <<'CONF' >/etc/apache2/conf-enabled/pay-short-links.conf
 RewriteEngine On
 RewriteRule ^/pay/([A-Za-z0-9]{1,16})/?$ /index.php/pay/$1 [L]
 CONF
+
+# Root-level slugs on the dedicated short-link host: when SHORT_LINK_BASE_URL
+# is set (e.g. https://pay.bodysculpt.ro), links look like
+# https://pay.bodysculpt.ro/abc123XY. The host condition is REQUIRED so the
+# rule never hijacks same-length app paths (/calendar, /invoices, ...) on the
+# main domain.
+if [ -n "${SHORT_LINK_BASE_URL}" ]; then
+    SHORT_LINK_HOST=$(echo "${SHORT_LINK_BASE_URL}" | sed -E 's#^https?://([^/]+)/?.*$#\1#' | sed 's/\./\\./g')
+    cat <<CONF >/etc/apache2/conf-enabled/pay-short-link-host.conf
+RewriteEngine On
+RewriteCond %{HTTP_HOST} ^${SHORT_LINK_HOST}$ [NC]
+RewriteRule ^/([A-Za-z0-9]{1,16})/?$ /index.php/pay/\$1 [L]
+CONF
+fi
 
 # Configure Apache to trust Railway's X-Forwarded-Proto header and set HTTPS=on
 # when the request arrived over HTTPS. This makes PHP see $_SERVER['HTTPS']

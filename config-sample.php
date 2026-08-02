@@ -106,11 +106,12 @@ class Config
     // const STRIPE_DEPOSIT_AMOUNT = '100.00';
     // const STRIPE_PAYMENT_TEMPLATE_NAME = 'payment_link_deposit';
     //
-    // SHORT_LINK_BASE_URL: optional public base for the short payment links
-    // sent via WhatsApp (e.g. 'https://bodysculpt.ro'). When set, links look
-    // like https://bodysculpt.ro/pay/<slug>. Requires the domain to point to
-    // this app and the Apache rewrite for /pay (built into the Railway image).
-    // Default when empty: the app URL without the index.php segment.
+    // SHORT_LINK_BASE_URL: optional dedicated host for the short payment
+    // links sent via WhatsApp (e.g. 'https://pay.bodysculpt.ro'). When set,
+    // links look like https://pay.bodysculpt.ro/<slug> (slug at the root).
+    // Requires the host to point to this app; the Railway image rewrites the
+    // root slug to /index.php/pay/<slug> on that host only. Default when
+    // empty: the app domain without index.php + /pay/<slug>.
     //
     // const SHORT_LINK_BASE_URL = '';
     //
