@@ -113,6 +113,66 @@ class Booking extends EA_Controller
     }
 
     /**
+     * Render the Stripe deposit "payment received" page.
+     *
+     * Standalone message page shown after Stripe Checkout redirects the
+     * customer back. Intentionally does NOT check the disable_booking
+     * setting: the payment was already made, so the client must see a
+     * confirmation, not the "booking disabled" message.
+     *
+     * The actual deposit_status is set by the Stripe webhook; this page
+     * is presentational only.
+     */
+    public function deposit_success(): void
+    {
+        method('get');
+
+        html_vars([
+            'show_message' => true,
+            'page_title' => 'Plata a fost primită · ' . e(setting('company_name')),
+            'message_title' => 'Plata a fost primită!',
+            'message_text' => 'Mulțumim! Avansul pentru programarea ta a fost achitat cu succes. '
+                . 'Te așteptăm la clinică la data și ora stabilită.',
+            'message_icon' => base_url('assets/img/success.png'),
+            'google_analytics_code' => setting('google_analytics_code'),
+            'matomo_analytics_url' => setting('matomo_analytics_url'),
+            'matomo_analytics_site_id' => setting('matomo_analytics_site_id'),
+            'display_login_button' => setting('display_login_button'),
+            'legal_notice_url' => setting('legal_notice_url'),
+            'imprint_url' => setting('imprint_url'),
+        ]);
+
+        $this->load->view('pages/booking_message');
+    }
+
+    /**
+     * Render the Stripe deposit "payment cancelled" page.
+     *
+     * Same reasoning as deposit_success(): must bypass disable_booking.
+     */
+    public function deposit_cancelled(): void
+    {
+        method('get');
+
+        html_vars([
+            'show_message' => true,
+            'page_title' => 'Plată nefinalizată · ' . e(setting('company_name')),
+            'message_title' => 'Plata nu a fost finalizată',
+            'message_text' => 'Avansul nu a fost achitat. Poți relua plata folosind linkul primit pe WhatsApp, '
+                . 'sau contactează clinica pentru ajutor.',
+            'message_icon' => base_url('assets/img/error.png'),
+            'google_analytics_code' => setting('google_analytics_code'),
+            'matomo_analytics_url' => setting('matomo_analytics_url'),
+            'matomo_analytics_site_id' => setting('matomo_analytics_site_id'),
+            'display_login_button' => setting('display_login_button'),
+            'legal_notice_url' => setting('legal_notice_url'),
+            'imprint_url' => setting('imprint_url'),
+        ]);
+
+        $this->load->view('pages/booking_message');
+    }
+
+    /**
      * Render the booking page.
     /**
      * Render the booking page.

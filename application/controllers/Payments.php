@@ -113,8 +113,8 @@ class Payments extends EA_Controller
                         'appointment_id' => (string) $appointment_id,
                     ],
                 ],
-                'success_url' => site_url('booking') . '?deposit=success',
-                'cancel_url' => site_url('booking') . '?deposit=cancelled',
+                'success_url' => site_url('booking/deposit_success'),
+                'cancel_url' => site_url('booking/deposit_cancelled'),
             ];
 
             // Prefill the customer email only when it is a valid address;
