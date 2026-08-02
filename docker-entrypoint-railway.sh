@@ -31,29 +31,28 @@ a2enmod setenvif 2>/dev/null || true
 a2enmod rewrite 2>/dev/null || true
 
 # Pretty short payment links. mod_rewrite rules in the main server context
-# are NOT inherited by virtual hosts, so:
-#  - the /pay/<slug> rule lives in a <Directory> block (applies to all vhosts)
-#  - the root-slug rule gets its own vhost matched by ServerName
-# Links look like https://bookings.bodysculpt.ro/pay/<slug>, or
-# https://pay.bodysculpt.ro/<slug> when SHORT_LINK_BASE_URL is set.
-cat <<'CONF' >/etc/apache2/conf-enabled/pay-short-links.conf
-<Directory /var/www/html>
-    RewriteEngine On
-    RewriteRule ^pay/([A-Za-z0-9]{1,16})/?$ index.php/pay/$1 [L]
-</Directory>
-CONF
+# are NOT inherited by virtual hosts, and per-directory rewrite rules from
+# separate <Directory> sections for the same path are NOT merged — so ALL
+# rules must live in ONE <Directory> block in ONE file.
+# NOTE: per-directory rewrites preserve the original REQUEST_URI, and
+# CodeIgniter routes on REQUEST_URI — so the /pay/<slug> rule rewrites to
+# index.php/pay/<slug>, while bare slugs on the dedicated short-link host
+# (SHORT_LINK_BASE_URL, e.g. https://pay.bodysculpt.ro/<slug>) only get sent
+# to the front controller and are routed by a host-conditional route in
+# application/config/routes.php.
+{
+    echo '<Directory /var/www/html>'
+    echo '    RewriteEngine On'
+    echo '    RewriteRule ^pay/([A-Za-z0-9]{1,16})/?$ index.php/pay/$1 [L]'
 
-if [ -n "${SHORT_LINK_BASE_URL}" ]; then
-    SHORT_LINK_HOST=$(echo "${SHORT_LINK_BASE_URL}" | sed -E 's#^https?://([^/]+)/?.*$#\1#')
-    cat <<CONF >/etc/apache2/sites-enabled/001-pay-short-link.conf
-<VirtualHost *:80>
-    ServerName ${SHORT_LINK_HOST}
-    DocumentRoot /var/www/html
-    RewriteEngine On
-    RewriteRule ^/([A-Za-z0-9]{1,16})/?$ /index.php/pay/\$1 [L]
-</VirtualHost>
-CONF
-fi
+    if [ -n "${SHORT_LINK_BASE_URL}" ]; then
+        SHORT_LINK_HOST=$(echo "${SHORT_LINK_BASE_URL}" | sed -E 's#^https?://([^/]+)/?.*$#\1#' | sed 's/\./\\./g')
+        echo "    RewriteCond %{HTTP_HOST} ^${SHORT_LINK_HOST}$ [NC]"
+        echo '    RewriteRule ^([A-Za-z0-9]{1,16})/?$ index.php [L]'
+    fi
+
+    echo '</Directory>'
+} > /etc/apache2/conf-enabled/pay-short-links.conf
 
 # Configure Apache to trust Railway's X-Forwarded-Proto header and set HTTPS=on
 # when the request arrived over HTTPS. This makes PHP see $_SERVER['HTTPS']

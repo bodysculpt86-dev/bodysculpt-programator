@@ -215,6 +215,18 @@ $route['p/([^/]+)'] = 'appointment_link/index/$1';
 // Public short payment link redirect (Stripe Checkout URL shortener).
 $route['pay/(:any)'] = 'pay/index/$1';
 
+// Root-level slugs on the dedicated short-link host: when SHORT_LINK_BASE_URL
+// is set (e.g. https://pay.bodysculpt.ro), links look like
+// https://pay.bodysculpt.ro/<slug> — no /pay/ prefix. CodeIgniter reads the
+// URI from the ORIGINAL REQUEST_URI, which Apache rewrites never change, so
+// bare slugs must be routed here, limited to that host only (otherwise they
+// would hijack same-length app paths like /invoices or /calendar).
+$short_link_host = parse_url((string) getenv('SHORT_LINK_BASE_URL'), PHP_URL_HOST);
+
+if (!empty($short_link_host) && strcasecmp($_SERVER['HTTP_HOST'] ?? '', $short_link_host) === 0) {
+    $route['([A-Za-z0-9]{1,16})'] = 'pay/index/$1';
+}
+
 // Public Stripe webhook receiver (signature-verified, CSRF-excluded).
 $route['webhooks/stripe'] = 'webhooks_stripe/receive';
 
