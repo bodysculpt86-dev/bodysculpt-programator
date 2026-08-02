@@ -40,19 +40,27 @@ a2enmod rewrite 2>/dev/null || true
 # (SHORT_LINK_BASE_URL, e.g. https://pay.bodysculpt.ro/<slug>) only get sent
 # to the front controller and are routed by a host-conditional route in
 # application/config/routes.php.
+echo "[pay-short-links] SHORT_LINK_BASE_URL='${SHORT_LINK_BASE_URL}'"
+
 {
     echo '<Directory /var/www/html>'
     echo '    RewriteEngine On'
     echo '    RewriteRule ^pay/([A-Za-z0-9]{1,16})/?$ index.php/pay/$1 [L]'
 
-    if [ -n "${SHORT_LINK_BASE_URL}" ]; then
-        SHORT_LINK_HOST=$(echo "${SHORT_LINK_BASE_URL}" | sed -E 's#^https?://([^/]+)/?.*$#\1#' | sed 's/\./\\./g')
+    # Sanitize the value: strip quotes/whitespace Railway users may paste.
+    SHORT_LINK_BASE_CLEAN=$(echo "${SHORT_LINK_BASE_URL}" | tr -d '"' | tr -d "'" | tr -d ' ')
+
+    if [ -n "${SHORT_LINK_BASE_CLEAN}" ]; then
+        SHORT_LINK_HOST=$(echo "${SHORT_LINK_BASE_CLEAN}" | sed -E 's#^https?://([^/]+)/?.*$#\1#' | sed 's/\./\\./g')
         echo "    RewriteCond %{HTTP_HOST} ^${SHORT_LINK_HOST}$ [NC]"
         echo '    RewriteRule ^([A-Za-z0-9]{1,16})/?$ index.php [L]'
     fi
 
     echo '</Directory>'
 } > /etc/apache2/conf-enabled/pay-short-links.conf
+
+echo '[pay-short-links] generated /etc/apache2/conf-enabled/pay-short-links.conf:'
+cat /etc/apache2/conf-enabled/pay-short-links.conf
 
 # Configure Apache to trust Railway's X-Forwarded-Proto header and set HTTPS=on
 # when the request arrived over HTTPS. This makes PHP see $_SERVER['HTTPS']
