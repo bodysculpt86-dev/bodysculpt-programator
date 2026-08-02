@@ -712,4 +712,9 @@ $lang['deposit_auto_cancelled'] = 'Avans neplătit — anulat automat';
 $lang['payment_link_sent'] = 'Link-ul de plată a fost trimis clientului.';
 $lang['payment_link_error'] = 'Link-ul de plată nu a putut fi creat.';
 $lang['payment_link_whatsapp_error'] = 'Link-ul a fost creat, dar trimiterea pe WhatsApp a eșuat.';
+$lang['invoices'] = 'Facturi';
+$lang['issue_invoice'] = 'Emite factură';
+$lang['generate_fiscal_invoice'] = 'Generează factură fiscală';
+$lang['manage_invoices_hint'] = 'Emite și gestionează facturi fiscale.';
+$lang['invoice_feature_coming_soon'] = 'Funcționalitatea de facturare va fi disponibilă în etapele următoare.';
 // End

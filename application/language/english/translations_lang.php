@@ -712,4 +712,9 @@ $lang['deposit_auto_cancelled'] = 'Unpaid deposit — auto-cancelled';
 $lang['payment_link_sent'] = 'The payment link was sent to the customer.';
 $lang['payment_link_error'] = 'The payment link could not be created.';
 $lang['payment_link_whatsapp_error'] = 'The link was created, but the WhatsApp send failed.';
+$lang['invoices'] = 'Invoices';
+$lang['issue_invoice'] = 'Issue Invoice';
+$lang['generate_fiscal_invoice'] = 'Generate Fiscal Invoice';
+$lang['manage_invoices_hint'] = 'Issue and manage fiscal invoices.';
+$lang['invoice_feature_coming_soon'] = 'Invoicing will be available in the upcoming phases.';
 // End

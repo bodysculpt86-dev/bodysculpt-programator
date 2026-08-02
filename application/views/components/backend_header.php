@@ -127,6 +127,26 @@
             </div>
         <?php endif; ?>
 
+        <?php if (can('view', PRIV_PACKAGES)): ?>
+            <?php $active = $active_menu == 'invoices' ? 'active' : ''; ?>
+            <div class="backend-sidebar-dropdown dropend <?= $active ?>">
+                <a class="backend-sidebar-link dropdown-toggle" href="#"
+                   data-bs-toggle="dropdown" aria-expanded="false"
+                   data-tippy-content="<?= lang('manage_invoices_hint') ?>">
+                    <i class="fas fa-file-invoice backend-sidebar-icon"></i>
+                    <span><?= lang('invoices') ?></span>
+                    <i class="fas fa-chevron-right backend-sidebar-caret ms-auto"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark backend-sidebar-dropdown-menu">
+                    <li>
+                        <a class="dropdown-item backend-sidebar-sublink" href="<?= site_url('invoices') ?>">
+                            <?= lang('invoices') ?>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        <?php endif; ?>
+
         <?php if (can('view', PRIV_CUSTOMER_PACKAGES)): ?>
             <?php $active = $active_menu == PRIV_CUSTOMER_PACKAGES ? 'active' : ''; ?>
             <div class="backend-sidebar-dropdown dropend <?= $active ?>">
@@ -340,6 +360,24 @@
                     <div class="collapse backend-sidebar-submenu <?= $active ? 'show' : '' ?>" id="sidebar-packages-submenu-mobile">
                         <a class="backend-sidebar-sublink" href="<?= site_url('packages') ?>">
                             <?= lang('packages') ?>
+                        </a>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if (can('view', PRIV_PACKAGES)): ?>
+                <?php $active = $active_menu == 'invoices' ? 'active' : ''; ?>
+                <div class="backend-sidebar-dropdown <?= $active ?>">
+                    <a class="backend-sidebar-link dropdown-toggle" href="#"
+                       data-bs-toggle="collapse" data-bs-target="#sidebar-invoices-submenu-mobile"
+                       aria-expanded="<?= $active ? 'true' : 'false' ?>">
+                        <i class="fas fa-file-invoice backend-sidebar-icon"></i>
+                        <span><?= lang('invoices') ?></span>
+                        <i class="fas fa-chevron-down backend-sidebar-caret ms-auto"></i>
+                    </a>
+                    <div class="collapse backend-sidebar-submenu <?= $active ? 'show' : '' ?>" id="sidebar-invoices-submenu-mobile">
+                        <a class="backend-sidebar-sublink" href="<?= site_url('invoices') ?>">
+                            <?= lang('invoices') ?>
                         </a>
                     </div>
                 </div>
