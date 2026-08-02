@@ -212,6 +212,9 @@ $route['p/([^/]+)/confirm'] = 'appointment_link/confirm/$1';
 $route['p/([^/]+)/cancel'] = 'appointment_link/cancel/$1';
 $route['p/([^/]+)'] = 'appointment_link/index/$1';
 
+// Public short payment link redirect (Stripe Checkout URL shortener).
+$route['pay/(:any)'] = 'pay/index/$1';
+
 // Public Stripe webhook receiver (signature-verified, CSRF-excluded).
 $route['webhooks/stripe'] = 'webhooks_stripe/receive';
 

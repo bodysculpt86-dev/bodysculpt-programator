@@ -27,6 +27,7 @@ class Payments extends EA_Controller
         $this->load->model('customers_model');
         $this->load->model('services_model');
         $this->load->model('providers_model');
+        $this->load->model('payment_links_model');
 
         $this->load->library('whatsapp_flaxxa');
     }
@@ -137,6 +138,12 @@ class Payments extends EA_Controller
 
             $this->appointments_model->save($appointment);
 
+            // Create a short internal link (/pay/<slug>) that redirects to the
+            // long Stripe Checkout URL. ONLY the WhatsApp template variable
+            // uses the short URL; the Stripe session, the webhook and the
+            // staff-facing checkout_url keep the original Stripe URL.
+            $short_url = site_url('pay/' . $this->payment_links_model->create($session->url, $appointment_id));
+
             // Send the payment link via WhatsApp. A send failure does not roll
             // back the session: the link exists and is reported to the staff.
             $whatsapp_result = $this->whatsapp_flaxxa->send_payment_link(
@@ -144,7 +151,7 @@ class Payments extends EA_Controller
                 $customer,
                 $service,
                 $provider,
-                $session->url,
+                $short_url,
             );
 
             log_message(
@@ -156,6 +163,7 @@ class Payments extends EA_Controller
             json_response([
                 'success' => true,
                 'checkout_url' => $session->url,
+                'short_url' => $short_url,
                 'stripe_session_id' => $session->id,
                 'whatsapp' => $whatsapp_result,
             ]);
