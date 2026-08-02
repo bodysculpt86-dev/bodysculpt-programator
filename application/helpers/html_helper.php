@@ -189,6 +189,11 @@ if (!function_exists('pure_html')) {
     {
         $config = HTMLPurifier_Config::createDefault();
 
+        // Disable the definition cache: the app uses the default config only,
+        // and the default Serializer cache would try to write inside the
+        // read-only vendor/ directory in the container.
+        $config->set('Cache.DefinitionImpl', null);
+
         $purifier = new HTMLPurifier($config);
 
         return $purifier->purify($markup);
