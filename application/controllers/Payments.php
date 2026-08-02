@@ -148,10 +148,9 @@ class Payments extends EA_Controller
 
             if (!empty($short_link_base)) {
                 // Dedicated short-link host (e.g. https://pay.bodysculpt.ro):
-                // the slug lives at the root — https://pay.bodysculpt.ro/abc123XY
-                // — and Apache rewrites it to /index.php/pay/<slug> on that
-                // host only (see docker-entrypoint-railway.sh).
-                $short_url = rtrim($short_link_base, '/') . '/' . $slug;
+                // keep the /pay/ prefix — https://pay.bodysculpt.ro/pay/<slug>
+                // — served by the Apache <Directory> rewrite rule.
+                $short_url = rtrim($short_link_base, '/') . '/pay/' . $slug;
             } else {
                 // Default: app domain without the index.php segment + /pay/.
                 $short_url = preg_replace('#/index\.php/?$#', '', site_url()) . '/pay/' . $slug;
