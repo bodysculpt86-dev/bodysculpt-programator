@@ -30,25 +30,28 @@ a2enmod setenvif 2>/dev/null || true
 # Ensure mod_rewrite is available for the pretty short payment links.
 a2enmod rewrite 2>/dev/null || true
 
-# Pretty short payment links: /pay/<slug> -> /index.php/pay/<slug>
-# Allows WhatsApp payment links like https://bookings.bodysculpt.ro/pay/abc123XY
-# while the rest of the app keeps its index.php URLs unchanged.
+# Pretty short payment links. mod_rewrite rules in the main server context
+# are NOT inherited by virtual hosts, so:
+#  - the /pay/<slug> rule lives in a <Directory> block (applies to all vhosts)
+#  - the root-slug rule gets its own vhost matched by ServerName
+# Links look like https://bookings.bodysculpt.ro/pay/<slug>, or
+# https://pay.bodysculpt.ro/<slug> when SHORT_LINK_BASE_URL is set.
 cat <<'CONF' >/etc/apache2/conf-enabled/pay-short-links.conf
-RewriteEngine On
-RewriteRule ^/pay/([A-Za-z0-9]{1,16})/?$ /index.php/pay/$1 [L]
+<Directory /var/www/html>
+    RewriteEngine On
+    RewriteRule ^pay/([A-Za-z0-9]{1,16})/?$ index.php/pay/$1 [L]
+</Directory>
 CONF
 
-# Root-level slugs on the dedicated short-link host: when SHORT_LINK_BASE_URL
-# is set (e.g. https://pay.bodysculpt.ro), links look like
-# https://pay.bodysculpt.ro/abc123XY. The host condition is REQUIRED so the
-# rule never hijacks same-length app paths (/calendar, /invoices, ...) on the
-# main domain.
 if [ -n "${SHORT_LINK_BASE_URL}" ]; then
-    SHORT_LINK_HOST=$(echo "${SHORT_LINK_BASE_URL}" | sed -E 's#^https?://([^/]+)/?.*$#\1#' | sed 's/\./\\./g')
-    cat <<CONF >/etc/apache2/conf-enabled/pay-short-link-host.conf
-RewriteEngine On
-RewriteCond %{HTTP_HOST} ^${SHORT_LINK_HOST}$ [NC]
-RewriteRule ^/([A-Za-z0-9]{1,16})/?$ /index.php/pay/\$1 [L]
+    SHORT_LINK_HOST=$(echo "${SHORT_LINK_BASE_URL}" | sed -E 's#^https?://([^/]+)/?.*$#\1#')
+    cat <<CONF >/etc/apache2/sites-enabled/001-pay-short-link.conf
+<VirtualHost *:80>
+    ServerName ${SHORT_LINK_HOST}
+    DocumentRoot /var/www/html
+    RewriteEngine On
+    RewriteRule ^/([A-Za-z0-9]{1,16})/?$ /index.php/pay/\$1 [L]
+</VirtualHost>
 CONF
 fi
 
