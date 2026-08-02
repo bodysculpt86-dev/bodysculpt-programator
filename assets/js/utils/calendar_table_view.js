@@ -46,6 +46,7 @@ App.Utils.CalendarTableView = (function () {
     let $filterProvider;
     let $filterService;
     let $selectDate;
+    let $weekdayLabel;
     let $popoverTarget = null;
     let lastFocusedEventData = null;
     let isSyncingScrollProxy = false;
@@ -1192,6 +1193,20 @@ App.Utils.CalendarTableView = (function () {
             class: 'btn btn-xs btn-outline-secondary next',
             html: [$('<span/>', {class: 'fas fa-chevron-right'})],
         }).appendTo($calendarHeader);
+
+        // Weekday label
+
+        $weekdayLabel = $('<span/>', {
+            class: 'calendar-weekday-label ms-2 text-white-50',
+        }).appendTo($calendarHeader);
+
+        // Today button
+
+        $('<button/>', {
+            class: 'btn btn-xs btn-outline-secondary ms-2 today-btn',
+            text: lang('today'),
+        }).appendTo($calendarHeader);
+
         App.Utils.UI.initializeDatePicker($calendarHeader.find('.select-date'), {
             onChange(selectedDates) {
                 const startDate = selectedDates[0];
@@ -1204,6 +1219,8 @@ App.Utils.CalendarTableView = (function () {
             },
         });
         $calendarHeader.find('.flatpickr-wrapper').addClass('w-auto');
+
+        updateWeekdayLabel(new Date());
         const providers = getAvailableProviders();
 
         // Provider filter
@@ -1263,12 +1280,41 @@ App.Utils.CalendarTableView = (function () {
     }
 
     /**
+     * Update the weekday label next to the date picker.
+     *
+     * Mirrors the weekday indexing of App.Utils.UI getFlatpickrLocale().
+     *
+     * @param {Date} date
+     */
+    function updateWeekdayLabel(date) {
+        if (!$weekdayLabel || !$weekdayLabel.length) {
+            return;
+        }
+
+        const weekday = [
+            lang('sunday'),
+            lang('monday'),
+            lang('tuesday'),
+            lang('wednesday'),
+            lang('thursday'),
+            lang('friday'),
+            lang('saturday'),
+        ][date.getDay()];
+
+        $weekdayLabel.text(weekday + ', ' + $selectDate.val());
+    }
+
+    /**
      * Create table schedule view.
      *
      * @param {Date} startDate - Start date to be displayed.
      * @param {Date} endDate - End date to be displayed.
      */
     function createView(startDate, endDate) {
+        // Keep the weekday label in sync on every navigation path.
+
+        updateWeekdayLabel(startDate);
+
         // Disable date navigation
 
         $('#calendar .calendar-header .btn').addClass('disabled').prop('disabled', true);
@@ -1604,6 +1650,20 @@ App.Utils.CalendarTableView = (function () {
 
             App.Utils.UI.setDateTimePickerValue($selectDate, startDate.toDate());
             createView(startDate.toDate(), endDate.toDate());
+        });
+
+        // Today button
+
+        $calendar.on('click', '.calendar-header .btn.today-btn', () => {
+            // Jump to today in the 1-day view: set the date first (flatpickr
+            // setDate does not fire onChange), then switch the interval to the
+            // 1-day option ('1') and let the existing interval-change handler
+            // do the single createView() render — identical to the user
+            // manually picking "1 day" + today.
+
+            App.Utils.UI.setDateTimePickerValue($selectDate, new Date());
+
+            $selectFilterItem.val('1').trigger('change');
         });
 
         // Day interval change
