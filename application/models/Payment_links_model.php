@@ -42,7 +42,7 @@ class Payment_links_model extends EA_Model
     {
         $this->load->helper('payment_link');
 
-        $this->purge_expired();
+        $this->purge_expired(); // Housekeeping: drop links older than the retention window.
 
         $slug = null;
 
@@ -115,13 +115,20 @@ class Payment_links_model extends EA_Model
     }
 
     /**
-     * Delete expired payment links (housekeeping).
+     * Delete old payment links (housekeeping).
+     *
+     * Links stay in the database for $retention_days after creation so the
+     * click history (clicked_at / click_count) remains available for a week,
+     * then they are purged. Called on every create and hourly from the
+     * process_unpaid_deposits cron.
+     *
+     * @param int $retention_days How many days to keep links (default 7).
      *
      * @return int Number of deleted rows.
      */
-    public function purge_expired(): int
+    public function purge_expired(int $retention_days = 7): int
     {
-        $this->db->where('expires_at <=', date('Y-m-d H:i:s'));
+        $this->db->where('create_datetime <=', date('Y-m-d H:i:s', strtotime('-' . $retention_days . ' days')));
         $this->db->delete('payment_links');
 
         return $this->db->affected_rows();

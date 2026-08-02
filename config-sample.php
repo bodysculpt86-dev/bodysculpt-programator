@@ -106,6 +106,14 @@ class Config
     // const STRIPE_DEPOSIT_AMOUNT = '100.00';
     // const STRIPE_PAYMENT_TEMPLATE_NAME = 'payment_link_deposit';
     //
+    // SHORT_LINK_BASE_URL: optional public base for the short payment links
+    // sent via WhatsApp (e.g. 'https://bodysculpt.ro'). When set, links look
+    // like https://bodysculpt.ro/pay/<slug>. Requires the domain to point to
+    // this app and the Apache rewrite for /pay (built into the Railway image).
+    // Default when empty: the app URL without the index.php segment.
+    //
+    // const SHORT_LINK_BASE_URL = '';
+    //
     // CLIENT_CANCEL_TEMPLATE_NAME: approved WhatsApp template sent to the
     // customer when an appointment is auto-cancelled for an unpaid deposit
     // (see Console::process_unpaid_deposits). Variables: {{header_1}} = customer

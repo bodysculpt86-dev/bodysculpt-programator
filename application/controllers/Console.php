@@ -44,6 +44,7 @@ class Console extends EA_Controller
         $this->load->model('admins_model');
         $this->load->model('appointments_model');
         $this->load->model('customers_model');
+        $this->load->model('payment_links_model');
         $this->load->model('providers_model');
         $this->load->model('services_model');
         $this->load->model('settings_model');
@@ -319,6 +320,14 @@ class Console extends EA_Controller
      */
     public function process_unpaid_deposits(): void
     {
+        // Housekeeping: purge short payment links older than the 7-day
+        // retention window (click history is kept for a week).
+        $purged_links = $this->payment_links_model->purge_expired();
+
+        if ($purged_links > 0) {
+            log_message('debug', '[unpaid-deposit-cancel] Purged ' . $purged_links . ' old payment link(s).');
+        }
+
         // Use the business timezone, same as the reminder job.
         $timezone = new DateTimeZone('Europe/Bucharest');
 

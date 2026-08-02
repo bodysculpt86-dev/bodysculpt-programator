@@ -27,6 +27,17 @@ a2enmod mpm_prefork 2>/dev/null || true
 # Ensure mod_setenvif is available so Apache can read X-Forwarded-Proto.
 a2enmod setenvif 2>/dev/null || true
 
+# Ensure mod_rewrite is available for the pretty short payment links.
+a2enmod rewrite 2>/dev/null || true
+
+# Pretty short payment links: /pay/<slug> -> /index.php/pay/<slug>
+# Allows WhatsApp payment links like https://bodysculpt.ro/pay/abc123XY
+# while the rest of the app keeps its index.php URLs unchanged.
+cat <<'CONF' >/etc/apache2/conf-enabled/pay-short-links.conf
+RewriteEngine On
+RewriteRule ^/pay/([A-Za-z0-9]{1,16})/?$ /index.php/pay/$1 [L]
+CONF
+
 # Configure Apache to trust Railway's X-Forwarded-Proto header and set HTTPS=on
 # when the request arrived over HTTPS. This makes PHP see $_SERVER['HTTPS']
 # correctly without modifying any application code.

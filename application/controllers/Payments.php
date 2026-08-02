@@ -142,7 +142,18 @@ class Payments extends EA_Controller
             // long Stripe Checkout URL. ONLY the WhatsApp template variable
             // uses the short URL; the Stripe session, the webhook and the
             // staff-facing checkout_url keep the original Stripe URL.
-            $short_url = site_url('pay/' . $this->payment_links_model->create($session->url, $appointment_id));
+            //
+            // The public base can be overridden with SHORT_LINK_BASE_URL (e.g.
+            // https://bodysculpt.ro) so links look like
+            // https://bodysculpt.ro/pay/<slug> — requires the domain to point
+            // to this app and the Apache rewrite for /pay (built into the
+            // Railway image). Default: app URL without the index.php segment.
+            $short_link_base = $this->readEnvOrConfig('SHORT_LINK_BASE_URL')
+                ?: preg_replace('#/index\.php/?$#', '', site_url());
+
+            $short_url = rtrim($short_link_base, '/')
+                . '/pay/'
+                . $this->payment_links_model->create($session->url, $appointment_id);
 
             // Send the payment link via WhatsApp. A send failure does not roll
             // back the session: the link exists and is reported to the staff.
