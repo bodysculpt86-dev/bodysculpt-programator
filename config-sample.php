@@ -115,6 +115,11 @@ class Config
     //
     // const SHORT_LINK_BASE_URL = '';
     //
+    // VAT_DEFAULT: default VAT rate (percent) pre-filled on each new invoice
+    // line on the invoicing page. Editable per line by the staff.
+    //
+    // const VAT_DEFAULT = '19';
+    //
     // CLIENT_CANCEL_TEMPLATE_NAME: approved WhatsApp template sent to the
     // customer when an appointment is auto-cancelled for an unpaid deposit
     // (see Console::process_unpaid_deposits). Variables: {{header_1}} = customer
