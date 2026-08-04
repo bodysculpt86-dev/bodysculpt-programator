@@ -53,6 +53,12 @@ class Smartbill
     protected ?string $series = null;
 
     /**
+     * @var string|null Optional receipt (chitanta) series; SmartBill uses the
+     * account's default receipt series when this is not set.
+     */
+    protected ?string $receiptSeries = null;
+
+    /**
      * Smartbill constructor.
      */
     public function __construct()
@@ -61,6 +67,7 @@ class Smartbill
         $this->token = $this->readEnvOrConfig('SMARTBILL_TOKEN');
         $this->companyVatCode = $this->readEnvOrConfig('SMARTBILL_CIF');
         $this->series = $this->readEnvOrConfig('SMARTBILL_SERIES');
+        $this->receiptSeries = $this->readEnvOrConfig('SMARTBILL_RECEIPT_SERIES');
     }
 
     /**
@@ -122,7 +129,7 @@ class Smartbill
             ];
         }
 
-        return [
+        $payload = [
             'companyVatCode' => $this->companyVatCode,
             'client' => $payloadClient,
             'issueDate' => $options['issue_date'],
@@ -133,6 +140,35 @@ class Smartbill
             'precision' => 2,
             'products' => $products,
         ];
+
+        // Record the incasare on the invoice (real emissions only - never on
+        // drafts) so SmartBill auto-generates the fiscal receipt document:
+        //  - cash     => Chitanta (isCash: true, goes to Registrul de casa)
+        //  - card     => Card (marks the invoice paid; the fiscal document is
+        //                the POS receipt, NOT a chitanta)
+        //  - transfer => no payment object: the invoice stays unpaid until the
+        //                bank transfer is confirmed (fiscally correct)
+        $payment_method = $options['payment_method'] ?? '';
+
+        if (empty($options['is_draft']) && $payment_method === 'cash') {
+            $payload['payment'] = [
+                'value' => (float) ($options['total'] ?? 0),
+                'type' => 'Chitanta',
+                'isCash' => true,
+            ];
+
+            if (!empty($this->receiptSeries)) {
+                $payload['payment']['paymentSeries'] = $this->receiptSeries;
+            }
+        } elseif (empty($options['is_draft']) && $payment_method === 'card') {
+            $payload['payment'] = [
+                'value' => (float) ($options['total'] ?? 0),
+                'type' => 'Card',
+                'isCash' => false,
+            ];
+        }
+
+        return $payload;
     }
 
     /**

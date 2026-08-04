@@ -447,6 +447,8 @@ class Invoices extends EA_Controller
             $payload = $this->smartbill->build_invoice_payload($client, $items, [
                 'issue_date' => $issue_date,
                 'is_draft' => $is_draft,
+                'payment_method' => $payment_method,
+                'total' => round($subtotal + $vat_total, 2),
             ]);
 
             $result = $this->smartbill->create_invoice($payload);

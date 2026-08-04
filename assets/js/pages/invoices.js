@@ -594,7 +594,13 @@ App.Pages.Invoices = (function () {
                         ? (invoice.series || '') + '-' + invoice.number
                         : lang('draft_without_number');
 
-                    showIssueMessage(lang('invoice_issued') + ' ' + invoiceNumber);
+                    let successText = lang('invoice_issued') + ' ' + invoiceNumber;
+
+                    if (invoice.payment_method === 'cash' && !Number(invoice.is_draft)) {
+                        successText += ' · ' + lang('receipt_issued');
+                    }
+
+                    showIssueMessage(successText);
 
                     // Success state: offer "Emite altă factură" (full reset),
                     // keep the submit button hidden until then.

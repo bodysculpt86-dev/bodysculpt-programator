@@ -764,4 +764,5 @@ $lang['from_bookings'] = 'din programări';
 $lang['prefill_from_bookings'] = 'Date preluate din programări — verifică-le și apasă Salvează pentru a crea clientul fiscal.';
 $lang['issue_another_invoice'] = 'Emite altă factură';
 $lang['draft_without_number'] = 'Ciornă (fără număr)';
+$lang['receipt_issued'] = 'Chitanță generată';
 // End

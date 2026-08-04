@@ -120,6 +120,12 @@ class Config
     //
     // const VAT_DEFAULT = '19';
     //
+    // SMARTBILL_RECEIPT_SERIES: optional receipt (chitanta) series used when a
+    // cash invoice is issued. When empty, SmartBill uses the account's default
+    // receipt series (Configurare > Serii documente in the SmartBill account).
+    //
+    // const SMARTBILL_RECEIPT_SERIES = '';
+    //
     // CLIENT_CANCEL_TEMPLATE_NAME: approved WhatsApp template sent to the
     // customer when an appointment is auto-cancelled for an unpaid deposit
     // (see Console::process_unpaid_deposits). Variables: {{header_1}} = customer
