@@ -747,6 +747,13 @@ App.Pages.Invoices = (function () {
      * Initialize the page module.
      */
     function initialize() {
+        // Invoice emission is admin-only (enforced server-side). For other
+        // roles the page degrades to a read-only invoice history view.
+        if (vars('role_slug') !== (App.Layouts?.Backend?.DB_SLUG_ADMIN || 'admin')) {
+            $('#issue-invoice').remove();
+            $modal.find('#issue-invoice-submit, #issue-another, #save-client, #lookup-cui, #new-client-toggle').remove();
+        }
+
         addEventListeners();
 
         loadHistory();

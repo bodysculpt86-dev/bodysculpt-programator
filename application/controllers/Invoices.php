@@ -255,11 +255,11 @@ class Invoices extends EA_Controller
         try {
             method('post');
 
-            if (cannot('view', PRIV_PACKAGES)) {
+            check('client', 'array');
+
+            if (session('role_slug') !== DB_SLUG_ADMIN) {
                 abort(403, 'Forbidden');
             }
-
-            check('client', 'array');
 
             $client = array_intersect_key((array) request('client'), array_flip($this->allowed_client_fields));
 
@@ -280,7 +280,7 @@ class Invoices extends EA_Controller
      *
      * POST invoices/issue
      *
-     * Creates a REAL fiscal document. Protected by:
+     * Creates a REAL fiscal document - restricted to admins only. Protected by:
      *  - a client-side double-submit guard (button disabled on click), and
      *  - server-side idempotency: the request carries an idempotency_key
      *    generated per modal open; a retried submission returns the already
@@ -291,7 +291,7 @@ class Invoices extends EA_Controller
         try {
             method('post');
 
-            if (cannot('add', PRIV_PACKAGES)) {
+            if (session('role_slug') !== DB_SLUG_ADMIN) {
                 abort(403, 'Forbidden');
             }
 
