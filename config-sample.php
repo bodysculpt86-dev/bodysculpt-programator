@@ -126,6 +126,14 @@ class Config
     //
     // const SMARTBILL_RECEIPT_SERIES = '';
     //
+    // INVOICE_ALLOWED_USERS: optional comma-separated list of USERNAMES
+    // allowed to emit invoices / create fiscal clients. The admin role is
+    // always required; when this list is populated the user's username must
+    // also be on it (trimmed, case-insensitive). EMPTY = any admin can emit.
+    // Example: INVOICE_ALLOWED_USERS=bodysculpt86,alexandra
+    //
+    // const INVOICE_ALLOWED_USERS = '';
+    //
     // CLIENT_CANCEL_TEMPLATE_NAME: approved WhatsApp template sent to the
     // customer when an appointment is auto-cancelled for an unpaid deposit
     // (see Console::process_unpaid_deposits). Variables: {{header_1}} = customer

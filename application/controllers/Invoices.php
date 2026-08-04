@@ -90,6 +90,7 @@ class Invoices extends EA_Controller
             // NOTE: '0' is a valid VAT rate - do NOT use ?: / empty() here.
             'vat_default' => $vat_default !== null && $vat_default !== '' ? $vat_default : '19',
             'smartbill_configured' => $this->smartbill->is_configured(),
+            'can_issue_invoices' => $this->can_issue_invoices(),
         ]);
 
         html_vars([
@@ -257,7 +258,7 @@ class Invoices extends EA_Controller
 
             check('client', 'array');
 
-            if (session('role_slug') !== DB_SLUG_ADMIN) {
+            if (!$this->can_issue_invoices()) {
                 abort(403, 'Forbidden');
             }
 
@@ -291,7 +292,7 @@ class Invoices extends EA_Controller
         try {
             method('post');
 
-            if (session('role_slug') !== DB_SLUG_ADMIN) {
+            if (!$this->can_issue_invoices()) {
                 abort(403, 'Forbidden');
             }
 
@@ -538,6 +539,54 @@ class Invoices extends EA_Controller
             ->set_content_type('application/pdf')
             ->set_header('Content-Disposition: inline; filename="factura-' . $invoice['series'] . $invoice['number'] . '.pdf"')
             ->set_output($pdf);
+    }
+
+    /**
+     * Whether the current user may issue invoices / manage fiscal clients.
+     *
+     * The admin role is always required. When INVOICE_ALLOWED_USERS is
+     * populated (comma-separated usernames), the current user's username must
+     * also be on the list (trimmed, case-insensitive). An EMPTY/unset list
+     * falls back to the previous behavior: any admin can emit. Nobody is
+     * ever locked out by an empty list.
+     *
+     * @return bool
+     */
+    private function can_issue_invoices(): bool
+    {
+        if (session('role_slug') !== DB_SLUG_ADMIN) {
+            return false;
+        }
+
+        // The env-managed super-admin is NEVER restricted by the allowlist
+        // (mirrors Accounts::is_super_admin_email()).
+        $super_admin_email = getenv('SUPERADMIN_EMAIL');
+
+        if (!empty($super_admin_email)) {
+            $user = $this->db->get_where('users', ['id' => (int) session('user_id')])->row_array();
+
+            if (strcasecmp(trim((string) ($user['email'] ?? '')), trim($super_admin_email)) === 0) {
+                return true;
+            }
+        }
+
+        $allowed = $this->readEnvOrConfig('INVOICE_ALLOWED_USERS');
+
+        if ($allowed === null || trim($allowed) === '') {
+            return true;
+        }
+
+        $allowed_usernames = array_filter(
+            array_map(fn($username) => mb_strtolower(trim($username)), explode(',', $allowed)),
+        );
+
+        // Usernames live in ea_user_settings (unique, enforced by
+        // Users_model::validate_username on every save).
+        $settings = $this->db->get_where('user_settings', ['id_users' => (int) session('user_id')])->row_array();
+
+        $username = mb_strtolower(trim((string) ($settings['username'] ?? '')));
+
+        return $username !== '' && in_array($username, $allowed_usernames, true);
     }
 
     /**
