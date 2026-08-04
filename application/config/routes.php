@@ -215,6 +215,9 @@ $route['p/([^/]+)'] = 'appointment_link/index/$1';
 // Public short payment link redirect (Stripe Checkout URL shortener).
 $route['pay/(:any)'] = 'pay/index/$1';
 
+// Public short invoice PDF link (WhatsApp document template fetches this).
+$route['inv/(:any)'] = 'inv/index/$1';
+
 // Root-level slugs on the dedicated short-link host: when SHORT_LINK_BASE_URL
 // is set (e.g. https://pay.bodysculpt.ro), links look like
 // https://pay.bodysculpt.ro/<slug> — no /pay/ prefix. CodeIgniter reads the

@@ -455,6 +455,87 @@ class Whatsapp_flaxxa
     }
 
     /**
+     * Send an issued invoice's PDF to the billing client on WhatsApp.
+     *
+     * Uses the template named by FLAXXA_INVOICE_TEMPLATE (default 'factura_pdf').
+     * The template must have a DOCUMENT header (no variables) and a body with
+     * THREE text variables:
+     *   {{1}} = client name
+     *   {{2}} = invoice number ("AM-0001"; drafts have no number)
+     *   {{3}} = invoice total with currency
+     *
+     * The PDF is attached dynamically as a document header parameter pointing
+     * to a public short link (/inv/<slug>) that Meta fetches at send time.
+     *
+     * @param array $client Billing client data (must contain name and phone).
+     * @param array $invoice Invoice data (series, number, total, is_draft).
+     * @param string $pdfUrl Publicly reachable URL of the invoice PDF.
+     *
+     * @return array Result array: ['success' => bool, 'error' => string|null]
+     */
+    public function send_invoice_pdf(array $client, array $invoice, string $pdfUrl): array
+    {
+        try {
+            $phone = $this->normalizePhoneForWhatsapp($client['phone'] ?? null);
+
+            if ($phone === null) {
+                $this->log(
+                    'Invoice PDF skipped: invalid phone for billing client #' . ($client['id'] ?? 'N/A') . ': ' . ($client['phone'] ?: '(empty)')
+                );
+
+                return ['success' => false, 'error' => 'invalid_phone'];
+            }
+
+            $template = $this->readEnvOrConfig('FLAXXA_INVOICE_TEMPLATE') ?: 'factura_pdf';
+
+            $invoiceNumber = !empty($invoice['number'])
+                ? ($invoice['series'] ?? '') . '-' . $invoice['number']
+                : ($invoice['series'] ?? '');
+
+            $fileName = 'factura-' . ($invoice['series'] ?? '') . ($invoice['number'] ?? '') . '.pdf';
+
+            $components = [
+                [
+                    'type' => 'header',
+                    'parameters' => [
+                        [
+                            'type' => 'document',
+                            'document' => [
+                                'link' => $pdfUrl,
+                                'filename' => $fileName,
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'type' => 'body',
+                    'parameters' => [
+                        ['type' => 'text', 'text' => trim((string) ($client['name'] ?? '')) ?: 'client'],
+                        ['type' => 'text', 'text' => $invoiceNumber],
+                        ['type' => 'text', 'text' => number_format((float) ($invoice['total'] ?? 0), 2) . ' Lei'],
+                    ],
+                ],
+            ];
+
+            if ($this->logOnly) {
+                $this->log(
+                    'LOG_ONLY invoice PDF would send to ' . $phone . ' using template "' . $template . '": ' . json_encode($components)
+                );
+
+                return ['success' => true, 'error' => null, 'log_only' => true];
+            }
+
+            $this->send($phone, $template, $components);
+
+            return ['success' => true, 'error' => null];
+        } catch (Throwable $e) {
+            $this->log('Invoice PDF failed for billing client #' . ($client['id'] ?? 'N/A') . ': ' . $e->getMessage());
+
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
      * Normalize a Romanian phone number to E.164 with leading '+' for Flaxxa.
      *
      * @param string|null $phone Raw phone number.
@@ -644,7 +725,15 @@ class Whatsapp_flaxxa
 
         $decoded = json_decode($response, true);
 
-        if ($httpCode < 200 || $httpCode >= 300 || !empty($decoded['error'])) {
+        // Flaxxa signals failures either via an "error" key or via
+        // {"status": "error", "message": "..."} — both must be detected,
+        // otherwise rejected sends are falsely reported as successful.
+        if (
+            $httpCode < 200
+            || $httpCode >= 300
+            || !empty($decoded['error'])
+            || ($decoded['status'] ?? '') === 'error'
+        ) {
             $errorMessage = $decoded['message'] ?? $decoded['error'] ?? $response;
             throw new Exception('Flaxxa API error (HTTP ' . $httpCode . '): ' . $errorMessage);
         }

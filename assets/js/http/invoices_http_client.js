@@ -133,6 +133,24 @@ App.Http.Invoices = (function () {
         return $.post(url, data);
     }
 
+    /**
+     * Send the invoice PDF to the client on WhatsApp.
+     *
+     * @param {Number} invoiceId
+     *
+     * @return {Object}
+     */
+    function sendWhatsapp(invoiceId) {
+        const url = App.Utils.Url.siteUrl('invoices/send_whatsapp');
+
+        const data = {
+            csrf_token: vars('csrf_token'),
+            invoice_id: invoiceId,
+        };
+
+        return $.post(url, data);
+    }
+
     return {
         searchClients,
         lookupCui,
@@ -141,5 +159,6 @@ App.Http.Invoices = (function () {
         listPackages,
         issue,
         history,
+        sendWhatsapp,
     };
 })();

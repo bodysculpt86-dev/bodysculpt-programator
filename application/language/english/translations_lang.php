@@ -765,4 +765,9 @@ $lang['prefill_from_bookings'] = 'Data loaded from bookings — review and press
 $lang['issue_another_invoice'] = 'Issue another invoice';
 $lang['draft_without_number'] = 'Draft (no number)';
 $lang['receipt_issued'] = 'Receipt generated';
+$lang['send_whatsapp'] = 'Send the invoice PDF on WhatsApp';
+$lang['whatsapp_send_failed'] = 'The WhatsApp send failed.';
+$lang['no_phone'] = 'The client has no phone number.';
+$lang['no_client'] = 'The invoice has no associated client.';
+$lang['invoice_not_issued'] = 'The invoice is not issued yet.';
 // End

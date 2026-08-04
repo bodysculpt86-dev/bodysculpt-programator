@@ -765,4 +765,9 @@ $lang['prefill_from_bookings'] = 'Date preluate din programări — verifică-le
 $lang['issue_another_invoice'] = 'Emite altă factură';
 $lang['draft_without_number'] = 'Ciornă (fără număr)';
 $lang['receipt_issued'] = 'Chitanță generată';
+$lang['send_whatsapp'] = 'Trimite factura PDF pe WhatsApp';
+$lang['whatsapp_send_failed'] = 'Trimiterea pe WhatsApp a eșuat.';
+$lang['no_phone'] = 'Clientul nu are număr de telefon.';
+$lang['no_client'] = 'Factura nu are un client asociat.';
+$lang['invoice_not_issued'] = 'Factura nu este emisă încă.';
 // End

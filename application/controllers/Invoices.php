@@ -52,10 +52,12 @@ class Invoices extends EA_Controller
         $this->load->model('packages_model');
         $this->load->model('invoices_model');
         $this->load->model('customers_model');
+        $this->load->model('invoice_links_model');
 
         $this->load->library('accounts');
         $this->load->library('anaf_lookup');
         $this->load->library('smartbill');
+        $this->load->library('whatsapp_flaxxa');
     }
 
     /**
@@ -587,6 +589,58 @@ class Invoices extends EA_Controller
         $username = mb_strtolower(trim((string) ($settings['username'] ?? '')));
 
         return $username !== '' && in_array($username, $allowed_usernames, true);
+    }
+
+    /**
+     * Send the invoice PDF to the billing client on WhatsApp (document
+     * template with a public short link Meta fetches at send time).
+     *
+     * POST invoices/send_whatsapp
+     */
+    public function send_whatsapp(): void
+    {
+        try {
+            method('post');
+
+            if (!$this->can_issue_invoices()) {
+                abort(403, 'Forbidden');
+            }
+
+            check('invoice_id', 'numeric');
+
+            $invoice_id = (int) request('invoice_id');
+
+            $invoice = $this->invoices_model->find($invoice_id);
+
+            if ($invoice['smartbill_status'] !== 'issued' || empty($invoice['series']) || empty($invoice['number'])) {
+                json_response(['success' => false, 'error' => 'invoice_not_issued']);
+
+                return;
+            }
+
+            if (empty($invoice['billing_client_id'])) {
+                json_response(['success' => false, 'error' => 'no_client']);
+
+                return;
+            }
+
+            $client = $this->billing_clients_model->find((int) $invoice['billing_client_id']);
+
+            if (trim((string) ($client['phone'] ?? '')) === '') {
+                json_response(['success' => false, 'error' => 'no_phone']);
+
+                return;
+            }
+
+            // Public short link for the PDF (Meta fetches it at send time).
+            $pdf_url = site_url('inv/' . $this->invoice_links_model->create($invoice_id));
+
+            $result = $this->whatsapp_flaxxa->send_invoice_pdf($client, $invoice, $pdf_url);
+
+            json_response($result);
+        } catch (Throwable $e) {
+            json_exception($e);
+        }
     }
 
     /**

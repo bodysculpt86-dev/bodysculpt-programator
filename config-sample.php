@@ -134,6 +134,12 @@ class Config
     //
     // const INVOICE_ALLOWED_USERS = '';
     //
+    // FLAXXA_INVOICE_TEMPLATE: approved WhatsApp template (DOCUMENT header,
+    // 3 body variables: client name, invoice number, total) used to send the
+    // invoice PDF to billing clients. Default: 'factura_pdf'.
+    //
+    // const FLAXXA_INVOICE_TEMPLATE = 'factura_pdf';
+    //
     // CLIENT_CANCEL_TEMPLATE_NAME: approved WhatsApp template sent to the
     // customer when an appointment is auto-cancelled for an unpaid deposit
     // (see Console::process_unpaid_deposits). Variables: {{header_1}} = customer

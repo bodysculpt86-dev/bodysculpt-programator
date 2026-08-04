@@ -619,6 +619,39 @@ App.Pages.Invoices = (function () {
         });
 
         /**
+         * Event: History WhatsApp button "Click"
+         */
+        $('#invoices-history').on('click', '.wa-send', function () {
+            const $button = $(this).prop('disabled', true);
+            const originalHtml = $button.html();
+
+            App.Http.Invoices.sendWhatsapp($button.data('invoice-id'))
+                .done((response) => {
+                    if (response.success) {
+                        $button.html($('<i/>', {class: 'fas fa-check'}));
+
+                        return;
+                    }
+
+                    const errorKeys = {
+                        invalid_phone: 'no_phone',
+                        no_phone: 'no_phone',
+                        no_client: 'no_client',
+                        invoice_not_issued: 'invoice_not_issued',
+                    };
+
+                    alert(lang(errorKeys[response.error] || 'whatsapp_send_failed') + (response.error && !errorKeys[response.error] ? ' ' + response.error : ''));
+
+                    $button.prop('disabled', false).html(originalHtml);
+                })
+                .fail(() => {
+                    alert(lang('whatsapp_send_failed'));
+
+                    $button.prop('disabled', false).html(originalHtml);
+                });
+        });
+
+        /**
          * Event: Line remove button "Click"
          */
         $('#invoice-lines').on('click', '.line-remove', function () {
@@ -733,11 +766,20 @@ App.Pages.Invoices = (function () {
 
                 if (invoice.smartbill_status === 'issued' && invoice.series && invoice.number) {
                     $('<a/>', {
-                        class: 'btn btn-sm btn-outline-secondary',
+                        class: 'btn btn-sm btn-outline-secondary me-1',
                         href: App.Utils.Url.siteUrl('invoices/pdf/' + invoice.id),
                         target: '_blank',
                         text: 'PDF',
                     }).appendTo($pdfCell);
+
+                    $('<button/>', {
+                        type: 'button',
+                        class: 'btn btn-sm btn-outline-success wa-send',
+                        html: $('<i/>', {class: 'fab fa-whatsapp'}),
+                    })
+                        .data('invoice-id', invoice.id)
+                        .attr('data-tippy-content', lang('send_whatsapp'))
+                        .appendTo($pdfCell);
                 }
             });
         });
