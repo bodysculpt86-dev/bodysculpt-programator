@@ -760,4 +760,6 @@ $lang['pending'] = 'Pending';
 $lang['issued'] = 'Issued';
 $lang['failed'] = 'Failed';
 $lang['draft'] = 'draft';
+$lang['from_bookings'] = 'from bookings';
+$lang['prefill_from_bookings'] = 'Data loaded from bookings — review and press Save to create the fiscal client.';
 // End

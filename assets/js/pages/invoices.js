@@ -110,6 +110,34 @@ App.Pages.Invoices = (function () {
     }
 
     /**
+     * Pre-fill the new-client form from a booking customer record.
+     *
+     * @param {Object} customer
+     */
+    function prefillFromCustomer(customer) {
+        resetSelection();
+
+        $clientSearch.val('');
+        $clientSearchResults.empty();
+
+        $modal.find('#client-type-pf').prop('checked', true);
+        togglePjFields();
+
+        $clientName.val(customer.name);
+        $clientCui.val('');
+        $clientRegCom.val('');
+        $clientAddress.val(customer.address || '');
+        $clientCity.val(customer.city || '');
+        $clientCounty.val('');
+        $clientEmail.val(customer.email || '');
+        $clientPhone.val(customer.phone || '');
+
+        $newClientForm.removeClass('d-none');
+
+        showMessage(lang('prefill_from_bookings'));
+    }
+
+    /**
      * Search billing clients and render the results list.
      *
      * @param {String} keyword
@@ -119,10 +147,18 @@ App.Pages.Invoices = (function () {
             $clientSearchResults.empty();
 
             clients.forEach((client) => {
+                const label =
+                    client.name +
+                    (client.source === 'customer'
+                        ? ' · ' + lang('from_bookings')
+                        : client.cui
+                          ? ' · CUI ' + client.cui
+                          : '');
+
                 $('<button/>', {
                     type: 'button',
                     class: 'list-group-item list-group-item-action client-result',
-                    text: client.name + (client.cui ? ' · CUI ' + client.cui : ''),
+                    text: label,
                 })
                     .data('client', client)
                     .appendTo($clientSearchResults);
@@ -556,7 +592,13 @@ App.Pages.Invoices = (function () {
          * Event: Client search result "Click"
          */
         $clientSearchResults.on('click', '.client-result', function () {
-            selectClient($(this).data('client'));
+            const client = $(this).data('client');
+
+            if (client.source === 'customer') {
+                prefillFromCustomer(client);
+            } else {
+                selectClient(client);
+            }
         });
 
         /**

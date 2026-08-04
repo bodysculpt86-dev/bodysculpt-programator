@@ -51,6 +51,7 @@ class Invoices extends EA_Controller
         $this->load->model('services_model');
         $this->load->model('packages_model');
         $this->load->model('invoices_model');
+        $this->load->model('customers_model');
 
         $this->load->library('accounts');
         $this->load->library('anaf_lookup');
@@ -116,7 +117,42 @@ class Invoices extends EA_Controller
 
             $keyword = request('keyword', '');
 
-            json_response($this->billing_clients_model->search($keyword));
+            // Fiscal clients first (ea_billing_clients), then booking customers
+            // (ea_users) — selecting a booking customer pre-fills the new-client
+            // form so the staff saves them as a fiscal client in one click.
+            $results = [];
+
+            foreach ($this->billing_clients_model->search($keyword) as $billing_client) {
+                $results[] = [
+                    'source' => 'billing',
+                    'id' => (int) $billing_client['id'],
+                    'name' => $billing_client['name'],
+                    'cui' => $billing_client['cui'],
+                    'type' => $billing_client['type'],
+                ];
+            }
+
+            foreach ($this->customers_model->search($keyword, 10, 0, 'first_name ASC') as $customer) {
+                $name = trim(($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? ''));
+
+                if ($name === '') {
+                    continue;
+                }
+
+                $results[] = [
+                    'source' => 'customer',
+                    'id' => (int) $customer['id'],
+                    'name' => $name,
+                    'cui' => null,
+                    'type' => 'pf',
+                    'email' => $customer['email'] ?? '',
+                    'phone' => $customer['phone_number'] ?? ($customer['mobile_number'] ?? ''),
+                    'address' => $customer['address'] ?? '',
+                    'city' => $customer['city'] ?? '',
+                ];
+            }
+
+            json_response($results);
         } catch (Throwable $e) {
             json_exception($e);
         }

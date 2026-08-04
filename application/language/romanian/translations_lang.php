@@ -760,4 +760,6 @@ $lang['pending'] = 'În așteptare';
 $lang['issued'] = 'Emisă';
 $lang['failed'] = 'Eșuat';
 $lang['draft'] = 'ciornă';
+$lang['from_bookings'] = 'din programări';
+$lang['prefill_from_bookings'] = 'Date preluate din programări — verifică-le și apasă Salvează pentru a crea clientul fiscal.';
 // End
