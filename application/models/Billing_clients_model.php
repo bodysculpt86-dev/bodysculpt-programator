@@ -48,6 +48,47 @@ class Billing_clients_model extends EA_Model
     }
 
     /**
+     * Find a billing client by identity (case-insensitive name match, refined
+     * by email/phone when available). Used for find-or-create dedupe when a
+     * fiscal client is auto-created from a booking customer.
+     *
+     * @param string $name
+     * @param string|null $email
+     * @param string|null $phone
+     *
+     * @return array|null
+     */
+    public function find_by_identity(string $name, ?string $email = null, ?string $phone = null): ?array
+    {
+        $candidates = $this->db
+            ->from('billing_clients')
+            ->where('LOWER(name)', mb_strtolower(trim($name)))
+            ->get()
+            ->result_array();
+
+        if (empty($candidates)) {
+            return null;
+        }
+
+        if (count($candidates) === 1) {
+            return $candidates[0];
+        }
+
+        // Multiple same-name rows: prefer the one matching email or phone.
+        foreach ($candidates as $candidate) {
+            if ($email && !empty($candidate['email']) && strcasecmp($candidate['email'], $email) === 0) {
+                return $candidate;
+            }
+
+            if ($phone && !empty($candidate['phone']) && $candidate['phone'] === $phone) {
+                return $candidate;
+            }
+        }
+
+        return $candidates[0];
+    }
+
+    /**
      * Get a specific billing client from the database.
      *
      * @param int $client_id

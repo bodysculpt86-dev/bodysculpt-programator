@@ -49,7 +49,9 @@ App.Pages.Invoices = (function () {
     let invoiceLines = [];
     let lineSource = 'service';
 
-    const vatDefault = vars('vat_default') || '19';
+    // NOTE: '0' is a valid VAT rate - do NOT use || / falsy checks here.
+    const vatDefaultVar = vars('vat_default');
+    const vatDefault = vatDefaultVar === undefined || vatDefaultVar === null || vatDefaultVar === '' ? '19' : vatDefaultVar;
     const currency = vars('currency') || 'Lei';
 
     // Phase D: one idempotency key per modal open (double-submit protection).

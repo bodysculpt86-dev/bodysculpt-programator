@@ -26,7 +26,14 @@ function asset_url(string $uri = '', ?string $protocol = null): string
 {
     $debug = config('debug');
 
-    $cache_busting_token = '?' . config('cache_busting_token');
+    // The static cache_busting_token never changes between deploys, so browsers
+    // keep stale JS/CSS. The Railway entrypoint writes a fresh token file on
+    // every container start (deploy or restart); prefer it when present.
+    $asset_version_file = FCPATH . 'storage/cache/.asset_version';
+
+    $cache_busting_token = '?' . (is_file($asset_version_file)
+        ? trim((string) file_get_contents($asset_version_file))
+        : config('cache_busting_token'));
 
     // Keep JS files non-minified so that local/custom JS changes (e.g. calendar
     // customizations) are always served as-is. For CSS files, fall back to the

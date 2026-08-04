@@ -81,11 +81,14 @@ class Invoices extends EA_Controller
 
         $role_slug = session('role_slug');
 
+        $vat_default = $this->readEnvOrConfig('VAT_DEFAULT');
+
         script_vars([
             'user_id' => $user_id,
             'role_slug' => $role_slug,
             'currency' => setting('currency'),
-            'vat_default' => $this->readEnvOrConfig('VAT_DEFAULT') ?: '19',
+            // NOTE: '0' is a valid VAT rate - do NOT use ?: / empty() here.
+            'vat_default' => $vat_default !== null && $vat_default !== '' ? $vat_default : '19',
             'smartbill_configured' => $this->smartbill->is_configured(),
         ]);
 
@@ -310,7 +313,58 @@ class Invoices extends EA_Controller
                 throw new InvalidArgumentException('The invoice has no lines.');
             }
 
-            $client = $this->billing_clients_model->find($billing_client_id);
+            $client = null;
+
+            try {
+                $client = $this->billing_clients_model->find($billing_client_id);
+            } catch (InvalidArgumentException $e) {
+                // Consistency net: the id may belong to a booking customer
+                // (ea_users) instead of a fiscal client (ea_billing_clients) -
+                // e.g. a stale cached JS sends the customer id directly. Create
+                // the fiscal client from the customer once, then proceed.
+                $customer = $this->customers_model->find($billing_client_id);
+
+                $customer_name = trim(($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? ''));
+
+                if ($customer_name === '') {
+                    throw $e;
+                }
+
+                $customer_email = $customer['email'] ?? null;
+                $customer_phone = $customer['phone_number'] ?? ($customer['mobile_number'] ?? null);
+
+                // Find-or-create: reuse an existing fiscal client for the same
+                // person instead of accumulating duplicates on every invoice.
+                $existing_client = $this->billing_clients_model->find_by_identity(
+                    $customer_name,
+                    $customer_email,
+                    $customer_phone,
+                );
+
+                if ($existing_client !== null) {
+                    $billing_client_id = (int) $existing_client['id'];
+                    $client = $existing_client;
+                } else {
+                    $billing_client_id = $this->billing_clients_model->save([
+                        'type' => 'pf',
+                        'name' => $customer_name,
+                        'cui' => null,
+                        'reg_com' => null,
+                        'address' => $customer['address'] ?? null,
+                        'city' => $customer['city'] ?? null,
+                        'county' => null,
+                        'email' => $customer_email,
+                        'phone' => $customer_phone,
+                    ]);
+
+                    $client = $this->billing_clients_model->find($billing_client_id);
+
+                    log_message(
+                        'debug',
+                        '[invoices] Auto-created billing client #' . $billing_client_id . ' from booking customer #' . $customer['id'],
+                    );
+                }
+            }
 
             // Server-side idempotency: same key -> return the existing invoice
             // instead of issuing a duplicate fiscal document.

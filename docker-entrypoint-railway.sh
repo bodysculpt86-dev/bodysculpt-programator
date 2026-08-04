@@ -71,6 +71,12 @@ cat <<'CONF' >/etc/apache2/conf-enabled/railway-forwarded-https.conf
 SetEnvIf X-Forwarded-Proto "^https$" HTTPS=on
 CONF
 
+# Bust browser asset caches (JS/CSS) on every container start: the static
+# cache_busting_token in application/config/app.php never changes between
+# deploys, so browsers would keep stale files. The asset helper prefers this
+# file over the static token when present.
+date +%s > /var/www/html/storage/cache/.asset_version 2>/dev/null || true
+
 # Replace the upstream product name with the white-label brand in the generated
 # email config (and any other upstream templates that contain it).
 sed -i 's/Easy!Appointments/Bookings by Revclar/g' /usr/local/bin/docker-entrypoint.sh
