@@ -251,6 +251,11 @@
                     <?= lang('generate_fiscal_invoice') ?>
                 </button>
 
+                <button type="button" id="issue-another" class="btn btn-success ms-auto d-none">
+                    <i class="fas fa-plus me-2"></i>
+                    <?= lang('issue_another_invoice') ?>
+                </button>
+
                 <div id="issue-message" class="alert d-none w-100 mb-0 mt-2"></div>
             </div>
         </div>

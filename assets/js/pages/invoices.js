@@ -294,6 +294,48 @@ App.Pages.Invoices = (function () {
     }
 
     /**
+     * Reset the invoice modal to a clean slate.
+     *
+     * Runs on EVERY modal open (hooked to show.bs.modal) and from the
+     * "Emite altă factură" button. Generates a FRESH idempotency key so the
+     * next emission is a genuinely new invoice server-side.
+     */
+    function resetModal() {
+        idempotencyKey = generateIdempotencyKey();
+
+        invoiceLines = [];
+        renderLines();
+
+        resetSelection();
+        $clientSearch.val('');
+        $clientSearchResults.empty();
+
+        $newClientForm.addClass('d-none');
+        $clientName.val('');
+        $clientCui.val('');
+        $clientRegCom.val('');
+        $clientAddress.val('');
+        $clientCity.val('');
+        $clientCounty.val('');
+        $clientEmail.val('');
+        $clientPhone.val('');
+        $modal.find('#client-type-pf').prop('checked', true);
+        togglePjFields();
+
+        $('#issue-message').addClass('d-none');
+        $('#issue-invoice-submit').prop('disabled', false).removeClass('d-none');
+        $('#issue-another').addClass('d-none');
+
+        $('#invoice-issue-date').val(new Date().toISOString().slice(0, 10));
+        $('#invoice-payment-method').val('cash');
+        $('#invoice-is-draft').prop('checked', true);
+
+        $('#invoice-currency').text(currency);
+
+        loadCatalogs();
+    }
+
+    /**
      * Generate a fresh idempotency key (one per modal open).
      *
      * @returns {String}
@@ -423,16 +465,16 @@ App.Pages.Invoices = (function () {
                 modalInstance = new bootstrap.Modal($modal[0]);
             }
 
-            $('#invoice-currency').text(currency);
-
-            idempotencyKey = generateIdempotencyKey();
-
-            $('#invoice-issue-date').val(new Date().toISOString().slice(0, 10));
-
-            loadCatalogs();
-
             modalInstance.show();
         });
+
+        // Full reset on EVERY open (the bootstrap.Modal instance is reused).
+        $modal.on('show.bs.modal', resetModal);
+
+        /**
+         * Event: "Emite altă factură" button "Click"
+         */
+        $modal.on('click', '#issue-another', resetModal);
 
         /**
          * Event: Line source tab "Click"
@@ -548,9 +590,16 @@ App.Pages.Invoices = (function () {
                     }
 
                     const invoice = response.invoice;
-                    const invoiceNumber = (invoice.series || '') + (invoice.number || '');
+                    const invoiceNumber = invoice.number
+                        ? (invoice.series || '') + '-' + invoice.number
+                        : lang('draft_without_number');
 
                     showIssueMessage(lang('invoice_issued') + ' ' + invoiceNumber);
+
+                    // Success state: offer "Emite altă factură" (full reset),
+                    // keep the submit button hidden until then.
+                    $button.addClass('d-none');
+                    $modal.find('#issue-another').removeClass('d-none');
 
                     invoiceLines = [];
                     renderLines();
@@ -659,7 +708,9 @@ App.Pages.Invoices = (function () {
                 $('<td/>', {text: invoice.issue_date || invoice.created_at}).appendTo($row);
                 $('<td/>', {text: invoice.client_name || '-'}).appendTo($row);
 
-                const number = invoice.series && invoice.number ? invoice.series + invoice.number : '-';
+                const number = invoice.number
+                    ? (invoice.series || '') + '-' + invoice.number
+                    : lang('draft_without_number');
 
                 $('<td/>', {text: number}).appendTo($row);
                 $('<td/>', {text: Number(invoice.total).toFixed(2)}).appendTo($row);

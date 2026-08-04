@@ -762,4 +762,6 @@ $lang['failed'] = 'Failed';
 $lang['draft'] = 'draft';
 $lang['from_bookings'] = 'from bookings';
 $lang['prefill_from_bookings'] = 'Data loaded from bookings — review and press Save to create the fiscal client.';
+$lang['issue_another_invoice'] = 'Issue another invoice';
+$lang['draft_without_number'] = 'Draft (no number)';
 // End
