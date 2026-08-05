@@ -530,6 +530,9 @@ App.Pages.Secretaries = (function () {
      * Initialize the module.
      */
     function initialize() {
+        // Attach județ/oraș suggestions (free-text is preserved, values are saved as-is).
+        App.Utils.LocationAutocomplete.attachCity($city, $state);
+
         App.Pages.Secretaries.resetForm();
         App.Pages.Secretaries.filter('');
         App.Pages.Secretaries.addEventListeners();

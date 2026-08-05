@@ -601,6 +601,9 @@ App.Pages.Providers = (function () {
      * Initialize the module.
      */
     function initialize() {
+        // Attach județ/oraș suggestions (free-text is preserved, values are saved as-is).
+        App.Utils.LocationAutocomplete.attachCity($city, $state);
+
         workingPlanManager = new App.Utils.WorkingPlan();
         workingPlanManager.addEventListeners();
 

@@ -795,6 +795,10 @@ App.Pages.Invoices = (function () {
      * Initialize the page module.
      */
     function initialize() {
+        // Attach județ/oraș suggestions on the billing client form (free-text
+        // is preserved, values are saved as-is, county cascades into city).
+        App.Utils.LocationAutocomplete.attachCity($clientCity, $clientCounty);
+
         // Invoice emission is restricted server-side (admin + optional email
         // allowlist via INVOICE_ALLOWED_USERS). Users without the right see a
         // read-only invoice history view.

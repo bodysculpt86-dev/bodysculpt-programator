@@ -28,6 +28,7 @@ App.Components.AppointmentsModal = (function () {
     const $phoneNumber = $('#phone-number');
     const $address = $('#address');
     const $city = $('#city');
+    const $state = $('#state');
     const $zipCode = $('#zip-code');
     const $language = $('#language');
     const $customerNotes = $('#customer-notes');
@@ -397,6 +398,7 @@ App.Components.AppointmentsModal = (function () {
                 phone_number: $phoneNumber.val(),
                 address: $address.val(),
                 city: $city.val(),
+                state: $state.val(),
                 zip_code: $zipCode.val(),
                 language: $language.val(),
                 notes: $customerNotes.val(),
@@ -606,6 +608,7 @@ App.Components.AppointmentsModal = (function () {
                 $phoneNumber.val(customer.phone_number);
                 $address.val(customer.address);
                 $city.val(customer.city);
+                $state.val(customer.state);
                 $zipCode.val(customer.zip_code);
                 $language.val(customer.language);
                 $customerNotes.val(customer.notes);
@@ -888,6 +891,7 @@ App.Components.AppointmentsModal = (function () {
             $phoneNumber.val('');
             $address.val('');
             $city.val('');
+            $state.val('');
             $zipCode.val('');
             $language.val(vars('default_language'));
             $customerNotes.val('');
@@ -1095,6 +1099,7 @@ App.Components.AppointmentsModal = (function () {
         $phoneNumber.val(customer.phone_number);
         $address.val(customer.address);
         $city.val(customer.city);
+        $state.val(customer.state);
         $zipCode.val(customer.zip_code);
         $language.val(customer.language);
         $customerNotes.val(customer.notes);
@@ -1341,6 +1346,9 @@ App.Components.AppointmentsModal = (function () {
      * Initialize the module.
      */
     function initialize() {
+        // Attach județ/oraș suggestions (free-text is preserved, values are saved as-is).
+        App.Utils.LocationAutocomplete.attachCity($city, $state);
+
         addEventListeners();
     }
 

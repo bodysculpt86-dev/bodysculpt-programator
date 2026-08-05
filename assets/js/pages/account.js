@@ -180,6 +180,9 @@ App.Pages.Account = (function () {
      * Initialize the page.
      */
     function initialize() {
+        // Attach județ/oraș suggestions (free-text is preserved, values are saved as-is).
+        App.Utils.LocationAutocomplete.attachCity($city, $state);
+
         const account = vars('account');
 
         deserialize(account);

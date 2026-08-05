@@ -151,6 +151,13 @@
                                 </div>
 
                                 <div class="mb-3">
+                                    <label for="state" class="form-label">
+                                        <?= lang('county') ?>
+                                    </label>
+                                    <input type="text" id="state" class="form-control" maxlength="120"/>
+                                </div>
+
+                                <div class="mb-3">
                                     <label for="zip-code" class="form-label">
                                         <?= lang('zip_code') ?>
                                         <?php if ($require_zip_code): ?>

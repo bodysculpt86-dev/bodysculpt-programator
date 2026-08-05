@@ -26,6 +26,7 @@ App.Pages.Booking = (function () {
     const $phoneNumber = $('#phone-number');
     const $address = $('#address');
     const $city = $('#city');
+    const $state = $('#state');
     const $zipCode = $('#zip-code');
     const $notes = $('#notes');
     const $captchaTitle = $('.captcha-title');
@@ -67,6 +68,9 @@ App.Pages.Booking = (function () {
      * Initialize the module.
      */
     function initialize() {
+        // Attach județ/oraș suggestions (free-text is preserved, values are saved as-is).
+        App.Utils.LocationAutocomplete.attachCity($city, $state);
+
         if (Boolean(Number(vars('display_cookie_notice'))) && window?.cookieconsent) {
             cookieconsent.initialise({
                 palette: {
@@ -261,6 +265,7 @@ App.Pages.Booking = (function () {
             prefillFromQueryParam('#phone-number', 'phone');
             prefillFromQueryParam('#address', 'address');
             prefillFromQueryParam('#city', 'city');
+            prefillFromQueryParam('#state', 'state');
             prefillFromQueryParam('#zip-code', 'zip');
 
             // Initialize remember me after prefilling from query params
@@ -804,6 +809,7 @@ App.Pages.Booking = (function () {
             phone_number: $phoneNumber.val(),
             address: $address.val(),
             city: $city.val(),
+            state: $state.val(),
             zip_code: $zipCode.val(),
             timezone: vars('default_timezone'),
             custom_field_1: $customField1.val(),
@@ -905,6 +911,7 @@ App.Pages.Booking = (function () {
             $phoneNumber.val(customer.phone_number);
             $address.val(customer.address);
             $city.val(customer.city);
+            $state.val(customer.state);
             $zipCode.val(customer.zip_code);
             const appointmentNotes = appointment.notes !== null ? appointment.notes : '';
             $notes.val(appointmentNotes);
@@ -995,6 +1002,7 @@ App.Pages.Booking = (function () {
             phoneNumber: $phoneNumber.val(),
             address: $address.val(),
             city: $city.val(),
+            state: $state.val(),
             zipCode: $zipCode.val(),
             customField1: $customField1.val(),
             customField2: $customField2.val(),
@@ -1051,6 +1059,9 @@ App.Pages.Booking = (function () {
             }
             if (!urlParams.has('city') && !$city.val()) {
                 $city.val(customerInfo.city || '');
+            }
+            if (!urlParams.has('state') && !$state.val()) {
+                $state.val(customerInfo.state || '');
             }
             if (!urlParams.has('zip_code') && !$zipCode.val()) {
                 $zipCode.val(customerInfo.zipCode || '');

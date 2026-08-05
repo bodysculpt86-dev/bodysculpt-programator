@@ -488,6 +488,9 @@ App.Pages.Admins = (function () {
      * Initialize the module.
      */
     function initialize() {
+        // Attach județ/oraș suggestions (free-text is preserved, values are saved as-is).
+        App.Utils.LocationAutocomplete.attachCity($city, $state);
+
         App.Pages.Admins.resetForm();
         App.Pages.Admins.filter('');
         App.Pages.Admins.addEventListeners();

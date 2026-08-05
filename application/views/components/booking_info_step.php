@@ -99,6 +99,12 @@
                 <?php endif; ?>
                 <?php if ($display_city): ?>
                     <div class="mb-3">
+                        <label for="state" class="form-label">
+                            <?= lang('county') ?>
+                        </label>
+                        <input type="text" id="state" class="form-control" maxlength="120"/>
+                    </div>
+                    <div class="mb-3">
                         <label for="city" class="form-label">
                             <?= lang('city') ?>
                             <?php if ($require_city): ?>

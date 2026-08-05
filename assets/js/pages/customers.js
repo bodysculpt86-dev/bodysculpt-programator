@@ -24,6 +24,7 @@ App.Pages.Customers = (function () {
     const $phoneNumber = $('#phone-number');
     const $address = $('#address');
     const $city = $('#city');
+    const $state = $('#state');
     const $zipCode = $('#zip-code');
     const $language = $('#language');
     const $ldapDn = $('#ldap-dn');
@@ -206,6 +207,7 @@ App.Pages.Customers = (function () {
                 phone_number: $phoneNumber.val(),
                 address: $address.val(),
                 city: $city.val(),
+                state: $state.val(),
                 zip_code: $zipCode.val(),
                 notes: $notes.val(),
                 language: $language.val() || 'english',
@@ -362,6 +364,7 @@ App.Pages.Customers = (function () {
         $phoneNumber.val(customer.phone_number);
         $address.val(customer.address);
         $city.val(customer.city);
+        $state.val(customer.state);
         $zipCode.val(customer.zip_code);
         $notes.val(customer.notes);
         $language.val(customer.language || 'english');
@@ -556,6 +559,9 @@ App.Pages.Customers = (function () {
      * Initialize the module.
      */
     function initialize() {
+        // Attach județ/oraș suggestions (free-text is preserved, values are saved as-is).
+        App.Utils.LocationAutocomplete.attachCity($city, $state);
+
         App.Pages.Customers.resetForm();
         App.Pages.Customers.addEventListeners();
         App.Pages.Customers.filter('');
