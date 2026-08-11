@@ -73,6 +73,8 @@ class Accounts
                 ['password' => $new_hash],
                 ['id_users' => $user_settings['id_users']],
             );
+
+            $stored_hash = $new_hash;
         }
 
         $user = $this->CI->users_model->find($user_settings['id_users']);
@@ -86,7 +88,56 @@ class Accounts
             'timezone' => setting('default_timezone'),
             'language' => !empty($user['language']) ? $user['language'] : Config::LANGUAGE,
             'role_slug' => $role['slug'],
+            // Fingerprint of the password hash at login time. Checked on every request
+            // (see EA_Controller::ensure_user_exists) so that any password change
+            // immediately invalidates all other sessions of this account.
+            'password_fingerprint' => hash('sha256', $stored_hash),
         ];
+    }
+
+    /**
+     * Get a fingerprint of the user's current local password hash.
+     *
+     * @param int $user_id User ID.
+     *
+     * @return string|null Returns the fingerprint or NULL when the account has no local password (e.g. LDAP-only).
+     */
+    public function get_password_fingerprint(int $user_id): ?string
+    {
+        $user_settings = $this->CI->db->get_where('user_settings', ['id_users' => $user_id])->row_array();
+
+        if (empty($user_settings) || empty($user_settings['password'])) {
+            return null;
+        }
+
+        return hash('sha256', $user_settings['password']);
+    }
+
+    /**
+     * Check whether a session is still valid with regards to the account's password.
+     *
+     * Sessions store the password fingerprint from login time. When the password has
+     * changed since (or the session predates fingerprints), the session is no longer
+     * valid and must be destroyed. LDAP-only accounts (no local password) are skipped.
+     *
+     * @param int $user_id User ID.
+     * @param string|null $fingerprint Fingerprint stored in the session.
+     *
+     * @return bool Returns TRUE if the session may continue, FALSE if it must be destroyed.
+     */
+    public function is_password_fingerprint_valid(int $user_id, ?string $fingerprint): bool
+    {
+        $current_fingerprint = $this->get_password_fingerprint($user_id);
+
+        if ($current_fingerprint === null) {
+            return true; // No local password (LDAP-only account) - nothing to verify against.
+        }
+
+        if (empty($fingerprint)) {
+            return false; // Session was created before fingerprints existed - force a fresh login.
+        }
+
+        return hash_equals($current_fingerprint, $fingerprint);
     }
 
     /**

@@ -90,6 +90,8 @@ class Ldap_client
                 'timezone' => setting('default_timezone'),
                 'language' => !empty($user['language']) ? $user['language'] : Config::LANGUAGE,
                 'role_slug' => $role['slug'],
+                // Fingerprint of the local password hash, if any (see Accounts::check_login).
+                'password_fingerprint' => $this->CI->accounts->get_password_fingerprint((int) $user['id']),
             ];
         }
 

@@ -154,6 +154,9 @@ class Account extends EA_Controller
                 'username' => $account['settings']['username'],
                 'timezone' => setting('default_timezone'),
                 'language' => $account['language'],
+                // Refresh the fingerprint so that changing your own password does not
+                // invalidate your current session (all your other sessions still die).
+                'password_fingerprint' => $this->accounts->get_password_fingerprint((int) session('user_id')),
             ]);
 
             response();

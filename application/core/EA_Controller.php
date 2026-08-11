@@ -104,6 +104,26 @@ class EA_Controller extends CI_Controller
 
             abort(403, 'Forbidden');
         }
+
+        // Skip the fingerprint check on the login controller itself, otherwise a
+        // stale session would block the login POST (403) before it can be replaced
+        // by a fresh, valid session.
+        if ($this->router->class === 'login') {
+            return;
+        }
+
+        // Invalidate the session when the account's password has changed since the
+        // login (e.g. super-admin synced from env vars, admin reset, account edit).
+        // Sessions created before fingerprints existed are also logged out once.
+        if (!$this->accounts->is_password_fingerprint_valid((int) $user_id, session('password_fingerprint'))) {
+            session_destroy();
+
+            if ($this->input->is_ajax_request()) {
+                abort(403, 'Forbidden');
+            }
+
+            redirect('login');
+        }
     }
 
     /**
