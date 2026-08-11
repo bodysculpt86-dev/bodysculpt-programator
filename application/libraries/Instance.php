@@ -214,12 +214,12 @@ class Instance
             }
 
             if (empty($admin['settings'])) {
-                return 'Super-admin already exists and credentials are up to date.';
+                return "Super-admin already exists and credentials are up to date (username: {$username}, email: {$email}).";
             }
 
             $this->CI->admins_model->save($admin);
 
-            return 'Super-admin updated.';
+            return "Super-admin updated (username: {$username}, email: {$email}).";
         }
 
         $this->CI->admins_model->save([
@@ -235,7 +235,7 @@ class Instance
             ],
         ]);
 
-        return 'Super-admin created.';
+        return "Super-admin created (username: {$username}, email: {$email}).";
     }
 
     /**

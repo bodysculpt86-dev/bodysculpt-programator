@@ -92,7 +92,21 @@ set -e
 php /var/www/html/index.php console migrate 2>&1 || echo "Automatic migrations failed; continuing startup." >&2
 
 # Bootstrap the super-admin account from Railway env vars (idempotent).
-php /var/www/html/index.php console bootstrap 2>&1 || echo "Super-admin bootstrap failed; continuing startup." >&2
+# IMPORTANT: this must be LOUD on failure. A silent failure means the app keeps
+# running with the OLD super-admin credentials while everyone assumes the new
+# env vars are active. Note: `console bootstrap` exits 0 even when it refuses
+# to sync (e.g. missing/invalid SUPERADMIN_* vars), so we must inspect output.
+BOOTSTRAP_OUTPUT="$(php /var/www/html/index.php console bootstrap 2>&1)" || true
+echo "$BOOTSTRAP_OUTPUT"
+if echo "$BOOTSTRAP_OUTPUT" | grep -qiE 'must be set|invalid|fatal|exception|error'; then
+    echo "===============================================================" >&2
+    echo "WARNING: SUPER-ADMIN BOOTSTRAP DID NOT SYNC CREDENTIALS!" >&2
+    echo "The app is starting with the PREVIOUS super-admin credentials." >&2
+    echo "Check SUPERADMIN_EMAIL / SUPERADMIN_USERNAME / SUPERADMIN_PASSWORD" >&2
+    echo "in the Railway service variables, then redeploy." >&2
+    echo "===============================================================" >&2
+fi
+unset BOOTSTRAP_OUTPUT
 
 # Railway cron mode: when RAILWAY_CRON_COMMAND is set, run it and exit.
 # This must happen BEFORE Apache starts, so cron containers never launch the web server.
