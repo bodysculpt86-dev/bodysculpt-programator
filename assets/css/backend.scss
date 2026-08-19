@@ -1092,3 +1092,100 @@ html.backend-sidebar-collapsed .backend-sidebar-footer {
 html.backend-sidebar-collapsed .backend-sidebar-footer .backend-sidebar-link {
     justify-content: center;
 }
+
+/* ----------------------------------------------------------------------------
+ * Phone prefix select (country flag + dial code next to the phone input)
+ * ------------------------------------------------------------------------- */
+
+.phone-prefix-select {
+    flex: 0 0 auto;
+    width: 6.5rem;
+    padding-right: 1.75rem;
+    cursor: pointer;
+}
+
+/* ----------------------------------------------------------------------------
+ * Mobile optimizations: appointment modal & customers form
+ *
+ * Keep every field full-width and stacked (handled by the Bootstrap grid), prevent the iOS/Android
+ * auto-zoom on focus with >= 16px inputs and make the primary actions reachable with the thumb.
+ * ------------------------------------------------------------------------- */
+
+@media (max-width: 767.98px) {
+    #appointments-modal {
+        .form-control,
+        .form-select,
+        .input-group-text {
+            font-size: 16px; // Prevent the mobile Safari/Chrome auto-zoom on input focus.
+            min-height: 44px; // Comfortable touch target.
+        }
+
+        textarea.form-control {
+            min-height: 0;
+        }
+
+        .modal-footer {
+            flex-wrap: wrap;
+            justify-content: center; // Center the CTAs on mobile.
+            gap: 0.75rem; // Keep the buttons visually separated.
+
+            .btn {
+                min-height: 44px;
+            }
+
+            #send-payment-link {
+                margin-right: 0 !important; // Neutralize the .me-auto desktop push on mobile.
+            }
+
+            #save-appointment {
+                order: -1; // Keep the primary action visible first, above the virtual keyboard.
+                width: 100%;
+                margin-inline-start: 0;
+            }
+        }
+    }
+
+    #customers {
+        .record-details {
+            .form-control,
+            .form-select {
+                font-size: 16px; // Prevent the mobile Safari/Chrome auto-zoom on input focus.
+                min-height: 44px;
+            }
+
+            textarea.form-control {
+                min-height: 0;
+            }
+
+            .btn-toolbar {
+                justify-content: center; // Center the CTA groups on mobile.
+                gap: 0.75rem;
+            }
+
+            #save-cancel-group {
+                width: 100%;
+                text-align: center;
+
+                .btn {
+                    min-height: 44px;
+                    margin: 0.25rem 0.25rem 0; // Keep Cancel/Delete separated.
+                }
+
+                #save-customer {
+                    display: block;
+                    width: 100%;
+                    margin-left: 0;
+                    margin-right: 0;
+                }
+            }
+
+            #add-edit-delete-group {
+                justify-content: center;
+
+                .btn {
+                    min-height: 44px;
+                }
+            }
+        }
+    }
+}

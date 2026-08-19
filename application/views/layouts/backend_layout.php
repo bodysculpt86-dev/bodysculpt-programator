@@ -69,6 +69,7 @@
 <script src="<?= asset_url('assets/js/utils/string.js') ?>"></script>
 <script src="<?= asset_url('assets/js/utils/url.js') ?>"></script>
 <script src="<?= asset_url('assets/js/utils/validation.js') ?>"></script>
+<script src="<?= asset_url('assets/js/utils/phone.js') ?>"></script>
 <script src="<?= asset_url('assets/js/data/ro_locations.js') ?>"></script>
 <script src="<?= asset_url('assets/js/utils/location_autocomplete.js') ?>"></script>
 <script src="<?= asset_url('assets/js/layouts/backend_layout.js') ?>"></script>

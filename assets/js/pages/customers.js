@@ -22,6 +22,7 @@ App.Pages.Customers = (function () {
     const $lastName = $('#last-name');
     const $email = $('#email');
     const $phoneNumber = $('#phone-number');
+    const $phonePrefix = $('#phone-prefix');
     const $address = $('#address');
     const $city = $('#city');
     const $state = $('#state');
@@ -204,7 +205,7 @@ App.Pages.Customers = (function () {
                 first_name: $firstName.val(),
                 last_name: $lastName.val(),
                 email: $email.val(),
-                phone_number: $phoneNumber.val(),
+                phone_number: App.Utils.Phone.compose($phonePrefix.val(), $phoneNumber.val()),
                 address: $address.val(),
                 city: $city.val(),
                 state: $state.val(),
@@ -336,6 +337,7 @@ App.Pages.Customers = (function () {
         $customers.find('.record-details').find('input, select, textarea').val('').prop('disabled', true);
         $customers.find('.record-details .form-label span').prop('hidden', true);
         $customers.find('.record-details #language').val(vars('default_language'));
+        $phonePrefix.val(App.Utils.Phone.DEFAULT_PREFIX);
 
         $customerAppointments.empty();
 
@@ -361,7 +363,7 @@ App.Pages.Customers = (function () {
         $firstName.val(customer.first_name);
         $lastName.val(customer.last_name);
         $email.val(customer.email);
-        $phoneNumber.val(customer.phone_number);
+        App.Utils.Phone.applyTo($phonePrefix, $phoneNumber, customer.phone_number);
         $address.val(customer.address);
         $city.val(customer.city);
         $state.val(customer.state);

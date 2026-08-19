@@ -62,6 +62,10 @@ class Customers_model extends EA_Model
      */
     public function save(array $customer): int
     {
+        if (!empty($customer['phone_number'])) {
+            $customer['phone_number'] = $this->normalize_phone_number($customer['phone_number']);
+        }
+
         $this->validate($customer);
 
         if ($this->exists($customer) && empty($customer['id'])) {
@@ -73,6 +77,85 @@ class Customers_model extends EA_Model
         } else {
             return $this->update($customer);
         }
+    }
+
+    /**
+     * Normalize a phone number to the "+<country code><number>" format (e.g. "+40712345678").
+     *
+     * This mirrors the client-side logic in assets/js/utils/phone.js and acts as the server-side source of
+     * truth, so that numbers are always stored consistently no matter which client submitted them:
+     *
+     * - "+40712345678" stays "+40712345678" (any explicit "+" prefix is kept as-is).
+     * - "0040712345678" becomes "+40712345678" (the "00" international prefix is converted to "+").
+     * - "40712345678" becomes "+40712345678" (known country dial code on a long digits-only number).
+     * - "0712345678" / "0712 345 678" / "712345678" become "+40712345678" (local format defaults to Romania).
+     *
+     * @param string $phone Raw phone number value.
+     *
+     * @return string Normalized phone number.
+     */
+    protected function normalize_phone_number(string $phone): string
+    {
+        // Known country dial codes (mirrors App.Utils.Phone.COUNTRIES), longest first.
+        static $dial_codes = [
+            '373',
+            '359',
+            '351',
+            '353',
+            '420',
+            '421',
+            '380',
+            '40',
+            '36',
+            '30',
+            '39',
+            '49',
+            '43',
+            '41',
+            '33',
+            '32',
+            '31',
+            '34',
+            '44',
+            '48',
+            '90',
+            '1',
+        ];
+
+        $phone = trim($phone);
+
+        if ($phone === '') {
+            return $phone;
+        }
+
+        $has_plus = str_starts_with($phone, '+');
+
+        $digits = preg_replace('/\D/', '', $phone);
+
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+            $has_plus = true;
+        }
+
+        if ($digits === '') {
+            return $phone;
+        }
+
+        if ($has_plus) {
+            return '+' . $digits;
+        }
+
+        // Digits only: detect a known country dial code on long numbers (e.g. "40712345678").
+        if (strlen($digits) >= 10) {
+            foreach ($dial_codes as $dial_code) {
+                if (str_starts_with($digits, $dial_code)) {
+                    return '+' . $digits;
+                }
+            }
+        }
+
+        // Legacy local format (e.g. "0712345678" or "712345678"): treat as Romanian by default.
+        return '+40' . ltrim($digits, '0');
     }
 
     /**

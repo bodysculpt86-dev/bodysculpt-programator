@@ -104,8 +104,13 @@
                                             <span class="text-danger">*</span>
                                         <?php endif; ?>
                                     </label>
-                                    <input type="text" id="phone-number" maxlength="60"
-                                           class="<?= $require_phone_number ? 'required' : '' ?> form-control"/>
+                                    <div class="input-group">
+                                        <select id="phone-prefix" class="form-select phone-prefix-select"
+                                                aria-label="<?= lang('phone_number') ?> prefix"></select>
+                                        <input type="tel" id="phone-number" maxlength="60"
+                                               class="<?= $require_phone_number ? 'required' : '' ?> form-control"
+                                               placeholder="712345678"/>
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">

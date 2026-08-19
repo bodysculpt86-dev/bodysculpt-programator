@@ -26,6 +26,7 @@ App.Components.AppointmentsModal = (function () {
     const $lastName = $('#last-name');
     const $email = $('#email');
     const $phoneNumber = $('#phone-number');
+    const $phonePrefix = $('#phone-prefix');
     const $address = $('#address');
     const $city = $('#city');
     const $state = $('#state');
@@ -395,7 +396,7 @@ App.Components.AppointmentsModal = (function () {
                 first_name: $firstName.val(),
                 last_name: $lastName.val(),
                 email: $email.val(),
-                phone_number: $phoneNumber.val(),
+                phone_number: App.Utils.Phone.compose($phonePrefix.val(), $phoneNumber.val()),
                 address: $address.val(),
                 city: $city.val(),
                 state: $state.val(),
@@ -605,7 +606,7 @@ App.Components.AppointmentsModal = (function () {
                 $firstName.val(customer.first_name);
                 $lastName.val(customer.last_name);
                 $email.val(customer.email);
-                $phoneNumber.val(customer.phone_number);
+                App.Utils.Phone.applyTo($phonePrefix, $phoneNumber, customer.phone_number);
                 $address.val(customer.address);
                 $city.val(customer.city);
                 $state.val(customer.state);
@@ -889,6 +890,7 @@ App.Components.AppointmentsModal = (function () {
             $lastName.val('');
             $email.val('');
             $phoneNumber.val('');
+            $phonePrefix.val(App.Utils.Phone.DEFAULT_PREFIX);
             $address.val('');
             $city.val('');
             $state.val('');
@@ -1096,7 +1098,7 @@ App.Components.AppointmentsModal = (function () {
         $firstName.val(customer.first_name);
         $lastName.val(customer.last_name);
         $email.val(customer.email);
-        $phoneNumber.val(customer.phone_number);
+        App.Utils.Phone.applyTo($phonePrefix, $phoneNumber, customer.phone_number);
         $address.val(customer.address);
         $city.val(customer.city);
         $state.val(customer.state);
@@ -1143,6 +1145,7 @@ App.Components.AppointmentsModal = (function () {
     function resetModal() {
         // Empty form fields.
         $appointmentsModal.find('input, textarea').val('');
+        $phonePrefix.val(App.Utils.Phone.DEFAULT_PREFIX);
         $appointmentsModal.find('.modal-message').addClass('.d-none');
         $appointmentsModal.find('.is-invalid').removeClass('is-invalid');
 
@@ -1348,6 +1351,32 @@ App.Components.AppointmentsModal = (function () {
     function initialize() {
         // Attach județ/oraș suggestions (free-text is preserved, values are saved as-is).
         App.Utils.LocationAutocomplete.attachCity($city, $state);
+
+        // On phones the calendar page is zoomed out (initial-scale=0.5) so that the whole schedule fits
+        // on the screen. While the appointment modal is open, temporarily restore the natural scale (1)
+        // so that the form stays readable and usable without pinch-zoom; restore it on close.
+        let zoomedOutViewportContent = null;
+
+        $appointmentsModal.on('show.bs.modal', () => {
+            const viewport = document.querySelector('meta[name="viewport"]');
+
+            if (window.innerWidth < 768 && viewport && viewport.content.includes('initial-scale=0.5')) {
+                zoomedOutViewportContent = viewport.content;
+                viewport.setAttribute(
+                    'content',
+                    'width=device-width, initial-scale=1, user-scalable=yes, minimum-scale=0.5, maximum-scale=3',
+                );
+            }
+        });
+
+        $appointmentsModal.on('hidden.bs.modal', () => {
+            const viewport = document.querySelector('meta[name="viewport"]');
+
+            if (zoomedOutViewportContent && viewport) {
+                viewport.setAttribute('content', zoomedOutViewportContent);
+                zoomedOutViewportContent = null;
+            }
+        });
 
         addEventListeners();
     }
