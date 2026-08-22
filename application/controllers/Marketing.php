@@ -188,7 +188,7 @@ class Marketing extends EA_Controller
             $discount = trim((string) request('discount'));
             $valid_until = trim((string) request('valid_until'));
 
-            if (normalize_romanian_phone($phone) === null) {
+            if (normalize_international_phone($phone) === null) {
                 json_response([
                     'success' => false,
                     'error' => 'invalid_phone',
@@ -231,7 +231,7 @@ class Marketing extends EA_Controller
 
         return array_values(
             array_filter($customers, function (array $customer): bool {
-                return normalize_romanian_phone($customer['phone_number'] ?? null) !== null;
+                return normalize_international_phone($customer['phone_number'] ?? null) !== null;
             })
         );
     }

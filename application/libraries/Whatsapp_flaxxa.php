@@ -536,15 +536,15 @@ class Whatsapp_flaxxa
     }
 
     /**
-     * Normalize a Romanian phone number to E.164 with leading '+' for Flaxxa.
+     * Normalize an international phone number to E.164 with leading '+' for Flaxxa.
      *
      * @param string|null $phone Raw phone number.
      *
-     * @return string|null Normalized E.164 number (e.g. +40722334455) or null if invalid.
+     * @return string|null Normalized E.164 number (e.g. +393123456789) or null if invalid.
      */
     private function normalizePhoneForWhatsapp(?string $phone): ?string
     {
-        $normalized = normalize_romanian_phone($phone);
+        $normalized = normalize_international_phone($phone);
 
         return $normalized !== null ? '+' . $normalized : null;
     }
