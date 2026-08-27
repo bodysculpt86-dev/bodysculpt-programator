@@ -480,6 +480,49 @@ class Appointments_model extends EA_Model
     }
 
     /**
+     * Get the same-day, consecutive-appointment group that contains the given appointment.
+     *
+     * Returns every active appointment of the same customer that falls on the same calendar
+     * day as the anchor appointment and connects to it through a chain of pauses no longer
+     * than SAME_DAY_GROUP_GAP_MINUTES. The result is ordered by start_datetime ascending and
+     * always contains at least the anchor appointment itself.
+     *
+     * @param int $appointment_id Anchor appointment ID.
+     *
+     * @return array Ordered list of appointments that belong to the same day group.
+     */
+    public function get_same_day_group(int $appointment_id): array
+    {
+        $anchor = $this->find($appointment_id);
+
+        $date = substr((string) $anchor['start_datetime'], 0, 10);
+
+        $candidates = $this->db
+            ->from('appointments')
+            ->where('is_unavailability', false)
+            ->where('id_users_customer', $anchor['id_users_customer'])
+            ->where('start_datetime >=', $date . ' 00:00:00')
+            ->where('start_datetime <=', $date . ' 23:59:59')
+            ->get()
+            ->result_array();
+
+        foreach ($candidates as &$candidate) {
+            $this->cast($candidate);
+        }
+        unset($candidate);
+
+        $groups = group_appointments_same_day_chain(
+            $candidates,
+            same_day_group_gap_minutes(),
+            same_day_group_excluded_statuses(),
+        );
+
+        $group = same_day_group_containing($groups, $appointment_id);
+
+        return $group ?? [$anchor];
+    }
+
+    /**
      * Get a specific appointment from the database.
      *
      * @param int $appointment_id The ID of the record to be returned.

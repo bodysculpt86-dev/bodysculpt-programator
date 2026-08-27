@@ -26,6 +26,17 @@ class Notifications
     protected EA_Controller|CI_Controller $CI;
 
     /**
+     * Tracks the same-day groups whose grouped confirmation was already sent during the
+     * current request, so a batch save never sends the combined message more than once.
+     *
+     * Keys are "customer_id|date"; the value is irrelevant. Reset on every request
+     * (nothing is persisted to the database).
+     *
+     * @var array
+     */
+    private static array $sent_grouped_confirmations = [];
+
+    /**
      * Notifications constructor.
      */
     public function __construct()
@@ -101,19 +112,61 @@ class Notifications
                 }
             }
 
-            // Send confirmation SMS for new appointments only.
+            // Send confirmation SMS + WhatsApp for new appointments only.
             if ($manage_mode === false) {
-                try {
-                    $this->CI->sms_smso->send_confirmation($appointment, $customer, $service, $provider);
-                } catch (Throwable $e) {
-                    $this->log_exception($e, 'appointment-saved sms to customer', $appointment['id'] ?? null);
+                [$confirmation_appointment, $confirmation_service, $grouped_count] = $this->build_grouped_confirmation(
+                    $appointment,
+                    $service,
+                );
+
+                // Deduplicate grouped confirmations within a single request: when several new
+                // appointments are batch-saved into the same same-day group, only the first
+                // one sends the combined confirmation.
+                $send_confirmation = true;
+
+                if ($grouped_count > 1) {
+                    $grouped_key = self::grouped_confirmation_key($appointment, $confirmation_appointment);
+
+                    if (isset(self::$sent_grouped_confirmations[$grouped_key])) {
+                        $send_confirmation = false;
+                    } else {
+                        self::$sent_grouped_confirmations[$grouped_key] = true;
+                    }
                 }
 
-                // Send confirmation WhatsApp for new appointments only.
-                try {
-                    $this->CI->whatsapp_flaxxa->send_confirmation($appointment, $customer, $service, $provider);
-                } catch (Throwable $e) {
-                    $this->log_exception($e, 'appointment-saved whatsapp to customer', $appointment['id'] ?? null);
+                if ($send_confirmation) {
+                    try {
+                        $this->CI->sms_smso->send_confirmation(
+                            $confirmation_appointment,
+                            $customer,
+                            $confirmation_service,
+                            $provider,
+                        );
+                    } catch (Throwable $e) {
+                        $this->log_exception($e, 'appointment-saved sms to customer', $appointment['id'] ?? null);
+                    }
+
+                    try {
+                        $this->CI->whatsapp_flaxxa->send_confirmation(
+                            $confirmation_appointment,
+                            $customer,
+                            $confirmation_service,
+                            $provider,
+                        );
+                    } catch (Throwable $e) {
+                        $this->log_exception($e, 'appointment-saved whatsapp to customer', $appointment['id'] ?? null);
+                    }
+                }
+
+                if ($grouped_count > 1 && $send_confirmation) {
+                    log_message(
+                        'debug',
+                        '[wa-flaxxa] Grouped confirmation for customer ' .
+                            ($customer['id'] ?? 'N/A') .
+                            ' — ' .
+                            $grouped_count .
+                            ' appointments',
+                    );
                 }
             }
 
@@ -363,6 +416,71 @@ class Notifications
             config(['language' => $current_language ?? 'english']);
             $this->CI->lang->load('translations');
         }
+    }
+
+    /**
+     * Build the dedup key for a grouped confirmation ("customer_id|date").
+     *
+     * @param array $appointment The just-saved appointment.
+     * @param array $confirmation_appointment The (possibly grouped) confirmation payload.
+     *
+     * @return string
+     */
+    private static function grouped_confirmation_key(array $appointment, array $confirmation_appointment): string
+    {
+        $customer_id = (int) ($appointment['id_users_customer'] ?? 0);
+        $date = substr((string) ($confirmation_appointment['start_datetime'] ?? ''), 0, 10);
+
+        return $customer_id . '|' . $date;
+    }
+
+    /**
+     * Build the appointment + service payload used for the confirmation message.
+     *
+     * When the saved appointment is part of a larger same-day group, this collapses the
+     * whole group into a single payload: the earliest start time and the concatenated
+     * service names. Otherwise the original appointment/service are returned untouched.
+     *
+     * @param array $appointment The just-saved appointment.
+     * @param array $service The just-saved appointment's service.
+     *
+     * @return array [appointment, service, group_count]
+     */
+    private function build_grouped_confirmation(array $appointment, array $service): array
+    {
+        $group = $this->CI->appointments_model->get_same_day_group((int) $appointment['id']);
+
+        if (count($group) <= 1) {
+            return [$appointment, $service, 1];
+        }
+
+        $service_ids = array_column($group, 'id_services');
+
+        $service_rows = $this->CI->db
+            ->select('id, name')
+            ->where_in('id', $service_ids)
+            ->get('services')
+            ->result_array();
+
+        $name_by_id = [];
+
+        foreach ($service_rows as $row) {
+            $name_by_id[(int) $row['id']] = $row['name'];
+        }
+
+        $names = [];
+
+        foreach ($group as $grouped_appointment) {
+            $names[] = $name_by_id[(int) $grouped_appointment['id_services']] ?? '';
+        }
+
+        $grouped_appointment = $appointment;
+        $grouped_appointment['start_datetime'] = $group[0]['start_datetime'];
+
+        $grouped_service = $service;
+        $grouped_service['name'] = implode(' + ', array_filter($names));
+
+        return [$grouped_appointment, $grouped_service, count($group)];
     }
 
     private function log_exception(Throwable $e, string $message, ?int $appointment_id): void

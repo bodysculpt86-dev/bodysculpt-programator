@@ -64,6 +64,7 @@ $autoload['libraries'] = ['database', 'session'];
 */
 
 $autoload['helper'] = [
+    'appointment_grouping',
     'array',
     'asset',
     'config',

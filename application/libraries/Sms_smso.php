@@ -219,7 +219,7 @@ class Sms_smso
      *
      * @return void
      */
-    public function send_reminder(array $appointment, array $customer, ?array $provider = null): void
+    public function send_reminder(array $appointment, array $customer, ?array $provider = null, ?array $service = null): void
     {
         try {
             $rawPhone = $customer['phone_number'] ?? null;
@@ -234,7 +234,7 @@ class Sms_smso
                 return;
             }
 
-            $message = $this->buildReminderMessage($appointment, $provider);
+            $message = $this->buildReminderMessage($appointment, $provider, $service);
 
             if ($this->logOnly) {
                 $this->log(
@@ -264,11 +264,19 @@ class Sms_smso
      *
      * @return string
      */
-    private function buildReminderMessage(array $appointment, ?array $provider = null): string
+    private function buildReminderMessage(array $appointment, ?array $provider = null, ?array $service = null): string
     {
         [$date, $time] = $this->formatDateTime($appointment, $provider);
 
-        $message = 'Reminder: aveti programare la BodySculpt maine, ' . $date . ' la ' . $time . '. Va asteptam!';
+        $message = 'Reminder: aveti programare la BodySculpt maine, ' . $date . ' la ' . $time . '.';
+
+        $serviceName = $service['name'] ?? null;
+
+        if (!empty($serviceName)) {
+            $message .= ' Proceduri: ' . $serviceName . '.';
+        }
+
+        $message .= ' Va asteptam!';
 
         if (!empty($appointment['confirmation_token'])) {
             $message .= ' Confirmi/anulezi: ' . base_url('p/' . $appointment['confirmation_token']);

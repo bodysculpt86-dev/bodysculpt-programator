@@ -235,11 +235,28 @@ class Console extends EA_Controller
 
         $appointments = $this->appointments_model->get_pending_sms_reminders($from, $until, $excludedStatuses);
 
-        foreach ($appointments as $appointment) {
+        $groups = group_appointments_same_day_chain(
+            $appointments,
+            same_day_group_gap_minutes(),
+            same_day_group_excluded_statuses(),
+        );
+
+        foreach ($groups as $group) {
+            $appointment = $group[0];
+            $group_count = count($group);
+
+            // Ensure the leading appointment has a token for the self-service link.
             if (empty($appointment['confirmation_token'])) {
                 $appointment['confirmation_token'] = $this->appointments_model->regenerate_confirmation_token(
                     $appointment['id'],
                 );
+            }
+
+            // Back-fill tokens for the other group members so future runs can reference them.
+            foreach ($group as $member) {
+                if ((int) $member['id'] !== (int) $appointment['id'] && empty($member['confirmation_token'])) {
+                    $this->appointments_model->regenerate_confirmation_token($member['id']);
+                }
             }
 
             try {
@@ -251,7 +268,7 @@ class Console extends EA_Controller
 
             if (empty($customer['phone_number'])) {
                 log_message('debug', '[SMSO] Reminder skipped: no phone for customer #' . $customer['id']);
-                $this->markReminderAttempted($appointment['id'], 'no phone');
+                $this->mark_reminder_attempted_for_group($group, 'no phone');
                 continue;
             }
 
@@ -263,20 +280,45 @@ class Console extends EA_Controller
                 log_message('error', '[SMSO] Could not load provider for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
             }
 
+            // Resolve the (possibly concatenated) service name used by the reminder body.
+            $service = ['name' => '-'];
             try {
-                $this->sms_smso->send_reminder($appointment, $customer, $provider);
-                $this->markReminderAttempted($appointment['id']);
+                if ($group_count > 1) {
+                    $service_ids = array_column($group, 'id_services');
+                    $rows = $this->db
+                        ->select('id, name')
+                        ->where_in('id', $service_ids)
+                        ->get('services')
+                        ->result_array();
+
+                    $name_by_id = [];
+                    foreach ($rows as $row) {
+                        $name_by_id[(int) $row['id']] = $row['name'];
+                    }
+
+                    $names = [];
+                    foreach ($group as $member) {
+                        $names[] = $name_by_id[(int) $member['id_services']] ?? '';
+                    }
+
+                    $service['name'] = implode(' + ', array_filter($names));
+                } else {
+                    $loaded = $this->services_model->find($appointment['id_services']);
+                    $service['name'] = $loaded['name'] ?? '-';
+                }
             } catch (Throwable $e) {
-                log_message('error', '[SMSO] Reminder exception for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
-                $this->markReminderAttempted($appointment['id'], $e->getMessage());
+                log_message('error', '[wa-flaxxa] Could not resolve service name(s) for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
             }
 
-            // Send WhatsApp reminder in parallel (failure isolated, does not affect SMS state).
-            $service = [];
+            // Single and grouped SMS reminders both mention the procedure(s).
+            $sms_service = $service;
+
+            $sms_error = null;
             try {
-                $service = $this->services_model->find($appointment['id_services']);
+                $this->sms_smso->send_reminder($appointment, $customer, $provider, $sms_service);
             } catch (Throwable $e) {
-                log_message('error', '[wa-flaxxa] Could not load service for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
+                $sms_error = $e->getMessage();
+                log_message('error', '[SMSO] Reminder exception for appointment #' . $appointment['id'] . ': ' . $sms_error);
             }
 
             try {
@@ -284,6 +326,12 @@ class Console extends EA_Controller
             } catch (Throwable $e) {
                 log_message('error', '[wa-flaxxa] Reminder exception for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
             }
+
+            if ($group_count > 1) {
+                log_message('debug', '[wa-flaxxa] Grouped reminder for customer ' . ($customer['id'] ?? 'N/A') . ' — ' . $group_count . ' appointments');
+            }
+
+            $this->mark_reminder_attempted_for_group($group, $sms_error);
         }
 
         log_message('debug', '[SMSO] Reminder run finished. Checked ' . count($appointments) . ' appointment(s).');
@@ -306,6 +354,21 @@ class Console extends EA_Controller
         }
 
         $this->db->update('appointments', $data, ['id' => $appointmentId]);
+    }
+
+    /**
+     * Mark every appointment in a reminder group as attempted.
+     *
+     * Prevents a grouped reminder from being re-sent for each member on a later run.
+     *
+     * @param array $group Group of appointments (need an 'id' key each).
+     * @param string|null $error Optional error message if the reminder failed.
+     */
+    private function mark_reminder_attempted_for_group(array $group, ?string $error = null): void
+    {
+        foreach ($group as $appointment) {
+            $this->markReminderAttempted((int) $appointment['id'], $error);
+        }
     }
 
     /**

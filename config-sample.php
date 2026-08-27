@@ -78,6 +78,15 @@ class Config
     // const FLAXXA_TEMPLATE_LANGUAGE = 'ro';
 
     // ------------------------------------------------------------------------
+    // SAME-DAY APPOINTMENT GROUPING
+    // ------------------------------------------------------------------------
+    // Consecutive appointments of the same customer, on the same calendar day,
+    // are grouped into a single confirmation/reminder message when the pause
+    // between them is no larger than this many minutes.
+    //
+    const SAME_DAY_GROUP_GAP_MINUTES = 90;
+
+    // ------------------------------------------------------------------------
     // EVOLUTION API WHATSAPP INTEGRATION (Optional)
     // ------------------------------------------------------------------------
     // In production these values are read from environment variables
