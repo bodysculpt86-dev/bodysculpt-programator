@@ -93,7 +93,11 @@ class Webhooks_meta extends EA_Controller
 
         $data = json_decode($payload, true);
 
-        $leadgen_id = $data['entry'][0]['changes'][0]['value']['leadgen_id'] ?? null;
+        // The leadgen object does NOT expose a "page_id" field — page_id (and
+        // ad_id/form_id) arrive here in the webhook payload entry[].changes[].value.
+        $value = $data['entry'][0]['changes'][0]['value'] ?? [];
+
+        $leadgen_id = $value['leadgen_id'] ?? null;
 
         if (empty($leadgen_id)) {
             // Acknowledge so Meta does not retry a payload we cannot act on.
@@ -111,6 +115,9 @@ class Webhooks_meta extends EA_Controller
 
         try {
             $lead_data = $this->fetch_lead($leadgen_id);
+
+            // page_id is sourced from the webhook payload, not the lead object.
+            $lead_data['page_id'] = $value['page_id'] ?? '';
 
             $lead = $this->map_lead($leadgen_id, $lead_data);
 
@@ -163,7 +170,7 @@ class Webhooks_meta extends EA_Controller
             $version .
             '/' .
             rawurlencode($leadgen_id) .
-            '?fields=field_data,created_time,form_id,page_id,ad_id&access_token=' .
+            '?fields=field_data,created_time,form_id,ad_id&access_token=' .
             rawurlencode($token);
 
         $ch = curl_init($url);
