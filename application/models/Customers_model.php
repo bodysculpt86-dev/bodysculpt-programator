@@ -336,6 +336,39 @@ class Customers_model extends EA_Model
     }
 
     /**
+     * Find a customer by phone number (normalized, matches the phone_number or
+     * mobile_number column). Used as the phone-based dedupe fallback when a
+     * Meta lead has no email.
+     *
+     * @param string $phone Raw phone number.
+     *
+     * @return array|null
+     */
+    public function find_by_phone(string $phone): ?array
+    {
+        $normalized = $this->normalize_phone_number($phone);
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        $role_id = $this->get_customer_role_id();
+
+        $customer = $this->db
+            ->select()
+            ->from('users')
+            ->where('id_roles', $role_id)
+            ->group_start()
+            ->where('phone_number', $normalized)
+            ->or_where('mobile_number', $normalized)
+            ->group_end()
+            ->get()
+            ->row_array();
+
+        return $customer ?: null;
+    }
+
+    /**
      * Insert a new customer into the database.
      *
      * @param array $customer Associative array with the customer data.

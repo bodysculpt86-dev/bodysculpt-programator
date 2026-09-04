@@ -49,6 +49,13 @@
                                     <?= lang('select') ?>
                                 </span>
                             </button>
+                            <button id="select-meta-lead" class="btn btn-outline-secondary btn-sm" type="button"
+                                    data-tippy-content="<?= lang('pick_meta_lead_hint') ?>">
+                                <i class="fas fa-user-plus me-2"></i>
+                                <span>
+                                    <?= lang('import_meta_lead') ?>
+                                </span>
+                            </button>
 
                             <input id="filter-existing-customers"
                                    placeholder="<?= lang('type_to_filter_customers') ?>"
@@ -57,7 +64,11 @@
 
                         <div id="existing-customers-list" style="display: none;"></div>
 
+                        <div id="meta-leads-list" style="display: none;"></div>
+
                         <input id="customer-id" type="hidden">
+
+                        <input id="meta-lead-id" type="hidden">
 
                         <div class="row">
                             <div class="col-12 col-sm-6">
@@ -420,6 +431,7 @@
 
 <script src="<?= asset_url('assets/js/http/customer_packages_http_client.js') ?>"></script>
 <script src="<?= asset_url('assets/js/http/payments_http_client.js') ?>"></script>
+<script src="<?= asset_url('assets/js/http/meta_leads_http_client.js') ?>"></script>
 <script src="<?= asset_url('assets/js/components/appointments_modal.js') ?>"></script>
 
 <?php end_section('scripts'); ?>

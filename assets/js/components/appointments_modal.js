@@ -22,6 +22,7 @@ App.Components.AppointmentsModal = (function () {
     const $endDatetime = $('#end-datetime');
     const $filterExistingCustomers = $('#filter-existing-customers');
     const $customerId = $('#customer-id');
+    const $metaLeadId = $('#meta-lead-id');
     const $firstName = $('#first-name');
     const $lastName = $('#last-name');
     const $email = $('#email');
@@ -34,6 +35,7 @@ App.Components.AppointmentsModal = (function () {
     const $language = $('#language');
     const $customerNotes = $('#customer-notes');
     const $selectCustomer = $('#select-customer');
+    const $selectMetaLead = $('#select-meta-lead');
     const $saveAppointment = $('#save-appointment');
     const $appointmentId = $('#appointment-id');
     const $appointmentLocation = $('#appointment-location');
@@ -57,6 +59,7 @@ App.Components.AppointmentsModal = (function () {
     const $appointmentServicesTotal = $('#appointment-services-total');
     const $insertAppointment = $('#insert-appointment');
     const $existingCustomersList = $('#existing-customers-list');
+    const $metaLeadsList = $('#meta-leads-list');
     const $newCustomer = $('#new-customer');
     const $customField1 = $('#custom-field-1');
     const $customField2 = $('#custom-field-2');
@@ -450,6 +453,7 @@ App.Components.AppointmentsModal = (function () {
                                 successCallback,
                                 errorCallback,
                                 false,
+                                $metaLeadId.val(),
                             );
                         },
                     },
@@ -463,6 +467,7 @@ App.Components.AppointmentsModal = (function () {
                                 successCallback,
                                 errorCallback,
                                 true,
+                                $metaLeadId.val(),
                             );
                         },
                     },
@@ -480,6 +485,7 @@ App.Components.AppointmentsModal = (function () {
                                 successCallback,
                                 errorCallback,
                                 false,
+                                $metaLeadId.val(),
                             );
                         },
                     },
@@ -493,6 +499,7 @@ App.Components.AppointmentsModal = (function () {
                                 successCallback,
                                 errorCallback,
                                 true,
+                                $metaLeadId.val(),
                             );
                         },
                     },
@@ -621,6 +628,80 @@ App.Components.AppointmentsModal = (function () {
             }
 
             $selectCustomer.trigger('click'); // Hide the list.
+
+            onCustomerSelected();
+        });
+
+        /**
+         * Event: Import Meta Lead Button "Click"
+         *
+         * Toggles the list of unconverted Meta leads.
+         *
+         * @param {jQuery.Event} event
+         */
+        $selectMetaLead.on('click', (event) => {
+            if (!$metaLeadsList.is(':visible')) {
+                $(event.currentTarget).find('span').text(lang('hide'));
+                $metaLeadsList.empty();
+                $metaLeadsList.slideDown('slow');
+
+                App.Http.MetaLeads.search('', 'new', 50, 0)
+                    .done((leads) => {
+                        $metaLeadsList.empty();
+
+                        if (!leads.length) {
+                            $metaLeadsList.append($('<em/>', { text: lang('meta_leads_empty') }));
+
+                            return;
+                        }
+
+                        leads.forEach((lead) => {
+                            const name =
+                                [(lead.first_name || ''), (lead.last_name || '')].filter(Boolean).join(' ') ||
+                                lang('meta_leads_empty');
+
+                            $('<div/>', {
+                                'data-id': lead.id,
+                                'text': name,
+                            }).appendTo($metaLeadsList);
+                        });
+                    })
+                    .fail(() => {
+                        $metaLeadsList.empty().append($('<em/>', { text: lang('service_communication_error') }));
+                    });
+            } else {
+                $metaLeadsList.slideUp('slow');
+                $(event.currentTarget).find('span').text(lang('import_meta_lead'));
+            }
+        });
+
+        /**
+         * Event: Select Meta Lead From List "Click"
+         *
+         * @param {jQuery.Event} event
+         */
+        $appointmentsModal.on('click', '#meta-leads-list div', (event) => {
+            const leadId = $(event.target).attr('data-id');
+
+            App.Http.MetaLeads.show(leadId)
+                .done((lead) => {
+                    $customerId.val('');
+                    $metaLeadId.val(lead.id);
+                    $firstName.val(lead.first_name || '');
+                    $lastName.val(lead.last_name || '');
+                    $email.val(lead.email || '');
+                    App.Utils.Phone.applyTo($phonePrefix, $phoneNumber, lead.phone_number);
+                    $address.val('');
+                    $city.val('');
+                    $state.val('');
+                    $zipCode.val('');
+                    $customerNotes.val('');
+                })
+                .fail(() => {
+                    App.Layouts.Backend.displayNotification(lang('service_communication_error'));
+                });
+
+            $selectMetaLead.trigger('click'); // Hide the list.
 
             onCustomerSelected();
         });
@@ -886,6 +967,7 @@ App.Components.AppointmentsModal = (function () {
          */
         $newCustomer.on('click', () => {
             $customerId.val('');
+            $metaLeadId.val('');
             $firstName.val('');
             $lastName.val('');
             $email.val('');
@@ -1190,6 +1272,11 @@ App.Components.AppointmentsModal = (function () {
         $existingCustomersList.slideUp('slow');
         $filterExistingCustomers.fadeOut('slow');
         $selectCustomer.find('span').text(lang('select'));
+
+        // Close the meta leads import list.
+        $metaLeadsList.slideUp('slow');
+        $selectMetaLead.find('span').text(lang('import_meta_lead'));
+        $metaLeadId.val('');
 
         // Setup start and datetimepickers.
         // Get the selected service duration. It will be needed in order to calculate the appointment end datetime.

@@ -233,5 +233,10 @@ if (!empty($short_link_host) && strcasecmp($_SERVER['HTTP_HOST'] ?? '', $short_l
 // Public Stripe webhook receiver (signature-verified, CSRF-excluded).
 $route['webhooks/stripe'] = 'webhooks_stripe/receive';
 
+// Public Meta Lead Ads webhook receiver (GET verification handshake + POST
+// signature-verified leadgen notification, CSRF-excluded).
+$route['webhooks/meta']['get'] = 'webhooks_meta/verify';
+$route['webhooks/meta']['post'] = 'webhooks_meta/receive';
+
 /* End of file routes.php */
 /* Location: ./application/config/routes.php */

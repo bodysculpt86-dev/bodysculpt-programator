@@ -52,6 +52,14 @@
             </a>
         <?php endif; ?>
 
+        <?php if (session('role_slug') === DB_SLUG_ADMIN): ?>
+            <?php $active = $active_menu === 'meta_leads' ? 'active' : ''; ?>
+            <a href="<?= site_url('meta_leads') ?>" class="backend-sidebar-link <?= $active ?>">
+                <i class="fas fa-inbox backend-sidebar-icon"></i>
+                <span><?= lang('meta_leads') ?></span>
+            </a>
+        <?php endif; ?>
+
         <?php if (session('role_slug') === DB_SLUG_ADMIN || session('role_slug') === DB_SLUG_PROVIDER): ?>
             <?php $active = $active_menu === 'reports' ? 'active' : ''; ?>
             <div class="backend-sidebar-dropdown dropend <?= $active ?>">
@@ -297,6 +305,14 @@
                 <a href="<?= site_url('marketing') ?>" class="backend-sidebar-link <?= $active ?>">
                     <i class="fas fa-bullhorn backend-sidebar-icon"></i>
                     <span><?= lang('marketing') ?></span>
+                </a>
+            <?php endif; ?>
+
+            <?php if (session('role_slug') === DB_SLUG_ADMIN): ?>
+                <?php $active = $active_menu === 'meta_leads' ? 'active' : ''; ?>
+                <a href="<?= site_url('meta_leads') ?>" class="backend-sidebar-link <?= $active ?>">
+                    <i class="fas fa-inbox backend-sidebar-icon"></i>
+                    <span><?= lang('meta_leads') ?></span>
                 </a>
             <?php endif; ?>
 

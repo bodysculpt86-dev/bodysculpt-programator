@@ -39,6 +39,7 @@ App.Http.Calendar = (function () {
         errorCallback,
         notifyUsers = true,
         forceSave = false,
+        metaLeadId = null,
     ) {
         const url = App.Utils.Url.siteUrl('calendar/save_appointment');
 
@@ -51,6 +52,10 @@ App.Http.Calendar = (function () {
 
         if (customer) {
             data.customer_data = customer;
+        }
+
+        if (metaLeadId) {
+            data.meta_lead_id = metaLeadId;
         }
 
         return $.post(url, data)
@@ -264,40 +269,43 @@ App.Http.Calendar = (function () {
         successCallback,
         errorCallback,
         notifyUsers,
+        metaLeadId = null,
         revertCallback,
     ) {
         const attemptSave = (forceSave = false) => {
-            saveAppointment(appointment, customer, null, errorCallback, notifyUsers, forceSave).done((response) => {
-                if (response.conflict) {
-                    // Show conflict confirmation dialog
-                    App.Utils.Message.show(
-                        lang('appointment_update'),
-                        response.message + ' ' + lang('would_you_like_to_proceed'),
-                        [
-                            {
-                                text: lang('cancel'),
-                                click: (event, messageModal) => {
-                                    messageModal.hide();
-                                    if (revertCallback) {
-                                        revertCallback();
-                                    }
+            saveAppointment(appointment, customer, null, errorCallback, notifyUsers, forceSave, metaLeadId).done(
+                (response) => {
+                    if (response.conflict) {
+                        // Show conflict confirmation dialog
+                        App.Utils.Message.show(
+                            lang('appointment_update'),
+                            response.message + ' ' + lang('would_you_like_to_proceed'),
+                            [
+                                {
+                                    text: lang('cancel'),
+                                    click: (event, messageModal) => {
+                                        messageModal.hide();
+                                        if (revertCallback) {
+                                            revertCallback();
+                                        }
+                                    },
                                 },
-                            },
-                            {
-                                text: lang('proceed'),
-                                click: (event, messageModal) => {
-                                    messageModal.hide();
-                                    attemptSave(true);
+                                {
+                                    text: lang('proceed'),
+                                    click: (event, messageModal) => {
+                                        messageModal.hide();
+                                        attemptSave(true);
+                                    },
                                 },
-                            },
-                        ],
-                    );
-                } else if (response.success) {
-                    if (successCallback) {
-                        successCallback(response);
+                            ],
+                        );
+                    } else if (response.success) {
+                        if (successCallback) {
+                            successCallback(response);
+                        }
                     }
-                }
-            });
+                },
+            );
         };
 
         attemptSave();

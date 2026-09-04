@@ -80,6 +80,7 @@ class Calendar extends EA_Controller
         $this->load->model('services_model');
         $this->load->model('providers_model');
         $this->load->model('roles_model');
+        $this->load->model('meta_leads_model');
 
         $this->load->library('accounts');
         $this->load->library('google_sync');
@@ -89,6 +90,7 @@ class Calendar extends EA_Controller
         $this->load->library('webhooks_client');
         $this->load->library('permissions');
         $this->load->library('jitsi_client');
+        $this->load->library('meta_capi');
     }
 
     /**
@@ -268,6 +270,7 @@ class Calendar extends EA_Controller
             check('appointment_data', 'array');
             check('notify_users', 'bool|null');
             check('force_save', 'bool|null');
+            check('meta_lead_id', 'numeric|null');
 
             $customer_data = request('customer_data');
 
@@ -276,6 +279,10 @@ class Calendar extends EA_Controller
             $notify_users = filter_var(request('notify_users', true), FILTER_VALIDATE_BOOLEAN);
 
             $force_save = filter_var(request('force_save', false), FILTER_VALIDATE_BOOLEAN);
+
+            $meta_lead_id = request('meta_lead_id');
+
+            $meta_lead_id = !empty($meta_lead_id) ? (int) $meta_lead_id : null;
 
             // Normalize the appointment data to a list of appointment records.
             $appointments = array_is_list($appointment_data) ? array_values($appointment_data) : [$appointment_data];
@@ -307,6 +314,16 @@ class Calendar extends EA_Controller
                 // Reuse existing customers by email (same behavior as public booking).
                 if (empty($customer['id']) && $this->customers_model->exists($customer)) {
                     $customer['id'] = $this->customers_model->find_record_id($customer);
+                }
+
+                // Meta lead import: also reuse an existing customer by phone when
+                // there is no email match (phone-only leads would otherwise duplicate).
+                if (empty($customer['id']) && $meta_lead_id && !empty($customer['phone_number'])) {
+                    $phone_match = $this->customers_model->find_by_phone((string) $customer['phone_number']);
+
+                    if (!empty($phone_match)) {
+                        $customer['id'] = (int) $phone_match['id'];
+                    }
                 }
 
                 $customer['id'] = $this->customers_model->save($customer);
@@ -412,6 +429,25 @@ class Calendar extends EA_Controller
                 }
 
                 $this->webhooks_client->trigger(WEBHOOK_APPOINTMENT_SAVE, $saved_appointment);
+            }
+
+            // Meta lead import: mark the lead converted and signal Meta via the
+            // Conversions API. Wrapped so a feedback-loop failure never blocks
+            // the appointment save.
+            if ($meta_lead_id && $customer_id) {
+                try {
+                    $this->meta_leads_model->mark_converted($meta_lead_id, (int) $customer_id);
+
+                    $lead = $this->meta_leads_model->find($meta_lead_id);
+
+                    if ($lead && $this->meta_capi->is_configured() && empty($lead['capi_converted_event_sent'])) {
+                        if ($this->meta_capi->send_stage_event($lead, 'converted')) {
+                            $this->meta_leads_model->mark_capi_event_sent((int) $lead['id'], 'converted');
+                        }
+                    }
+                } catch (Throwable $e) {
+                    log_message('error', '[meta-lead] Conversion processing failed: ' . $e->getMessage());
+                }
             }
 
             json_response([

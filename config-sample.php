@@ -155,4 +155,25 @@ class Config
     // name, {{body_1}} = service, {{body_2}} = appointment date/time.
     //
     // const CLIENT_CANCEL_TEMPLATE_NAME = 'avans_neplatit';
+
+    // ------------------------------------------------------------------------
+    // META LEAD ADS INTEGRATION (Optional)
+    // ------------------------------------------------------------------------
+    // In production these values are read from environment variables set in
+    // Railway. The constants below are an optional local fallback for
+    // development only. Never commit real tokens.
+    //
+    // META_VERIFY_TOKEN:    the webhook "Verify Token" chosen in Meta's app dashboard.
+    // META_APP_SECRET:      the app secret (App > Settings > Basic), used to verify X-Hub-Signature-256.
+    // META_PAGE_ACCESS_TOKEN: long-lived Page access token with the leads_retrieval permission.
+    // META_GRAPH_VERSION:   Graph API version used for lead fetch + Conversions API (default v22.0).
+    // META_DATASET_ID:      the clinic's Pixel/Dataset ID (Events Manager), for Conversions API for CRM.
+    // META_CRM_ACCESS_TOKEN: the Conversions API / CRM integration access token.
+    //
+    // const META_VERIFY_TOKEN = '';
+    // const META_APP_SECRET = '';
+    // const META_PAGE_ACCESS_TOKEN = '';
+    // const META_GRAPH_VERSION = 'v22.0';
+    // const META_DATASET_ID = '';
+    // const META_CRM_ACCESS_TOKEN = '';
 }
