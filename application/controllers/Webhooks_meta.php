@@ -119,6 +119,11 @@ class Webhooks_meta extends EA_Controller
             // Non-2xx tells Meta to retry the delivery later.
             log_message('error', '[meta-webhook] Failed to process lead ' . $leadgen_id . ': ' . $e->getMessage());
 
+            // Also write to stderr (error_log) so the detail is visible in
+            // Railway's streamed deployment logs — storage/logs is ephemeral.
+            error_log('[meta-webhook] Failed to process lead ' . $leadgen_id . ': ' . $e->getMessage());
+            error_log('[meta-webhook] Trace: ' . $e->getTraceAsString());
+
             json_response(['success' => false, 'error' => 'processing_failed'], 500);
 
             return;
@@ -174,10 +179,30 @@ class Webhooks_meta extends EA_Controller
         curl_close($ch);
 
         if ($response === false) {
+            error_log(
+                '[meta-webhook] Graph API cURL error for lead ' .
+                    $leadgen_id .
+                    ' (token length ' .
+                    strlen($token) .
+                    '): ' .
+                    $curlError,
+            );
+
             throw new RuntimeException('Graph API cURL error: ' . $curlError);
         }
 
         if ($httpCode < 200 || $httpCode >= 300) {
+            error_log(
+                '[meta-webhook] Graph API error for lead ' .
+                    $leadgen_id .
+                    ' (HTTP ' .
+                    $httpCode .
+                    ', token length ' .
+                    strlen($token) .
+                    '): ' .
+                    $response,
+            );
+
             throw new RuntimeException('Graph API returned ' . $httpCode . ': ' . substr((string) $response, 0, 500));
         }
 
