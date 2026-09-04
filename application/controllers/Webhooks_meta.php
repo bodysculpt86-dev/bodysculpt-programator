@@ -75,8 +75,7 @@ class Webhooks_meta extends EA_Controller
         if ($app_secret === '') {
             log_message('error', '[meta-webhook] META_APP_SECRET is not configured; rejecting notification.');
 
-            $this->output->set_status_header(400);
-            json_response(['success' => false, 'error' => 'webhook_not_configured']);
+            json_response(['success' => false, 'error' => 'webhook_not_configured'], 400);
 
             return;
         }
@@ -87,8 +86,7 @@ class Webhooks_meta extends EA_Controller
         if (!hash_equals($expected_signature, $signature)) {
             log_message('error', '[meta-webhook] Signature verification failed.');
 
-            $this->output->set_status_header(400);
-            json_response(['success' => false, 'error' => 'invalid_signature']);
+            json_response(['success' => false, 'error' => 'invalid_signature'], 400);
 
             return;
         }
@@ -121,8 +119,7 @@ class Webhooks_meta extends EA_Controller
             // Non-2xx tells Meta to retry the delivery later.
             log_message('error', '[meta-webhook] Failed to process lead ' . $leadgen_id . ': ' . $e->getMessage());
 
-            $this->output->set_status_header(500);
-            json_response(['success' => false, 'error' => 'processing_failed']);
+            json_response(['success' => false, 'error' => 'processing_failed'], 500);
 
             return;
         }
