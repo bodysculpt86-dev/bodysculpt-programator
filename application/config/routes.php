@@ -238,5 +238,9 @@ $route['webhooks/stripe'] = 'webhooks_stripe/receive';
 $route['webhooks/meta']['get'] = 'webhooks_meta/verify';
 $route['webhooks/meta']['post'] = 'webhooks_meta/receive';
 
+// Public Make (make.com) webhook receiver (POST only, shared-secret header
+// verified, CSRF-excluded). Forwards Meta Lead Ads leads into meta_leads.
+$route['webhooks/make']['post'] = 'webhooks_make/receive';
+
 /* End of file routes.php */
 /* Location: ./application/config/routes.php */
