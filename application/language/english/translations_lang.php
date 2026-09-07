@@ -441,6 +441,7 @@ $lang['meta_leads_no_form_fields'] = 'No additional answers';
 $lang['meta_leads_empty'] = 'No new leads';
 $lang['import_meta_lead'] = 'Import lead';
 $lang['pick_meta_lead_hint'] = 'Import a customer from a Meta lead';
+$lang['type_to_filter_meta_leads'] = 'Type to filter leads.';
 $lang['marketing_hint'] = 'Send the marketing offer via WhatsApp to all customers with a valid phone number, using the Meta-approved template.';
 $lang['new_campaign'] = 'New Campaign';
 $lang['campaign_procedure'] = 'Procedure';

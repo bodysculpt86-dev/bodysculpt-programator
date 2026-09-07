@@ -441,6 +441,7 @@ $lang['meta_leads_no_form_fields'] = 'Fără răspunsuri suplimentare';
 $lang['meta_leads_empty'] = 'Nu sunt leaduri noi';
 $lang['import_meta_lead'] = 'Importă lead';
 $lang['pick_meta_lead_hint'] = 'Importă un client dintr-un lead Meta';
+$lang['type_to_filter_meta_leads'] = 'Tastează pentru a filtra leadurile.';
 $lang['marketing_hint'] = 'Trimite oferta de marketing pe WhatsApp tuturor clienților cu număr de telefon valid, folosind șablonul aprobat de Meta.';
 $lang['new_campaign'] = 'Campanie nouă';
 $lang['campaign_procedure'] = 'Procedură';

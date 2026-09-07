@@ -448,7 +448,8 @@ body .modal.full-screen .modal-push {
 }
 
 /* Existing customers list in appointments modal */
-#existing-customers-list {
+#existing-customers-list,
+#meta-leads-list {
     height: 110px;
     overflow-y: auto;
     margin-bottom: 8px;
@@ -456,7 +457,8 @@ body .modal.full-screen .modal-push {
     line-height: 22px;
 }
 
-#existing-customers-list div {
+#existing-customers-list div,
+#meta-leads-list div {
     display: inline-block;
     width: 250px;
     margin: 0 7px 7px 0;
@@ -464,14 +466,16 @@ body .modal.full-screen .modal-push {
     border-radius: var(--bs-border-radius);
 }
 
-#existing-customers-list div:hover {
+#existing-customers-list div:hover,
+#meta-leads-list div:hover {
     background: var(--bs-primary);
     font-weight: bold;
     color: var(--bs-white);
     cursor: pointer;
 }
 
-#filter-existing-customers {
+#filter-existing-customers,
+#filter-meta-leads {
     display: inline-block;
     margin-top: 12px;
     margin-bottom: 12px;

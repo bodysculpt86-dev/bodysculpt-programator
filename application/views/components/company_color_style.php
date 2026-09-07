@@ -282,7 +282,8 @@ if (!empty($company_color) && $company_color !== DEFAULT_COMPANY_COLOR):
         border-right-color: var(--bs-primary) !important;
     }
 
-    #existing-customers-list div:hover {
+    #existing-customers-list div:hover,
+    #meta-leads-list div:hover {
         background: var(--bs-primary) !important;
     }
 </style>

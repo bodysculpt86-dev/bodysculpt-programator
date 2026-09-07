@@ -64,6 +64,10 @@
 
                         <div id="existing-customers-list" style="display: none;"></div>
 
+                        <input id="filter-meta-leads"
+                               placeholder="<?= lang('type_to_filter_meta_leads') ?>"
+                               style="display: none;" class="input-sm form-control">
+
                         <div id="meta-leads-list" style="display: none;"></div>
 
                         <input id="customer-id" type="hidden">
