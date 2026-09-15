@@ -22,6 +22,8 @@ App.Pages.MetaLeads = (function () {
     const CALL_STATUSES = ['de sunat', 'nu a raspuns', 'revine', 'nu e interesat'];
 
     let currentCallStatus = 'de sunat';
+    let noteModal = null;
+    let leadCache = {};
 
     /**
      * Initialize the page.
@@ -29,6 +31,10 @@ App.Pages.MetaLeads = (function () {
     function init() {
         bindEvents();
         renderFilterState();
+
+        noteModal = new bootstrap.Modal(document.getElementById('meta-lead-note-modal'));
+        $('#meta-lead-note-save').on('click', onNoteModalSave);
+
         load();
     }
 
@@ -44,13 +50,8 @@ App.Pages.MetaLeads = (function () {
         $tableBody.on('change', '.meta-leads-call-status', onStatusChange);
         $cards.on('change', '.meta-leads-call-status', onStatusChange);
 
-        $tableBody.on('click', '[data-action="save-note"]', onNoteSave);
-        $cards.on('click', '[data-action="save-note"]', onNoteSave);
-
-        $tableBody.on('keyup', '.meta-leads-note-input', onNoteKeyup);
-        $cards.on('keyup', '.meta-leads-note-input', onNoteKeyup);
-
-        $tableBody.on('click', '[data-action="toggle-form-fields"]', onToggleFormFields);
+        $tableBody.on('click', '[data-action="open-note"]', onOpenNote);
+        $cards.on('click', '[data-action="open-note"]', onOpenNote);
 
         $tableBody.on('click', '[data-action="delete"]', onDeleteClick);
         $cards.on('click', '[data-action="delete"]', onDeleteClick);
@@ -80,6 +81,7 @@ App.Pages.MetaLeads = (function () {
     function render(leads) {
         $tableBody.empty();
         $cards.empty();
+        leadCache = {};
 
         if (!leads.length) {
             $empty.removeClass('d-none');
@@ -89,6 +91,8 @@ App.Pages.MetaLeads = (function () {
         $empty.addClass('d-none');
 
         leads.forEach((lead) => {
+            leadCache[lead.id] = lead;
+
             $tableBody.append(renderTableRow(lead));
             $cards.append(renderCard(lead));
         });
@@ -103,30 +107,33 @@ App.Pages.MetaLeads = (function () {
             .fail(() => App.Layouts.Backend.displayNotification(lang('service_communication_error')));
     }
 
-    function onNoteSave(event) {
-        const $button = $(event.currentTarget);
-        const $input = $button.siblings('.meta-leads-note-input');
-        const leadId = $button.data('id');
+    function onOpenNote(event) {
+        const leadId = $(event.currentTarget).data('id');
+        const lead = leadCache[leadId];
 
-        App.Http.MetaLeads.updateCall(leadId, { call_note: $input.val() })
-            .done(() => load())
-            .fail(() => App.Layouts.Backend.displayNotification(lang('service_communication_error')));
-    }
-
-    function onNoteKeyup(event) {
-        if (event.key === 'Enter') {
-            $(event.currentTarget).siblings('[data-action="save-note"]').trigger('click');
+        if (!lead) {
+            return;
         }
+
+        const name = [(lead.first_name || ''), (lead.last_name || '')].filter(Boolean).join(' ');
+
+        $('#meta-lead-note-title').text(`${lang('call_note')} — ${name || '—'}`);
+        $('#meta-lead-note-textarea').val(lead.call_note || '');
+        $('#meta-lead-note-save').data('id', leadId);
+
+        noteModal.show();
     }
 
-    function onToggleFormFields(event) {
-        const $toggle = $(event.currentTarget);
-        const $fields = $toggle.siblings('.meta-leads-more-fields');
-        const expand = $fields.hasClass('d-none');
+    function onNoteModalSave() {
+        const leadId = $('#meta-lead-note-save').data('id');
+        const note = $('#meta-lead-note-textarea').val();
 
-        $fields.toggleClass('d-none', !expand);
-        $toggle.find('i').toggleClass('fa-chevron-down', !expand).toggleClass('fa-chevron-up', expand);
-        $toggle.find('.meta-leads-more-label').text(expand ? lang('meta_leads_show_less') : $toggle.data('more-label'));
+        App.Http.MetaLeads.updateCall(leadId, { call_note: note })
+            .done(() => {
+                noteModal.hide();
+                load();
+            })
+            .fail(() => App.Layouts.Backend.displayNotification(lang('service_communication_error')));
     }
 
     function onDeleteClick(event) {
@@ -156,11 +163,11 @@ App.Pages.MetaLeads = (function () {
         return `
             <tr>
                 <td>${nameAndPhoneHtml(lead)}</td>
-                <td>${formAnswersHtml(lead, true)}</td>
+                <td>${formAnswersHtml(lead)}</td>
                 <td>${relativeTimeHtml(lead.received_at)}</td>
                 <td>${statusSelectHtml(lead)}</td>
                 <td>${assignedToHtml(lead)} ${appointmentBadgeHtml(lead)}</td>
-                <td class="text-nowrap">${noteEditorHtml(lead)}</td>
+                <td>${noteDisplayHtml(lead)}</td>
                 <td class="text-center">
                     <button type="button" class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${lead.id}" title="${lang('meta_leads_delete')}">
                         <i class="fas fa-trash"></i>
@@ -193,7 +200,7 @@ App.Pages.MetaLeads = (function () {
                         ${assignedToHtml(lead)} ${appointmentBadgeHtml(lead)}
                     </div>
 
-                    ${noteEditorHtml(lead)}
+                    ${noteDisplayHtml(lead)}
                 </div>
             </div>`;
     }
@@ -233,7 +240,7 @@ App.Pages.MetaLeads = (function () {
         return `<span title="${escapeHtml(formatDatetime(value))}">${escapeHtml(formatRelativeTime(value))}</span>`;
     }
 
-    function formAnswersHtml(lead, collapse = false) {
+    function formAnswersHtml(lead) {
         const fields = parseFormFields(lead.form_fields).filter((field) => {
             const name = String(field.name || '').toLowerCase();
 
@@ -244,21 +251,11 @@ App.Pages.MetaLeads = (function () {
             return `<span class="text-muted">${lang('meta_leads_no_form_fields')}</span>`;
         }
 
-        const renderField = (field) =>
-            `<div class="small"><span class="text-muted">${escapeHtml(cleanQuestion(field.name))}:</span> ${escapeHtml(cleanValue(field.value))}</div>`;
-
-        if (!collapse || fields.length <= 3) {
-            return fields.map(renderField).join('');
-        }
-
-        const moreLabel = `${lang('meta_leads_show_more')} (${fields.length - 3})`;
-
-        return `
-            ${fields.slice(0, 3).map(renderField).join('')}
-            <button type="button" class="btn btn-link btn-sm p-0 small text-decoration-none" data-action="toggle-form-fields" data-more-label="${escapeHtml(moreLabel)}">
-                <i class="fas fa-chevron-down me-1"></i><span class="meta-leads-more-label">${escapeHtml(moreLabel)}</span>
-            </button>
-            <div class="meta-leads-more-fields d-none">${fields.slice(3).map(renderField).join('')}</div>`;
+        return fields
+            .map((field) =>
+                `<div class="small"><span class="text-muted">${escapeHtml(cleanQuestion(field.name))}:</span> ${escapeHtml(cleanValue(field.value))}</div>`,
+            )
+            .join('');
     }
 
     function statusSelectHtml(lead) {
@@ -271,14 +268,23 @@ App.Pages.MetaLeads = (function () {
         return `<select class="form-select form-select-sm meta-leads-call-status" data-id="${lead.id}">${options}</select>`;
     }
 
-    function noteEditorHtml(lead) {
+    function noteDisplayHtml(lead) {
+        const note = String(lead.call_note || '').trim();
+
+        if (!note) {
+            return `
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="open-note" data-id="${lead.id}">
+                    <i class="fas fa-plus me-1"></i>${lang('add_note')}
+                </button>`;
+        }
+
+        const firstLine = note.split('\n')[0].trim();
+        const preview = firstLine.length > 40 ? firstLine.slice(0, 40).trimEnd() + '…' : firstLine;
+
         return `
-            <div class="input-group input-group-sm">
-                <input type="text" class="form-control meta-leads-note-input" value="${escapeHtml(lead.call_note || '')}" placeholder="${lang('call_note_placeholder')}">
-                <button type="button" class="btn btn-outline-secondary" data-action="save-note" data-id="${lead.id}">
-                    <i class="fas fa-check"></i>
-                </button>
-            </div>`;
+            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-start" data-action="open-note" data-id="${lead.id}" title="${lang('edit_note')}">
+                ${escapeHtml(preview)}
+            </button>`;
     }
 
     function assignedToHtml(lead) {

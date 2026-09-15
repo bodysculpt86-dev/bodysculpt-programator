@@ -2,7 +2,7 @@
 
 <?php section('content'); ?>
 
-<div class="container backend-page py-3" id="meta-leads-page">
+<div class="container-fluid backend-page py-3" id="meta-leads-page">
     <div class="row">
         <div class="col-12 mb-3">
             <h4 class="mb-2 fw-light">
@@ -52,13 +52,13 @@
         <table class="table table-sm table-hover align-middle">
             <thead>
                 <tr>
-                    <th><?= lang('meta_leads_name') ?></th>
-                    <th><?= lang('meta_leads_form_answers') ?></th>
-                    <th><?= lang('meta_leads_received_at') ?></th>
-                    <th><?= lang('call_status') ?></th>
-                    <th><?= lang('assigned_to') ?></th>
-                    <th><?= lang('call_note') ?></th>
-                    <th><?= lang('meta_leads_actions') ?></th>
+                    <th style="width: 15%"><?= lang('meta_leads_name') ?></th>
+                    <th style="width: 28%"><?= lang('meta_leads_form_answers') ?></th>
+                    <th style="width: 10%"><?= lang('meta_leads_received_at') ?></th>
+                    <th style="width: 12%"><?= lang('call_status') ?></th>
+                    <th style="width: 13%"><?= lang('assigned_to') ?></th>
+                    <th style="width: 16%"><?= lang('call_note') ?></th>
+                    <th style="width: 6%"><?= lang('meta_leads_actions') ?></th>
                 </tr>
             </thead>
             <tbody id="meta-leads-table-body"></tbody>
@@ -70,6 +70,24 @@
 
     <div id="meta-leads-empty" class="text-muted d-none">
         <?= lang('no_records_found') ?>
+    </div>
+</div>
+
+<div class="modal fade" id="meta-lead-note-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="meta-lead-note-title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <textarea id="meta-lead-note-textarea" class="form-control" rows="6"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?= lang('cancel') ?></button>
+                <button type="button" class="btn btn-primary" id="meta-lead-note-save"><?= lang('save') ?></button>
+            </div>
+        </div>
     </div>
 </div>
 
