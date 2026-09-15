@@ -66,7 +66,7 @@ class Meta_capi
      * Send a single lead lifecycle stage event to the Conversions API.
      *
      * @param array $lead A meta_leads record (must include leadgen_id).
-     * @param string $stage Stage name ('crm_lead', 'converted', ...).
+     * @param string $stage Event name sent to Meta (e.g. 'LEADS', 'CONVERTED').
      *
      * @return bool True when the event was accepted by Meta.
      */

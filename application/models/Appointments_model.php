@@ -269,9 +269,7 @@ class Appointments_model extends EA_Model
                 $customer_package = $this->customer_packages_model->find((int) $appointment['id_customer_packages']);
 
                 if ((int) $customer_package['id_users_customer'] !== (int) $appointment['id_users_customer']) {
-                    throw new InvalidArgumentException(
-                        'The selected customer package does not belong to the appointment customer.',
-                    );
+                    throw new InvalidArgumentException(lang('customer_package_wrong_customer'));
                 }
 
                 // If the appointment already consumed this exact package/service, we must allow the update even
@@ -289,7 +287,7 @@ class Appointments_model extends EA_Model
 
                 if (!$is_existing_usage) {
                     if (empty($customer_package['is_active'])) {
-                        throw new InvalidArgumentException('The selected customer package is not active.');
+                        throw new InvalidArgumentException(lang('customer_package_not_active'));
                     }
 
                     $has_remaining = false;
@@ -305,9 +303,7 @@ class Appointments_model extends EA_Model
                     }
 
                     if (!$has_remaining) {
-                        throw new InvalidArgumentException(
-                            'The selected customer package has no remaining uses for this service.',
-                        );
+                        throw new InvalidArgumentException(lang('customer_package_no_remaining_uses'));
                     }
                 }
             }

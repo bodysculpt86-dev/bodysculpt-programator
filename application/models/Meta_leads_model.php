@@ -26,6 +26,7 @@ class Meta_leads_model extends EA_Model
     protected array $casts = [
         'id' => 'integer',
         'customer_id' => 'integer',
+        'assigned_to' => 'integer',
         'capi_lead_event_sent' => 'boolean',
         'capi_converted_event_sent' => 'boolean',
     ];
@@ -142,6 +143,58 @@ class Meta_leads_model extends EA_Model
     }
 
     /**
+     * Search meta leads for the internal call workflow, optionally filtered by
+     * call_status. Each row is enriched with a has_appointments count (whether
+     * the linked customer has any appointment) and the assigned user's name.
+     *
+     * Uncontacted leads (call_status = 'de sunat') are floated to the top, then
+     * ordered oldest-first so nobody is forgotten.
+     *
+     * @param string|null $call_status One of the allowed call statuses, null for all.
+     * @param string $keyword
+     * @param int $limit
+     * @param int $offset
+     *
+     * @return array
+     */
+    public function search_calls(?string $call_status = null, string $keyword = '', int $limit = 200, int $offset = 0): array
+    {
+        $this->db
+            ->select(
+                "meta_leads.*, " .
+                    "COUNT(a.id) AS has_appointments, " .
+                    "MAX(CONCAT_WS(' ', u.first_name, u.last_name)) AS assigned_to_name",
+                false,
+            )
+            ->from('meta_leads')
+            ->join('appointments a', 'a.id_users_customer = meta_leads.customer_id AND a.is_unavailability = 0', 'left')
+            ->join('users u', 'u.id = meta_leads.assigned_to', 'left');
+
+        if ($keyword !== '') {
+            $this->db
+                ->group_start()
+                ->like('meta_leads.first_name', $keyword)
+                ->or_like('meta_leads.last_name', $keyword)
+                ->or_like('CONCAT_WS(" ", meta_leads.first_name, meta_leads.last_name)', $keyword, 'both', false)
+                ->or_like('meta_leads.email', $keyword)
+                ->or_like('meta_leads.phone_number', $keyword)
+                ->group_end();
+        }
+
+        $allowed = ['de sunat', 'nu a raspuns', 'revine', 'nu e interesat'];
+
+        if ($call_status !== null && in_array($call_status, $allowed, true)) {
+            $this->db->where('meta_leads.call_status', $call_status);
+        }
+
+        $this->db->group_by('meta_leads.id');
+        $this->db->order_by("FIELD(meta_leads.call_status, 'de sunat')", 'DESC', false);
+        $this->db->order_by('meta_leads.received_at', 'ASC');
+
+        return $this->db->limit($limit, $offset)->get()->result_array();
+    }
+
+    /**
      * Mark a lead as converted and link it to the created/reused customer.
      *
      * @param int $lead_id
@@ -163,7 +216,7 @@ class Meta_leads_model extends EA_Model
      * Record that a Conversions API stage event was successfully sent.
      *
      * @param int $lead_id
-     * @param string $stage 'crm_lead' or 'converted'.
+     * @param string $stage Column selector: 'converted' (capi_converted_event_sent) or 'crm_lead' (capi_lead_event_sent).
      *
      * @return void
      */
@@ -175,6 +228,30 @@ class Meta_leads_model extends EA_Model
             $column => 1,
             'update_datetime' => date('Y-m-d H:i:s'),
         ]);
+    }
+
+    /**
+     * Update the internal call workflow fields of a meta lead.
+     *
+     * Only whitelisted fields are written. When call_status is present the
+     * call_updated_at timestamp is refreshed.
+     *
+     * @param int $lead_id
+     * @param array $data Fields to update (call_status, call_note, assigned_to).
+     *
+     * @return void
+     */
+    public function update_call(int $lead_id, array $data): void
+    {
+        $data = array_intersect_key($data, array_flip(['call_status', 'call_note', 'assigned_to']));
+
+        if (isset($data['call_status'])) {
+            $data['call_updated_at'] = date('Y-m-d H:i:s');
+        }
+
+        $data['update_datetime'] = date('Y-m-d H:i:s');
+
+        $this->db->where('id', $lead_id)->update('meta_leads', $data);
     }
 
     /**

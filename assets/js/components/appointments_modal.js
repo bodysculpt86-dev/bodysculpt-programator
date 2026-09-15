@@ -460,8 +460,17 @@ App.Components.AppointmentsModal = (function () {
             };
 
             // Define error callback.
-            const errorCallback = () => {
-                $appointmentsModal.find('.modal-message').text(lang('service_communication_error'));
+            const errorCallback = (xhr) => {
+                // Business rule violations (400/422) carry a user-friendly message from the
+                // backend; only real server errors get the generic communication message.
+                const isBusinessError = xhr && [400, 422].includes(xhr.status);
+
+                const message =
+                    isBusinessError && xhr.responseJSON && xhr.responseJSON.message
+                        ? xhr.responseJSON.message
+                        : lang('service_communication_error');
+
+                $appointmentsModal.find('.modal-message').text(message);
                 $appointmentsModal.find('.modal-message').addClass('alert-danger').removeClass('d-none');
                 $appointmentsModal.find('.modal-body').scrollTop(0);
             };

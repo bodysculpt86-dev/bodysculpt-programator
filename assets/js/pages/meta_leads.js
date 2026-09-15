@@ -1,126 +1,122 @@
 /* ----------------------------------------------------------------------------
  * Easy!Appointments - Online Appointment Scheduler
  *
- * Meta Leads admin page.
+ * Meta Leads admin page (internal call workflow).
  * ---------------------------------------------------------------------------- */
 
 /**
  * Meta Leads page.
  *
- * Lists leads received from Meta Lead Ads, lets admins inspect the raw form
- * answers and delete leads.
+ * Lists leads received from Meta Lead Ads as an internal call workflow for the
+ * receptionists: quick call_status filters, inline status/note editing and a
+ * phone-first layout on mobile. No Meta Conversions API calls happen here.
  */
 App.Pages.MetaLeads = (function () {
-    const $statusFilter = $('#meta-leads-status-filter');
+    const $callFilter = $('#meta-leads-call-filter');
     const $keyword = $('#meta-leads-keyword');
     const $filter = $('#meta-leads-filter');
-    const $resultsBody = $('#meta-leads-results-body');
+    const $tableBody = $('#meta-leads-table-body');
+    const $cards = $('#meta-leads-cards');
     const $empty = $('#meta-leads-empty');
 
-    let detailsModal = null;
+    const CALL_STATUSES = ['de sunat', 'nu a raspuns', 'revine', 'nu e interesat'];
+
+    let currentCallStatus = 'de sunat';
 
     /**
      * Initialize the page.
      */
     function init() {
+        bindEvents();
+        renderFilterState();
         load();
+    }
 
+    function bindEvents() {
+        $callFilter.on('click', 'button', onFilterClick);
         $filter.on('click', load);
-        $statusFilter.on('change', load);
         $keyword.on('keyup', (event) => {
             if (event.key === 'Enter') {
                 load();
             }
         });
 
-        $resultsBody.on('click', '[data-action="view"]', onViewClick);
-        $resultsBody.on('click', '[data-action="delete"]', onDeleteClick);
+        $tableBody.on('change', '.meta-leads-call-status', onStatusChange);
+        $cards.on('change', '.meta-leads-call-status', onStatusChange);
+
+        $tableBody.on('click', '[data-action="save-note"]', onNoteSave);
+        $cards.on('click', '[data-action="save-note"]', onNoteSave);
+
+        $tableBody.on('keyup', '.meta-leads-note-input', onNoteKeyup);
+        $cards.on('keyup', '.meta-leads-note-input', onNoteKeyup);
+
+        $tableBody.on('click', '[data-action="delete"]', onDeleteClick);
+        $cards.on('click', '[data-action="delete"]', onDeleteClick);
     }
 
-    /**
-     * Load and render the current filter results.
-     */
+    function onFilterClick(event) {
+        currentCallStatus = $(event.currentTarget).data('call-status') || 'de sunat';
+        renderFilterState();
+        load();
+    }
+
+    function renderFilterState() {
+        $callFilter.find('button').each(function () {
+            const active = ($(this).data('call-status') || 'de sunat') === currentCallStatus;
+            $(this).toggleClass('btn-primary', active).toggleClass('btn-outline-primary', !active);
+        });
+    }
+
     function load() {
         const keyword = $keyword.val().trim();
-        const status = $statusFilter.val();
 
-        App.Http.MetaLeads.search(keyword, status || null, 100, 0)
-            .done((leads) => {
-                render(leads || []);
-            })
-            .fail(() => {
-                render([]);
-            });
+        App.Http.MetaLeads.searchCalls(currentCallStatus, keyword, 200, 0)
+            .done((leads) => render(leads || []))
+            .fail(() => render([]));
     }
 
-    /**
-     * Render the leads table.
-     *
-     * @param {Array} leads
-     */
     function render(leads) {
-        $resultsBody.empty();
+        $tableBody.empty();
+        $cards.empty();
 
         if (!leads.length) {
             $empty.removeClass('d-none');
-
             return;
         }
 
         $empty.addClass('d-none');
 
         leads.forEach((lead) => {
-            const name = escapeHtml(
-                [(lead.first_name || ''), (lead.last_name || '')].filter(Boolean).join(' ') || '—',
-            );
-
-            const statusBadge =
-                lead.status === 'converted'
-                    ? `<span class="badge bg-success">${lang('meta_leads_status_converted')}</span>`
-                    : `<span class="badge bg-info text-dark">${lang('meta_leads_status_new')}</span>`;
-
-            $resultsBody.append(`
-                <tr>
-                    <td>${name}</td>
-                    <td>${escapeHtml(lead.phone_number || '')}</td>
-                    <td>${escapeHtml(lead.email || '')}</td>
-                    <td>${escapeHtml(formatDatetime(lead.received_at))}</td>
-                    <td>${statusBadge}</td>
-                    <td>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="view" data-id="${lead.id}">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button type="button" class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${lead.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `);
+            $tableBody.append(renderTableRow(lead));
+            $cards.append(renderCard(lead));
         });
     }
 
-    /**
-     * Handle the "view" action: show the raw form answers in a modal.
-     *
-     * @param {jQuery.Event} event
-     */
-    function onViewClick(event) {
-        const leadId = $(event.currentTarget).data('id');
+    function onStatusChange(event) {
+        const $select = $(event.currentTarget);
+        const leadId = $select.data('id');
 
-        App.Http.MetaLeads.show(leadId)
-            .done((lead) => {
-                showDetailsModal(lead);
-            })
-            .fail(() => {
-                App.Layouts.Backend.displayNotification(lang('service_communication_error'));
-            });
+        App.Http.MetaLeads.updateCall(leadId, { call_status: $select.val() })
+            .done(() => load())
+            .fail(() => App.Layouts.Backend.displayNotification(lang('service_communication_error')));
     }
 
-    /**
-     * Handle the "delete" action.
-     *
-     * @param {jQuery.Event} event
-     */
+    function onNoteSave(event) {
+        const $button = $(event.currentTarget);
+        const $input = $button.siblings('.meta-leads-note-input');
+        const leadId = $button.data('id');
+
+        App.Http.MetaLeads.updateCall(leadId, { call_note: $input.val() })
+            .done(() => load())
+            .fail(() => App.Layouts.Backend.displayNotification(lang('service_communication_error')));
+    }
+
+    function onNoteKeyup(event) {
+        if (event.key === 'Enter') {
+            $(event.currentTarget).siblings('[data-action="save-note"]').trigger('click');
+        }
+    }
+
     function onDeleteClick(event) {
         const leadId = $(event.currentTarget).data('id');
 
@@ -142,60 +138,153 @@ App.Pages.MetaLeads = (function () {
         ]);
     }
 
-    /**
-     * Build and show a modal listing the lead's raw form answers.
-     *
-     * @param {Object} lead
-     */
-    function showDetailsModal(lead) {
-        if (detailsModal) {
-            detailsModal.remove();
-        }
+    // --- Renderers -----------------------------------------------------------
 
-        const fields = lead.form_fields || [];
-        const rows = fields.length
-            ? fields
-                  .map((field) => {
-                      const value = (field.values || []).join(', ');
-
-                      return `<dt>${escapeHtml(field.name || '')}</dt><dd>${escapeHtml(value)}</dd>`;
-                  })
-                  .join('')
-            : `<p class="text-muted">${lang('meta_leads_no_form_fields')}</p>`;
-
-        detailsModal = $(`
-            <div class="modal fade" tabindex="-1">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">${lang('meta_leads_view_title')}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <dl class="row mb-0">
-                                <dt class="col-4">${lang('first_name')}</dt><dd class="col-8">${escapeHtml(lead.first_name || '')}</dd>
-                                <dt class="col-4">${lang('last_name')}</dt><dd class="col-8">${escapeHtml(lead.last_name || '')}</dd>
-                                <dt class="col-4">${lang('phone_number')}</dt><dd class="col-8">${escapeHtml(lead.phone_number || '')}</dd>
-                                <dt class="col-4">${lang('email')}</dt><dd class="col-8">${escapeHtml(lead.email || '')}</dd>
-                            </dl>
-                            <hr>
-                            ${rows}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `).appendTo('body');
-
-        detailsModal.modal('show');
+    function renderTableRow(lead) {
+        return `
+            <tr>
+                <td>${nameAndPhoneHtml(lead)}</td>
+                <td>${formAnswersHtml(lead)}</td>
+                <td>${relativeTimeHtml(lead.received_at)}</td>
+                <td>${statusSelectHtml(lead)}</td>
+                <td>${assignedToHtml(lead)} ${appointmentBadgeHtml(lead)}</td>
+                <td class="text-nowrap">
+                    ${noteEditorHtml(lead)}
+                    <button type="button" class="btn btn-outline-danger btn-sm mt-1" data-action="delete" data-id="${lead.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
     }
 
-    /**
-     * Format a "YYYY-MM-DD HH:mm:ss" datetime for display.
-     *
-     * @param {String} value
-     *
-     * @return {String}
-     */
+    function renderCard(lead) {
+        return `
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <div class="fw-bold">${nameHtml(lead)}</div>
+                            <div class="text-muted small">${relativeTimeHtml(lead.received_at)}</div>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${lead.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+
+                    ${phoneButtonHtml(lead)}
+
+                    <div class="mb-2">${formAnswersHtml(lead)}</div>
+
+                    <div class="mb-2">${statusSelectHtml(lead)}</div>
+
+                    <div class="mb-2 small">
+                        ${assignedToHtml(lead)} ${appointmentBadgeHtml(lead)}
+                    </div>
+
+                    ${noteEditorHtml(lead)}
+                </div>
+            </div>`;
+    }
+
+    function nameHtml(lead) {
+        const name = [(lead.first_name || ''), (lead.last_name || '')].filter(Boolean).join(' ') || '—';
+        return escapeHtml(name);
+    }
+
+    function nameAndPhoneHtml(lead) {
+        let phone = '';
+
+        if (lead.phone_number) {
+            phone = `<a href="${phoneLinkHref(lead.phone_number)}" class="d-block small text-decoration-none"><i class="fas fa-phone me-1"></i>${escapeHtml(lead.phone_number)}</a>`;
+        }
+
+        return `<div>${nameHtml(lead)}${phone}</div>`;
+    }
+
+    function phoneButtonHtml(lead) {
+        if (!lead.phone_number) {
+            return `<div class="text-muted mb-2">${lang('no_phone')}</div>`;
+        }
+
+        return `<a class="btn btn-success w-100 mb-2" href="${phoneLinkHref(lead.phone_number)}"><i class="fas fa-phone me-2"></i>${escapeHtml(lead.phone_number)}</a>`;
+    }
+
+    function phoneLinkHref(phone) {
+        return 'tel:' + String(phone).replace(/[^+\d]/g, '');
+    }
+
+    function relativeTimeHtml(value) {
+        if (!value) {
+            return '—';
+        }
+
+        return `<span title="${escapeHtml(formatDatetime(value))}">${escapeHtml(moment(value).fromNow())}</span>`;
+    }
+
+    function formAnswersHtml(lead) {
+        const fields = parseFormFields(lead.form_fields);
+
+        if (!fields.length) {
+            return `<span class="text-muted">${lang('meta_leads_no_form_fields')}</span>`;
+        }
+
+        return fields
+            .map((field) => {
+                const value = (field.values || []).join(', ');
+
+                return `<div class="small"><span class="text-muted">${escapeHtml(field.name || '')}:</span> ${escapeHtml(value)}</div>`;
+            })
+            .join('');
+    }
+
+    function statusSelectHtml(lead) {
+        const options = CALL_STATUSES.map((status) => {
+            const selected = lead.call_status === status ? 'selected' : '';
+
+            return `<option value="${status}" ${selected}>${lang('call_status_' + status.replace(/ /g, '_'))}</option>`;
+        }).join('');
+
+        return `<select class="form-select form-select-sm meta-leads-call-status" data-id="${lead.id}">${options}</select>`;
+    }
+
+    function noteEditorHtml(lead) {
+        return `
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control meta-leads-note-input" value="${escapeHtml(lead.call_note || '')}" placeholder="${lang('call_note_placeholder')}">
+                <button type="button" class="btn btn-outline-secondary" data-action="save-note" data-id="${lead.id}">
+                    <i class="fas fa-check"></i>
+                </button>
+            </div>`;
+    }
+
+    function assignedToHtml(lead) {
+        return `<span class="text-muted">${escapeHtml(lead.assigned_to_name || lang('unassigned'))}</span>`;
+    }
+
+    function appointmentBadgeHtml(lead) {
+        const hasAppointment = Number(lead.has_appointments) > 0;
+
+        return hasAppointment ? `<span class="badge bg-success ms-1">${lang('has_appointment')}</span>` : '';
+    }
+
+    function parseFormFields(formFields) {
+        if (!formFields) {
+            return [];
+        }
+
+        let parsed = formFields;
+
+        if (typeof formFields === 'string') {
+            try {
+                parsed = JSON.parse(formFields);
+            } catch (error) {
+                return [];
+            }
+        }
+
+        return Array.isArray(parsed) ? parsed : [];
+    }
+
     function formatDatetime(value) {
         if (!value) {
             return '—';
@@ -204,13 +293,6 @@ App.Pages.MetaLeads = (function () {
         return moment(value).format('DD.MM.YYYY HH:mm');
     }
 
-    /**
-     * Escape HTML special characters.
-     *
-     * @param {String} value
-     *
-     * @return {String}
-     */
     function escapeHtml(value) {
         return String(value ?? '')
             .replace(/&/g, '&amp;')

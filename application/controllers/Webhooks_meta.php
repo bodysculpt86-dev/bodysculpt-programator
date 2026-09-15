@@ -141,7 +141,9 @@ class Webhooks_meta extends EA_Controller
         if ($this->meta_capi->is_configured()) {
             $saved = $this->meta_leads_model->find_by_leadgen_id($leadgen_id);
 
-            if ($saved && empty($saved['capi_lead_event_sent']) && $this->meta_capi->send_stage_event($saved, 'crm_lead')) {
+            // event_name is 'LEADS' (funnel stage 1); the lowercase 'crm_lead'
+            // below only selects the capi_lead_event_sent column.
+            if ($saved && empty($saved['capi_lead_event_sent']) && $this->meta_capi->send_stage_event($saved, 'LEADS')) {
                 $this->meta_leads_model->mark_capi_event_sent((int) $saved['id'], 'crm_lead');
             }
         }
@@ -311,5 +313,267 @@ class Webhooks_meta extends EA_Controller
         }
 
         return $default;
+    }
+
+    /**
+     * Back-fill missed Meta leads (CLI only, one-off).
+     *
+     * Imports leads that were submitted BEFORE the app was granted Leads Access
+     * on the Page and therefore never reached the leadgen webhook. Lists every
+     * Instant Form on the Page, pages through each form's leads, and imports
+     * only those with created_time >= `--since` (default: today in the clinic's
+     * timezone). Dedupes on leadgen_id, so re-running is a safe no-op.
+     *
+     * Reuses the exact map_lead() + meta_leads_model->save() path as receive(),
+     * so a back-filled lead is identical to a webhook lead except received_at is
+     * the lead's real created_time (not the import run time).
+     *
+     * Usage:
+     *
+     *   php index.php webhooks_meta backfill
+     *   php index.php webhooks_meta backfill --since=2026-09-04
+     *   php index.php webhooks_meta backfill --since=2026-09-04 --page-id=105976218886400
+     */
+    public function backfill(): void
+    {
+        if (!is_cli()) {
+            exit('This command can only be run from the command line.' . PHP_EOL);
+        }
+
+        $token = $this->meta_conf('META_PAGE_ACCESS_TOKEN');
+
+        if ($token === '') {
+            fwrite(STDERR, '[meta-backfill] META_PAGE_ACCESS_TOKEN is not configured.' . PHP_EOL);
+            exit(1);
+        }
+
+        $page_id = $this->cli_option('--page-id', $this->meta_conf('META_PAGE_ID', '105976218886400'));
+        $since = $this->cli_option('--since', date('Y-m-d'));
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $since)) {
+            fwrite(STDERR, '[meta-backfill] Invalid --since "' . $since . '"; expected YYYY-MM-DD.' . PHP_EOL);
+            exit(1);
+        }
+
+        // "since" is a calendar day in the clinic's timezone; Meta returns
+        // created_time in UTC, so convert the start-of-day boundary to a UTC
+        // timestamp for comparison (mirrors Console::send_sms_reminders()).
+        $timezone = new DateTimeZone('Europe/Bucharest');
+
+        try {
+            $timezone = new DateTimeZone(setting('default_timezone') ?: 'Europe/Bucharest');
+        } catch (Throwable $e) {
+            log_message('warning', '[meta-backfill] Invalid default timezone, using Europe/Bucharest: ' . $e->getMessage());
+        }
+
+        $cutoff = (new DateTime($since . ' 00:00:00', $timezone))->getTimestamp();
+
+        try {
+            $forms = $this->graph_get_json($page_id . '/leadgen_forms', ['fields' => 'id,name,status']);
+        } catch (Throwable $e) {
+            fwrite(STDERR, '[meta-backfill] FATAL: could not list leadgen forms: ' . $e->getMessage() . PHP_EOL);
+            exit(1);
+        }
+
+        $forms_scanned = 0;
+        $leads_seen = 0;
+        $in_window = 0;
+        $skipped_existing = 0;
+        $imported = 0;
+        $errors = [];
+
+        foreach ($forms['data'] ?? [] as $form) {
+            $form_id = (string) ($form['id'] ?? '');
+            $form_name = (string) ($form['name'] ?? $form_id);
+
+            if ($form_id === '') {
+                continue;
+            }
+
+            $forms_scanned++;
+
+            try {
+                $after = null;
+
+                do {
+                    $params = ['fields' => 'id,created_time,field_data,form_id', 'limit' => 100];
+
+                    if ($after !== null) {
+                        $params['after'] = $after;
+                    }
+
+                    $page = $this->graph_get_json($form_id . '/leads', $params);
+
+                    foreach ($page['data'] ?? [] as $lead) {
+                        $leads_seen++;
+
+                        try {
+                            $leadgen_id = (string) ($lead['id'] ?? '');
+                            $created_time = (string) ($lead['created_time'] ?? '');
+
+                            if ($leadgen_id === '' || $created_time === '') {
+                                $errors[] = 'form "' . $form_name . '": lead missing id/created_time; skipped';
+                                continue;
+                            }
+
+                            $created_ts = strtotime($created_time);
+
+                            if ($created_ts === false) {
+                                $errors[] = 'lead ' . $leadgen_id . ': unparseable created_time "' . $created_time . '"; skipped';
+                                continue;
+                            }
+
+                            // The critical filter: never import leads older than
+                            // the window (the two forms hold ~995 total leads).
+                            if ($created_ts < $cutoff) {
+                                continue;
+                            }
+
+                            $in_window++;
+
+                            if ($this->meta_leads_model->find_by_leadgen_id($leadgen_id)) {
+                                $skipped_existing++;
+                                continue;
+                            }
+
+                            // Reuse the webhook's exact mapping (field extraction,
+                            // full_name split, phone normalization, form_fields JSON).
+                            $lead_data = [
+                                'field_data' => $lead['field_data'] ?? [],
+                                'form_id' => $form_id,
+                                'page_id' => $page_id,
+                            ];
+
+                            $mapped = $this->map_lead($leadgen_id, $lead_data);
+
+                            // Back-fill correctness: stamp the lead with when it
+                            // actually arrived, not when this import ran.
+                            $mapped['received_at'] = $this->format_lead_time($created_time);
+
+                            $this->meta_leads_model->save($mapped);
+                            $imported++;
+
+                            // Mirror receive(): fire the initial CRM stage so the
+                            // Conversions API feedback loop still sees these leads.
+                            if ($this->meta_capi->is_configured()) {
+                                $saved = $this->meta_leads_model->find_by_leadgen_id($leadgen_id);
+
+                                // event_name is 'LEADS' (funnel stage 1); the lowercase 'crm_lead'
+                                // below only selects the capi_lead_event_sent column.
+                                if ($saved && empty($saved['capi_lead_event_sent']) && $this->meta_capi->send_stage_event($saved, 'LEADS')) {
+                                    $this->meta_leads_model->mark_capi_event_sent((int) $saved['id'], 'crm_lead');
+                                }
+                            }
+                        } catch (Throwable $e) {
+                            $errors[] = 'lead ' . ($lead['id'] ?? '?') . ': ' . $e->getMessage();
+                        }
+                    }
+
+                    $after = $page['paging']['cursors']['after'] ?? null;
+                } while ($after !== null);
+            } catch (Throwable $e) {
+                $errors[] = 'form "' . $form_name . '": ' . $e->getMessage();
+            }
+        }
+
+        echo PHP_EOL;
+        echo '=== Meta lead back-fill summary ===' . PHP_EOL;
+        echo 'Page: ' . $page_id . PHP_EOL;
+        echo 'Window: since ' . $since . ' 00:00:00 ' . $timezone->getName() . PHP_EOL;
+        echo 'Instant Forms scanned: ' . $forms_scanned . PHP_EOL;
+        echo 'Leads returned by API: ' . $leads_seen . PHP_EOL;
+        echo 'Leads in window: ' . $in_window . PHP_EOL;
+        echo 'Already present (skipped): ' . $skipped_existing . PHP_EOL;
+        echo 'Newly imported: ' . $imported . PHP_EOL;
+
+        if ($errors !== []) {
+            echo 'Errors: ' . count($errors) . PHP_EOL;
+
+            foreach ($errors as $error) {
+                echo '  - ' . $error . PHP_EOL;
+            }
+        }
+
+        echo PHP_EOL;
+    }
+
+    /**
+     * Read a "--name=value" argument from the CLI argv.
+     *
+     * @param string $name Option name without the leading dashes.
+     * @param string $default Value returned when the option is absent.
+     *
+     * @return string
+     */
+    private function cli_option(string $name, string $default = ''): string
+    {
+        $prefix = '--' . $name . '=';
+
+        foreach (($GLOBALS['argv'] ?? []) as $arg) {
+            if (str_starts_with((string) $arg, $prefix)) {
+                return substr((string) $arg, strlen($prefix));
+            }
+        }
+
+        return $default;
+    }
+
+    /**
+     * GET a Graph API edge and return its decoded JSON.
+     *
+     * @param string $endpoint Edge path relative to the Graph version (e.g. "{form-id}/leads").
+     * @param array $params Query parameters (access_token is appended automatically).
+     *
+     * @return array
+     */
+    private function graph_get_json(string $endpoint, array $params): array
+    {
+        $token = $this->meta_conf('META_PAGE_ACCESS_TOKEN');
+        $version = $this->meta_conf('META_GRAPH_VERSION', 'v22.0');
+
+        $params['access_token'] = $token;
+
+        $url = 'https://graph.facebook.com/' . $version . '/' . $endpoint . '?' . http_build_query($params);
+
+        $ch = curl_init($url);
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+
+        curl_close($ch);
+
+        if ($response === false) {
+            error_log('[meta-backfill] Graph API cURL error: ' . $curlError);
+            throw new RuntimeException('Graph API cURL error: ' . $curlError);
+        }
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            error_log('[meta-backfill] Graph API returned ' . $httpCode . ': ' . substr((string) $response, 0, 500));
+            throw new RuntimeException('Graph API returned ' . $httpCode . ': ' . substr((string) $response, 0, 500));
+        }
+
+        return json_decode($response, true) ?: [];
+    }
+
+    /**
+     * Convert a Meta created_time (UTC) into a "Y-m-d H:i:s" string in the app's
+     * configured timezone, matching the value the webhook stores via date().
+     *
+     * @param string $created_time
+     *
+     * @return string
+     */
+    private function format_lead_time(string $created_time): string
+    {
+        $dt = new DateTime($created_time);
+
+        $dt->setTimezone(new DateTimeZone(date_default_timezone_get()));
+
+        return $dt->format('Y-m-d H:i:s');
     }
 }

@@ -34,6 +34,7 @@ class Webhooks_make extends EA_Controller
         parent::__construct();
 
         $this->load->model('meta_leads_model');
+        $this->load->library('meta_capi');
         $this->load->helper('phone');
     }
 
@@ -112,6 +113,23 @@ class Webhooks_make extends EA_Controller
             json_response(['ok' => false, 'error' => 'processing_failed'], 500);
 
             return;
+        }
+
+        // Send the initial 'LEADS' stage to the Meta Conversions API, mirroring
+        // Webhooks_meta::receive(). Failure-isolated so a CAPI error never changes
+        // the 200 response Make expects (avoiding a retry of an already-saved lead).
+        try {
+            if ($this->meta_capi->is_configured()) {
+                $saved = $this->meta_leads_model->find_by_leadgen_id($lead_id);
+
+                // event_name is 'LEADS' (funnel stage 1); the lowercase 'crm_lead'
+                // below only selects the capi_lead_event_sent column.
+                if ($saved && empty($saved['capi_lead_event_sent']) && $this->meta_capi->send_stage_event($saved, 'LEADS')) {
+                    $this->meta_leads_model->mark_capi_event_sent((int) $saved['id'], 'crm_lead');
+                }
+            }
+        } catch (Throwable $e) {
+            log_message('error', '[make-webhook] Failed to send LEADS stage for lead ' . $lead_id . ': ' . $e->getMessage());
         }
 
         json_response(['ok' => true, 'lead_id' => $lead_id]);

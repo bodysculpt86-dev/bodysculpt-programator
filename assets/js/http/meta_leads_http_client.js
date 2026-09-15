@@ -75,9 +75,57 @@ App.Http.MetaLeads = (function () {
         return $.post(url, data);
     }
 
+    /**
+     * Search meta leads for the internal call workflow, filtered by call_status.
+     *
+     * @param {String|null} callStatus
+     * @param {String} keyword
+     * @param {Number} limit
+     * @param {Number} offset
+     *
+     * @return {Object}
+     */
+    function searchCalls(callStatus = 'de sunat', keyword = '', limit = 200, offset = 0) {
+        const url = App.Utils.Url.siteUrl('meta_leads/search_calls');
+
+        const data = {
+            csrf_token: vars('csrf_token'),
+            call_status: callStatus || undefined,
+            keyword,
+            limit,
+            offset,
+        };
+
+        return $.post(url, data);
+    }
+
+    /**
+     * Update a lead's call workflow fields (call_status / call_note).
+     *
+     * @param {Number} leadId
+     * @param {Object} data
+     *
+     * @return {Object}
+     */
+    function updateCall(leadId, data) {
+        const url = App.Utils.Url.siteUrl('meta_leads/update_call');
+
+        const postData = Object.assign(
+            {
+                csrf_token: vars('csrf_token'),
+                lead_id: leadId,
+            },
+            data,
+        );
+
+        return $.post(url, postData);
+    }
+
     return {
         search,
+        searchCalls,
         show,
+        updateCall,
         destroy,
     };
 })();

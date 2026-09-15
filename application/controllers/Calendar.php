@@ -441,7 +441,9 @@ class Calendar extends EA_Controller
                     $lead = $this->meta_leads_model->find($meta_lead_id);
 
                     if ($lead && $this->meta_capi->is_configured() && empty($lead['capi_converted_event_sent'])) {
-                        if ($this->meta_capi->send_stage_event($lead, 'converted')) {
+                        // event_name is 'CONVERTED' (matches the clinic's manual Make.com history);
+                        // the lowercase 'converted' below only selects the capi_converted_event_sent column.
+                        if ($this->meta_capi->send_stage_event($lead, 'CONVERTED')) {
                             $this->meta_leads_model->mark_capi_event_sent((int) $lead['id'], 'converted');
                         }
                     }

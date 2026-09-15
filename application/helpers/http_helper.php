@@ -177,7 +177,12 @@ if (!function_exists('json_exception')) {
 
         unset($response['trace']); // Do not send the trace to the browser as it might contain sensitive info
 
-        json_response($response, 500);
+        // Business rule violations (InvalidArgumentException) are client errors, not server
+        // crashes: respond with 400 so the frontend can show the specific message instead of
+        // a generic server communication error.
+        $status = $e instanceof InvalidArgumentException ? 400 : 500;
+
+        json_response($response, $status);
     }
 }
 
