@@ -50,6 +50,8 @@ App.Pages.MetaLeads = (function () {
         $tableBody.on('keyup', '.meta-leads-note-input', onNoteKeyup);
         $cards.on('keyup', '.meta-leads-note-input', onNoteKeyup);
 
+        $tableBody.on('click', '[data-action="toggle-form-fields"]', onToggleFormFields);
+
         $tableBody.on('click', '[data-action="delete"]', onDeleteClick);
         $cards.on('click', '[data-action="delete"]', onDeleteClick);
     }
@@ -117,6 +119,16 @@ App.Pages.MetaLeads = (function () {
         }
     }
 
+    function onToggleFormFields(event) {
+        const $toggle = $(event.currentTarget);
+        const $fields = $toggle.siblings('.meta-leads-more-fields');
+        const expand = $fields.hasClass('d-none');
+
+        $fields.toggleClass('d-none', !expand);
+        $toggle.find('i').toggleClass('fa-chevron-down', !expand).toggleClass('fa-chevron-up', expand);
+        $toggle.find('.meta-leads-more-label').text(expand ? lang('meta_leads_show_less') : $toggle.data('more-label'));
+    }
+
     function onDeleteClick(event) {
         const leadId = $(event.currentTarget).data('id');
 
@@ -144,13 +156,13 @@ App.Pages.MetaLeads = (function () {
         return `
             <tr>
                 <td>${nameAndPhoneHtml(lead)}</td>
-                <td>${formAnswersHtml(lead)}</td>
+                <td>${formAnswersHtml(lead, true)}</td>
                 <td>${relativeTimeHtml(lead.received_at)}</td>
                 <td>${statusSelectHtml(lead)}</td>
                 <td>${assignedToHtml(lead)} ${appointmentBadgeHtml(lead)}</td>
-                <td class="text-nowrap">
-                    ${noteEditorHtml(lead)}
-                    <button type="button" class="btn btn-outline-danger btn-sm mt-1" data-action="delete" data-id="${lead.id}">
+                <td class="text-nowrap">${noteEditorHtml(lead)}</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${lead.id}" title="${lang('meta_leads_delete')}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -218,23 +230,35 @@ App.Pages.MetaLeads = (function () {
             return '—';
         }
 
-        return `<span title="${escapeHtml(formatDatetime(value))}">${escapeHtml(moment(value).fromNow())}</span>`;
+        return `<span title="${escapeHtml(formatDatetime(value))}">${escapeHtml(formatRelativeTime(value))}</span>`;
     }
 
-    function formAnswersHtml(lead) {
-        const fields = parseFormFields(lead.form_fields);
+    function formAnswersHtml(lead, collapse = false) {
+        const fields = parseFormFields(lead.form_fields).filter((field) => {
+            const name = String(field.name || '').toLowerCase();
+
+            return name !== 'full_name' && name !== 'phone_number';
+        });
 
         if (!fields.length) {
             return `<span class="text-muted">${lang('meta_leads_no_form_fields')}</span>`;
         }
 
-        return fields
-            .map((field) => {
-                const value = (field.values || []).join(', ');
+        const renderField = (field) =>
+            `<div class="small"><span class="text-muted">${escapeHtml(cleanQuestion(field.name))}:</span> ${escapeHtml(cleanValue(field.value))}</div>`;
 
-                return `<div class="small"><span class="text-muted">${escapeHtml(field.name || '')}:</span> ${escapeHtml(value)}</div>`;
-            })
-            .join('');
+        if (!collapse || fields.length <= 3) {
+            return fields.map(renderField).join('');
+        }
+
+        const moreLabel = `${lang('meta_leads_show_more')} (${fields.length - 3})`;
+
+        return `
+            ${fields.slice(0, 3).map(renderField).join('')}
+            <button type="button" class="btn btn-link btn-sm p-0 small text-decoration-none" data-action="toggle-form-fields" data-more-label="${escapeHtml(moreLabel)}">
+                <i class="fas fa-chevron-down me-1"></i><span class="meta-leads-more-label">${escapeHtml(moreLabel)}</span>
+            </button>
+            <div class="meta-leads-more-fields d-none">${fields.slice(3).map(renderField).join('')}</div>`;
     }
 
     function statusSelectHtml(lead) {
@@ -268,21 +292,86 @@ App.Pages.MetaLeads = (function () {
     }
 
     function parseFormFields(formFields) {
-        if (!formFields) {
+        if (!formFields || typeof formFields !== 'string') {
             return [];
         }
 
-        let parsed = formFields;
+        const separator = formFields.indexOf('||');
 
-        if (typeof formFields === 'string') {
-            try {
-                parsed = JSON.parse(formFields);
-            } catch (error) {
-                return [];
-            }
+        if (separator === -1) {
+            return [];
         }
 
-        return Array.isArray(parsed) ? parsed : [];
+        const names = formFields.slice(0, separator).split(' | ');
+        const values = formFields.slice(separator + 2).split(' | ');
+
+        const count = Math.min(names.length, values.length);
+        const fields = [];
+
+        for (let i = 0; i < count; i++) {
+            fields.push({
+                name: names[i].trim(),
+                value: values[i].trim(),
+            });
+        }
+
+        return fields;
+    }
+
+    function cleanQuestion(name) {
+        const spaced = String(name || '').replace(/_/g, ' ');
+
+        return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+    }
+
+    function cleanValue(value) {
+        return String(value || '').replace(/_/g, ' ');
+    }
+
+    function formatRelativeTime(value) {
+        const then = moment(value);
+
+        if (!then.isValid()) {
+            return '—';
+        }
+
+        const seconds = moment().diff(then, 'seconds');
+
+        if (seconds < 60) {
+            return lang('relative_time_just_now');
+        }
+
+        const minutes = Math.floor(seconds / 60);
+
+        if (minutes < 60) {
+            return fillRelative(lang('relative_time_minutes'), minutes);
+        }
+
+        const hours = Math.floor(minutes / 60);
+
+        if (hours < 24) {
+            return fillRelative(lang('relative_time_hours'), hours);
+        }
+
+        const days = Math.floor(hours / 24);
+
+        if (days < 7) {
+            return fillRelative(lang('relative_time_days'), days);
+        }
+
+        if (days < 30) {
+            return fillRelative(lang('relative_time_weeks'), Math.floor(days / 7));
+        }
+
+        if (days < 365) {
+            return fillRelative(lang('relative_time_months'), Math.floor(days / 30));
+        }
+
+        return fillRelative(lang('relative_time_years'), Math.floor(days / 365));
+    }
+
+    function fillRelative(template, count) {
+        return String(template).replace('%d', count);
     }
 
     function formatDatetime(value) {

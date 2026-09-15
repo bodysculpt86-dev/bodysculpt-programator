@@ -58,6 +58,7 @@
                     <th><?= lang('call_status') ?></th>
                     <th><?= lang('assigned_to') ?></th>
                     <th><?= lang('call_note') ?></th>
+                    <th><?= lang('meta_leads_actions') ?></th>
                 </tr>
             </thead>
             <tbody id="meta-leads-table-body"></tbody>
