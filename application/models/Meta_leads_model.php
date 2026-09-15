@@ -161,35 +161,35 @@ class Meta_leads_model extends EA_Model
     {
         $this->db
             ->select(
-                "meta_leads.*, " .
+                "ml.*, " .
                     "COUNT(a.id) AS has_appointments, " .
                     "MAX(CONCAT_WS(' ', u.first_name, u.last_name)) AS assigned_to_name",
                 false,
             )
-            ->from('meta_leads')
-            ->join('appointments a', 'a.id_users_customer = meta_leads.customer_id AND a.is_unavailability = 0', 'left')
-            ->join('users u', 'u.id = meta_leads.assigned_to', 'left');
+            ->from('meta_leads ml')
+            ->join('appointments a', 'a.id_users_customer = ml.customer_id AND a.is_unavailability = 0', 'left')
+            ->join('users u', 'u.id = ml.assigned_to', 'left');
 
         if ($keyword !== '') {
             $this->db
                 ->group_start()
-                ->like('meta_leads.first_name', $keyword)
-                ->or_like('meta_leads.last_name', $keyword)
-                ->or_like('CONCAT_WS(" ", meta_leads.first_name, meta_leads.last_name)', $keyword, 'both', false)
-                ->or_like('meta_leads.email', $keyword)
-                ->or_like('meta_leads.phone_number', $keyword)
+                ->like('ml.first_name', $keyword)
+                ->or_like('ml.last_name', $keyword)
+                ->or_like('CONCAT_WS(" ", ml.first_name, ml.last_name)', $keyword, 'both', false)
+                ->or_like('ml.email', $keyword)
+                ->or_like('ml.phone_number', $keyword)
                 ->group_end();
         }
 
         $allowed = ['de sunat', 'nu a raspuns', 'revine', 'nu e interesat'];
 
         if ($call_status !== null && in_array($call_status, $allowed, true)) {
-            $this->db->where('meta_leads.call_status', $call_status);
+            $this->db->where('ml.call_status', $call_status);
         }
 
-        $this->db->group_by('meta_leads.id');
-        $this->db->order_by("FIELD(meta_leads.call_status, 'de sunat')", 'DESC', false);
-        $this->db->order_by('meta_leads.received_at', 'ASC');
+        $this->db->group_by('ml.id');
+        $this->db->order_by("FIELD(ml.call_status, 'de sunat')", 'DESC', false);
+        $this->db->order_by('ml.received_at', 'ASC');
 
         return $this->db->limit($limit, $offset)->get()->result_array();
     }
