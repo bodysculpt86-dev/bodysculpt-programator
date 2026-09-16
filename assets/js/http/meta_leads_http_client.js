@@ -90,11 +90,17 @@ App.Http.MetaLeads = (function () {
 
         const data = {
             csrf_token: vars('csrf_token'),
-            call_status: callStatus || undefined,
             keyword,
             limit,
             offset,
         };
+
+        // Omit call_status entirely for "All" (null) so the backend sees no
+        // filter. Sending `call_status: undefined` relies on jQuery serializing
+        // undefined to an empty string; omitting the key is unambiguous.
+        if (callStatus) {
+            data.call_status = callStatus;
+        }
 
         return $.post(url, data);
     }

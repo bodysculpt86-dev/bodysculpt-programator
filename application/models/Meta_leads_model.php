@@ -147,8 +147,8 @@ class Meta_leads_model extends EA_Model
      * call_status. Each row is enriched with a has_appointments count (whether
      * the linked customer has any appointment) and the assigned user's name.
      *
-     * Uncontacted leads (call_status = 'de sunat') are floated to the top, then
-     * ordered oldest-first so nobody is forgotten.
+     * Leads are ordered strictly newest-first (received_at DESC), with no
+     * call_status prioritization.
      *
      * @param string|null $call_status One of the allowed call statuses, null for all.
      * @param string $keyword
@@ -188,16 +188,9 @@ class Meta_leads_model extends EA_Model
         }
 
         $this->db->group_by('ml.id');
-        $this->db->order_by("FIELD(ml.call_status, 'de sunat')", 'DESC', false);
         $this->db->order_by('ml.received_at', 'DESC');
 
-        $query = $this->db->limit($limit, $offset)->get();
-
-        // Sanitized: log only the whitelisted call_status, never the raw SQL
-        // (last_query() could contain the user's keyword search term — PII).
-        error_log('[meta_leads search_calls] call_status=' . var_export($call_status, true));
-
-        return $query->result_array();
+        return $this->db->limit($limit, $offset)->get()->result_array();
     }
 
     /**

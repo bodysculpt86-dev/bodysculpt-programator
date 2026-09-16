@@ -124,8 +124,6 @@ class Meta_leads extends EA_Controller
             $limit = (int) request('limit', 200);
             $offset = (int) request('offset', 0);
 
-            error_log('[meta_leads search_calls] raw_call_status=' . var_export(request('call_status'), true) . ' final=' . var_export($call_status, true));
-
             json_response(array_values($this->meta_leads_model->search_calls($call_status, $keyword, $limit, $offset)));
         } catch (Throwable $e) {
             json_exception($e);
