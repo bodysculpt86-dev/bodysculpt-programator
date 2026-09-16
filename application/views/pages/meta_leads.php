@@ -30,7 +30,7 @@
                 <button type="button" class="btn btn-outline-primary" data-call-status="nu e interesat">
                     <?= lang('call_status_nu_e_interesat') ?>
                 </button>
-                <button type="button" class="btn btn-outline-primary" data-call-status="">
+                <button type="button" class="btn btn-outline-primary" data-call-status="toate">
                     <?= lang('meta_leads_all') ?>
                 </button>
             </div>

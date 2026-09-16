@@ -85,7 +85,7 @@ App.Http.MetaLeads = (function () {
      *
      * @return {Object}
      */
-    function searchCalls(callStatus = 'de sunat', keyword = '', limit = 200, offset = 0) {
+    function searchCalls(callStatus = null, keyword = '', limit = 200, offset = 0) {
         const url = App.Utils.Url.siteUrl('meta_leads/search_calls');
 
         const data = {

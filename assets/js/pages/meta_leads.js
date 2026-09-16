@@ -21,7 +21,11 @@ App.Pages.MetaLeads = (function () {
 
     const CALL_STATUSES = ['de sunat', 'nu a raspuns', 'revine', 'nu e interesat'];
 
-    let currentCallStatus = 'de sunat';
+    // "toate" is the sentinel for the "All" filter: it maps to call_status = null
+    // on the backend (no WHERE clause), unlike the empty string which is falsy.
+    const ALL_CALL_STATUS = 'toate';
+
+    let currentCallStatus = ALL_CALL_STATUS;
     let noteModal = null;
     let leadCache = {};
 
@@ -58,22 +62,23 @@ App.Pages.MetaLeads = (function () {
     }
 
     function onFilterClick(event) {
-        currentCallStatus = $(event.currentTarget).data('call-status') || 'de sunat';
+        currentCallStatus = $(event.currentTarget).data('call-status') || ALL_CALL_STATUS;
         renderFilterState();
         load();
     }
 
     function renderFilterState() {
         $callFilter.find('button').each(function () {
-            const active = ($(this).data('call-status') || 'de sunat') === currentCallStatus;
+            const active = ($(this).data('call-status') || ALL_CALL_STATUS) === currentCallStatus;
             $(this).toggleClass('btn-primary', active).toggleClass('btn-outline-primary', !active);
         });
     }
 
     function load() {
         const keyword = $keyword.val().trim();
+        const callStatus = currentCallStatus === ALL_CALL_STATUS ? null : currentCallStatus;
 
-        App.Http.MetaLeads.searchCalls(currentCallStatus, keyword, 200, 0)
+        App.Http.MetaLeads.searchCalls(callStatus, keyword, 200, 0)
             .done((leads) => render(leads || []))
             .fail(() => render([]));
     }
