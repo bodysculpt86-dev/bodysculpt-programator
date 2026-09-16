@@ -193,7 +193,9 @@ class Meta_leads_model extends EA_Model
 
         $query = $this->db->limit($limit, $offset)->get();
 
-        error_log('[meta_leads search_calls] SQL=' . $this->db->last_query());
+        // Sanitized: log only the whitelisted call_status, never the raw SQL
+        // (last_query() could contain the user's keyword search term — PII).
+        error_log('[meta_leads search_calls] call_status=' . var_export($call_status, true));
 
         return $query->result_array();
     }
