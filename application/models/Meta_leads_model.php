@@ -191,7 +191,11 @@ class Meta_leads_model extends EA_Model
         $this->db->order_by("FIELD(ml.call_status, 'de sunat')", 'DESC', false);
         $this->db->order_by('ml.received_at', 'DESC');
 
-        return $this->db->limit($limit, $offset)->get()->result_array();
+        $query = $this->db->limit($limit, $offset)->get();
+
+        error_log('[meta_leads search_calls] SQL=' . $this->db->last_query());
+
+        return $query->result_array();
     }
 
     /**
