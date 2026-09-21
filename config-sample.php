@@ -78,6 +78,43 @@ class Config
     // const FLAXXA_TEMPLATE_LANGUAGE = 'ro';
 
     // ------------------------------------------------------------------------
+    // WHATSAPP PROVIDER (Optional)
+    // ------------------------------------------------------------------------
+    // WA_PROVIDER selects how WhatsApp templates are sent. All six templates
+    // this app sends (confirmation, reminder, marketing, payment link,
+    // unpaid-deposit cancellation, invoice PDF) follow it — there is no
+    // per-template switch.
+    //
+    //   flaxxa (default) - Flaxxa WAPI, using FLAXXA_API_TOKEN below
+    //   meta             - WhatsApp Cloud API directly, POST
+    //                      /{META_WA_PHONE_NUMBER_ID}/messages
+    //
+    // Both send the same approved Meta template names and the same components;
+    // Flaxxa is a wrapper around the same Graph API, so switching changes the
+    // transport and nothing else. An unrecognised value falls back to flaxxa
+    // and logs at error level.
+    //
+    // With WA_PROVIDER=meta, FLAXXA_API_TOKEN is ignored and these are used
+    // instead. The template names above are NOT ignored — they are the same
+    // Meta templates either way.
+    //
+    // BODYSCULPT_WA_TOKEN: System User token with whatsapp_business_messaging
+    // (expiration Never). Set WA_PROVIDER=meta with it missing or empty and the
+    // library falls into log-only mode, sending nothing.
+    //
+    // META_WA_PHONE_NUMBER_ID: the clinic's WhatsApp phone number ID — the
+    // numeric ID, not the phone number. POST /api/admin/import-coexistence-client
+    // on the Revclar WABA service returns it as phone_number_id.
+    //
+    // Before switching, test with:
+    //   php index.php console wa_test_send <your number> meta
+    //
+    // const WA_PROVIDER = 'flaxxa';
+    // const BODYSCULPT_WA_TOKEN = '';
+    // const META_WA_PHONE_NUMBER_ID = '';
+    // const META_GRAPH_VERSION = 'v22.0';
+
+    // ------------------------------------------------------------------------
     // SAME-DAY APPOINTMENT GROUPING
     // ------------------------------------------------------------------------
     // Consecutive appointments of the same customer, on the same calendar day,

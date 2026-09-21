@@ -9,14 +9,39 @@
 /**
  * Class Whatsapp_flaxxa
  *
- * Sends WhatsApp template messages via the Flaxxa WAPI REST API.
+ * Sends WhatsApp template messages through one of two providers, selected by the
+ * WA_PROVIDER environment variable:
+ *
+ *   flaxxa (default) - the Flaxxa WAPI REST API
+ *   meta             - the WhatsApp Cloud API directly, POST /{phone_number_id}/messages
+ *
+ * The class name is historical: Flaxxa is still the default, and the only provider
+ * until WA_PROVIDER says otherwise. Both providers are handed the same approved
+ * Meta template names and the same component list, because Flaxxa's WAPI is a
+ * wrapper around the same Graph API — which is what makes the switch a
+ * configuration change rather than a rewrite.
  */
 class Whatsapp_flaxxa
 {
     /**
      * @var string Flaxxa WAPI endpoint for sending template messages.
      */
-    private const API_URL = 'https://wapi.flaxxa.com/api/v1/sendtemplatemessage';
+    private const FLAXXA_API_URL = 'https://wapi.flaxxa.com/api/v1/sendtemplatemessage';
+
+    /**
+     * @var string Graph API host used by the meta provider.
+     */
+    private const GRAPH_API_BASE_URL = 'https://graph.facebook.com';
+
+    /**
+     * @var string Send via Flaxxa WAPI (default).
+     */
+    private const PROVIDER_FLAXXA = 'flaxxa';
+
+    /**
+     * @var string Send via the WhatsApp Cloud API.
+     */
+    private const PROVIDER_META = 'meta';
 
     /**
      * @var CI_Controller|object CodeIgniter instance.
@@ -24,7 +49,27 @@ class Whatsapp_flaxxa
     protected $CI;
 
     /**
-     * @var string|null Cached Flaxxa API token.
+     * @var string Active provider (self::PROVIDER_FLAXXA or self::PROVIDER_META).
+     */
+    protected string $provider = self::PROVIDER_FLAXXA;
+
+    /**
+     * @var string Graph API version, with its leading "v" (e.g. "v22.0").
+     */
+    protected string $graphVersion = 'v22.0';
+
+    /**
+     * @var string|null System User token, used only by the meta provider.
+     */
+    protected ?string $metaToken = null;
+
+    /**
+     * @var string|null The clinic's WhatsApp phone_number_id, used only by the meta provider.
+     */
+    protected ?string $metaPhoneNumberId = null;
+
+    /**
+     * @var string|null Flaxxa API token, unused once WA_PROVIDER=meta.
      */
     protected ?string $apiToken = null;
 
@@ -54,9 +99,21 @@ class Whatsapp_flaxxa
     protected bool $logOnly = false;
 
     /**
-     * Whatsapp_flaxxa constructor.
+     * @var string|null Why nothing will be sent, when nothing will be.
+     *
+     * A silent log-only mode is the one failure that looks exactly like success
+     * from the outside, so the reason travels with the flag.
      */
-    public function __construct()
+    protected ?string $logOnlyReason = null;
+
+    /**
+     * Whatsapp_flaxxa constructor.
+     *
+     * @param array|null $config Optional ['provider' => 'flaxxa'|'meta'] override. Used by
+     *                           Console::wa_test_send to exercise the meta transport while
+     *                           WA_PROVIDER still says flaxxa.
+     */
+    public function __construct(?array $config = null)
     {
         $this->CI = &get_instance();
 
@@ -70,12 +127,126 @@ class Whatsapp_flaxxa
             $this->templateLanguage = $language;
         }
 
+        $this->resolveProvider($config);
+
         // LOG_ONLY mode lets you test the integration without sending real WhatsApp messages.
-        if (empty($this->apiToken) || strtoupper($this->apiToken) === 'LOG_ONLY') {
+        // Which credential decides that depends on the provider: the Flaxxa token is
+        // irrelevant once sends travel over the Graph API, and vice versa.
+        $reasons = [];
+
+        $token = $this->provider === self::PROVIDER_META ? $this->metaToken : $this->apiToken;
+        $tokenName = $this->provider === self::PROVIDER_META ? 'BODYSCULPT_WA_TOKEN' : 'FLAXXA_API_TOKEN';
+
+        if (empty($token)) {
+            $reasons[] = $tokenName . ' is not set';
+        } elseif (strtoupper($token) === 'LOG_ONLY') {
+            $reasons[] = $tokenName . ' is LOG_ONLY';
+        }
+
+        // The Graph API addresses the message with the phone_number_id in the URL
+        // rather than with the token, so a missing one is exactly as fatal.
+        if ($this->provider === self::PROVIDER_META && empty($this->metaPhoneNumberId)) {
+            $reasons[] = 'META_WA_PHONE_NUMBER_ID is not set';
+        }
+
+        if ($reasons) {
             $this->logOnly = true;
+            $this->logOnlyReason = implode('; ', $reasons);
         }
 
         $this->CI->load->helper('phone');
+    }
+
+    /**
+     * Decide which provider this instance sends through.
+     *
+     * An explicit $config['provider'] wins over the environment — that is how
+     * Console::wa_test_send exercises the meta transport while WA_PROVIDER still
+     * says flaxxa, which is the entire point of testing before switching.
+     *
+     * An unrecognised WA_PROVIDER value falls back to flaxxa rather than failing:
+     * Flaxxa still works, so a typo keeps messages flowing instead of silently
+     * stopping them. The warning is what stops the fallback being silent.
+     *
+     * @param array|null $config Optional constructor config.
+     *
+     * @return void
+     */
+    private function resolveProvider(?array $config): void
+    {
+        $requested = $config['provider'] ?? $this->readEnvOrConfig('WA_PROVIDER');
+
+        if ($requested === null || trim((string) $requested) === '') {
+            return;
+        }
+
+        $requested = strtolower(trim((string) $requested));
+
+        if ($requested === self::PROVIDER_META) {
+            $this->provider = self::PROVIDER_META;
+
+            $this->metaToken = $this->readEnvOrConfig('BODYSCULPT_WA_TOKEN');
+            $this->metaPhoneNumberId = $this->readEnvOrConfig('META_WA_PHONE_NUMBER_ID');
+
+            $version = $this->readEnvOrConfig('META_GRAPH_VERSION');
+            if (!empty($version)) {
+                // Accepts both "v22.0" and "22.0" — the rest of the app writes the
+                // version with its "v", but an operator pasting from Meta's docs
+                // usually copies it without.
+                $this->graphVersion = 'v' . ltrim($version, 'vV');
+            }
+
+            return;
+        }
+
+        if ($requested !== self::PROVIDER_FLAXXA) {
+            // 'error', not 'warning': this CodeIgniter's Log::$_levels has no
+            // WARNING entry, so a 'warning' line is dropped without ever being
+            // written. Reported at error level because it means the operator
+            // asked for a provider and is silently getting a different one.
+            log_message(
+                'error',
+                '[wa-flaxxa] Unrecognised WA_PROVIDER "' . $requested . '" — sending via flaxxa. '
+                    . 'Set WA_PROVIDER to "flaxxa" or "meta".'
+            );
+        }
+    }
+
+    /**
+     * The provider this instance actually sends through ('flaxxa' or 'meta').
+     *
+     * @return string
+     */
+    public function get_provider(): string
+    {
+        return $this->provider;
+    }
+
+    /**
+     * Why nothing will be sent, or null when sends are live.
+     *
+     * @return string|null
+     */
+    public function get_log_only_reason(): ?string
+    {
+        return $this->logOnlyReason;
+    }
+
+    /**
+     * The template names the appointment senders will use.
+     *
+     * Read from here rather than from the environment by the caller, so a test
+     * report names the same template the sender actually resolves — including
+     * the Config fallback in readEnvOrConfig() and the built-in defaults.
+     *
+     * @return array ['confirmation' => string|null, 'reminder' => string|null]
+     */
+    public function get_configured_templates(): array
+    {
+        return [
+            'confirmation' => $this->confirmationTemplate,
+            'reminder' => $this->reminderTemplate,
+        ];
     }
 
     /**
@@ -105,7 +276,9 @@ class Whatsapp_flaxxa
      * Send a confirmation WhatsApp message for a new appointment.
      *
      * The method is failure-isolated: it catches all exceptions and logs them,
-     * it never propagates errors to the caller.
+     * it never propagates errors to the caller. The outcome is returned as well
+     * as logged, so a caller that cares can act on it — routine appointment
+     * traffic ignores the return value.
      *
      * @param array $appointment Appointment data (must contain start_datetime).
      * @param array $customer Customer data (must contain phone_number and id).
@@ -113,9 +286,9 @@ class Whatsapp_flaxxa
      * @param array|null $provider Provider data (must contain timezone). When provided,
      *                            the appointment date/time is formatted in this timezone.
      *
-     * @return void
+     * @return array Result array: ['success' => bool, 'error' => string|null]
      */
-    public function send_confirmation(array $appointment, array $customer, array $service, ?array $provider = null): void
+    public function send_confirmation(array $appointment, array $customer, array $service, ?array $provider = null): array
     {
         try {
             $rawPhone = $customer['phone_number'] ?? null;
@@ -127,12 +300,12 @@ class Whatsapp_flaxxa
                 $this->log(
                     'Confirmation skipped: invalid phone for customer #' . ($customerId ?? 'N/A') . ': ' . ($rawPhone ?: '(empty)')
                 );
-                return;
+                return ['success' => false, 'error' => 'invalid_phone'];
             }
 
             if (empty($this->confirmationTemplate)) {
                 $this->log('Confirmation skipped: FLAXXA_CONFIRMATION_TEMPLATE not configured.');
-                return;
+                return ['success' => false, 'error' => 'template_not_configured'];
             }
 
             $components = [
@@ -142,16 +315,21 @@ class Whatsapp_flaxxa
 
             if ($this->logOnly) {
                 $this->log(
-                    'LOG_ONLY confirmation would send to ' . $phone . ' using template "' . $this->confirmationTemplate . '": ' . json_encode($components)
+                    'LOG_ONLY confirmation would send to ' . $phone . ' using template "' . $this->confirmationTemplate . '"'
+                        . ' (' . $this->logOnlyReason . '): ' . json_encode($components)
                 );
-                return;
+                return ['success' => true, 'error' => null, 'log_only' => true];
             }
 
             $this->send($phone, $this->confirmationTemplate, $components);
+
+            return ['success' => true, 'error' => null];
         } catch (Throwable $e) {
             $this->log(
                 'Confirmation failed for customer #' . ($customer['id'] ?? 'N/A') . ': ' . $e->getMessage()
             );
+
+            return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 
@@ -166,9 +344,9 @@ class Whatsapp_flaxxa
      * @param array|null $provider Provider data (must contain timezone). When provided,
      *                            the appointment date/time is formatted in this timezone.
      *
-     * @return void
+     * @return array Result array: ['success' => bool, 'error' => string|null]
      */
-    public function send_reminder(array $appointment, array $customer, array $service, ?array $provider = null): void
+    public function send_reminder(array $appointment, array $customer, array $service, ?array $provider = null): array
     {
         try {
             $rawPhone = $customer['phone_number'] ?? null;
@@ -180,12 +358,12 @@ class Whatsapp_flaxxa
                 $this->log(
                     'Reminder skipped: invalid phone for customer #' . ($customerId ?? 'N/A') . ': ' . ($rawPhone ?: '(empty)')
                 );
-                return;
+                return ['success' => false, 'error' => 'invalid_phone'];
             }
 
             if (empty($this->reminderTemplate)) {
                 $this->log('Reminder skipped: FLAXXA_REMINDER_TEMPLATE not configured.');
-                return;
+                return ['success' => false, 'error' => 'template_not_configured'];
             }
 
             $components = [
@@ -195,25 +373,31 @@ class Whatsapp_flaxxa
 
             if ($this->logOnly) {
                 $this->log(
-                    'LOG_ONLY reminder would send to ' . $phone . ' using template "' . $this->reminderTemplate . '": ' . json_encode($components)
+                    'LOG_ONLY reminder would send to ' . $phone . ' using template "' . $this->reminderTemplate . '"'
+                        . ' (' . $this->logOnlyReason . '): ' . json_encode($components)
                 );
-                return;
+                return ['success' => true, 'error' => null, 'log_only' => true];
             }
 
             $this->send($phone, $this->reminderTemplate, $components);
+
+            return ['success' => true, 'error' => null];
         } catch (Throwable $e) {
             $this->log(
                 'Reminder failed for customer #' . ($customer['id'] ?? 'N/A') . ': ' . $e->getMessage()
             );
+
+            return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 
     /**
      * Send a marketing WhatsApp message to a customer.
      *
-     * Unlike send_confirmation/send_reminder, this method returns a result
-     * array instead of swallowing errors, so the caller (marketing page)
-     * can display per-recipient success/failure.
+     * Returns a result array rather than swallowing the error, so the caller
+     * (marketing page) can display per-recipient success/failure. All six
+     * senders here return that same shape; send_confirmation and send_reminder
+     * simply have no caller reading it.
      *
      * Variables of the approved marketing template:
      *   {{header_1}} = customer full name
@@ -684,6 +868,106 @@ class Whatsapp_flaxxa
     }
 
     /**
+     * Perform the HTTP POST via the configured provider.
+     *
+     * Every one of the six senders ends up here, which is why the provider switch
+     * lives at this point and nowhere else: no caller knows which provider is
+     * active, and none of them changed when it was added.
+     *
+     * @param string $phone E.164 phone number with leading '+'.
+     * @param string $templateName Approved template name.
+     * @param array $components Template components (header and body).
+     *
+     * @return void
+     *
+     * @throws Exception If the API returns an error.
+     */
+    private function send(string $phone, string $templateName, array $components): void
+    {
+        if ($this->provider === self::PROVIDER_META) {
+            $this->sendViaMeta($phone, $templateName, $components);
+
+            return;
+        }
+
+        $this->sendViaFlaxxa($phone, $templateName, $components);
+    }
+
+    /**
+     * Perform the HTTP POST to the WhatsApp Cloud API.
+     *
+     * The body is the same message Flaxxa accepts, minus Flaxxa's own wrapper
+     * fields (`token`, `phone`, `template_name`): Meta takes the token in the
+     * Authorization header, the recipient as `to`, and the template name and
+     * language inside a `template` object. The `components` array is passed
+     * through untouched — it is already Meta's own format, with the header
+     * element and the body element separate — which is why nothing above this
+     * method changed when the provider did.
+     *
+     * @param string $phone E.164 phone number with leading '+'.
+     * @param string $templateName Approved template name.
+     * @param array $components Template components (header and body).
+     *
+     * @return void
+     *
+     * @throws Exception If the API returns an error.
+     */
+    private function sendViaMeta(string $phone, string $templateName, array $components): void
+    {
+        $url = self::GRAPH_API_BASE_URL . '/' . $this->graphVersion . '/' . $this->metaPhoneNumberId . '/messages';
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'recipient_type' => 'individual',
+            // Meta wants the number as digits with its country code, and no '+'.
+            'to' => ltrim($phone, '+'),
+            'type' => 'template',
+            'template' => [
+                'name' => $templateName,
+                'language' => ['code' => $this->templateLanguage],
+                'components' => $components,
+            ],
+        ];
+
+        $ch = curl_init($url);
+
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Accept: application/json',
+            'Authorization: Bearer ' . $this->metaToken,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+
+        if ($response === false) {
+            throw new Exception('cURL error: ' . $curlError);
+        }
+
+        $decoded = json_decode($response, true);
+        $error = is_array($decoded) ? ($decoded['error'] ?? null) : null;
+
+        if ($httpCode < 200 || $httpCode >= 300 || $error) {
+            // Meta reports failures in an `error` object. Its `code` is kept because
+            // it is the whole diagnosis and is what Meta's support asks for:
+            // 190 = bad or expired token, 132001 = template does not exist in that
+            // language, 131047 = outside the 24-hour customer service window.
+            $errorMessage = is_array($error)
+                ? ($error['message'] ?? 'unknown error') . ' (code ' . ($error['code'] ?? 'n/a') . ')'
+                : ($error ?: $response);
+
+            throw new Exception('Meta Graph API error (HTTP ' . $httpCode . '): ' . $errorMessage);
+        }
+
+        $this->log('Message sent to ' . $phone . ' using template "' . $templateName . '" via meta');
+    }
+
+    /**
      * Perform the HTTP POST to Flaxxa WAPI.
      *
      * @param string $phone E.164 phone number with leading '+'.
@@ -694,7 +978,7 @@ class Whatsapp_flaxxa
      *
      * @throws Exception If the API returns an error.
      */
-    private function send(string $phone, string $templateName, array $components): void
+    private function sendViaFlaxxa(string $phone, string $templateName, array $components): void
     {
         $payload = [
             'token' => $this->apiToken,
@@ -704,7 +988,7 @@ class Whatsapp_flaxxa
             'components' => $components,
         ];
 
-        $ch = curl_init(self::API_URL);
+        $ch = curl_init(self::FLAXXA_API_URL);
 
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
@@ -738,7 +1022,7 @@ class Whatsapp_flaxxa
             throw new Exception('Flaxxa API error (HTTP ' . $httpCode . '): ' . $errorMessage);
         }
 
-        $this->log('Message sent to ' . $phone . ' using template "' . $templateName . '"');
+        $this->log('Message sent to ' . $phone . ' using template "' . $templateName . '" via flaxxa');
     }
 
     /**

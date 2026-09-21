@@ -51,6 +51,137 @@ class Console extends EA_Controller
     }
 
     /**
+     * Send the two appointment WhatsApp templates to a single number, as a
+     * delivery test for the WhatsApp provider.
+     *
+     * The provider defaults to 'meta' rather than to whatever WA_PROVIDER says,
+     * because the reason to run this is to prove the Graph API path works
+     * *before* switching WA_PROVIDER to it — a test that followed the flag could
+     * only ever test the provider already in use.
+     *
+     * The messages are real and go to a real WhatsApp number.
+     *
+     * Usage:
+     *
+     * php index.php console wa_test_send 40712345678
+     * php index.php console wa_test_send 40712345678 flaxxa
+     *
+     * @param string $phone Recipient, international format, with or without '+'.
+     * @param string $provider 'meta' (default) or 'flaxxa'.
+     *
+     * @return void
+     */
+    public function wa_test_send(string $phone = '', string $provider = 'meta'): void
+    {
+        $phone = trim($phone);
+
+        if ($phone === '') {
+            response('Usage: php index.php console wa_test_send <phone> [meta|flaxxa]');
+
+            return;
+        }
+
+        $normalized = normalize_international_phone($phone);
+
+        if ($normalized === null) {
+            response('Not a usable phone number: ' . $phone);
+
+            return;
+        }
+
+        // A separate instance with an explicit provider: the test must neither
+        // depend on, nor disturb, the provider the application itself is using.
+        // CodeIgniter re-instantiates the class when given a different object
+        // name, so the already-loaded $this->whatsapp_flaxxa is left alone.
+        $this->load->library('whatsapp_flaxxa', ['provider' => $provider], 'wa_test_sender');
+        $sender = $this->wa_test_sender;
+
+        $templates = $sender->get_configured_templates();
+
+        $lines = [
+            'Provider: ' . $sender->get_provider(),
+            'Number:   +' . $normalized,
+        ];
+
+        $reason = $sender->get_log_only_reason();
+        if ($reason !== null) {
+            // Log-only mode is the one failure that looks identical to success
+            // from the outside, so it is said here rather than left to the log.
+            $lines[] = 'LOG_ONLY — nothing will actually be sent: ' . $reason;
+        }
+
+        // Placeholder data on purpose: this tests delivery and the shape of the
+        // header/body components, not the content, and requiring a real
+        // appointment to exist would make the test impossible to run on demand.
+        $customer = [
+            'id' => 0,
+            'first_name' => 'Test',
+            'last_name' => 'Revclar',
+            'phone_number' => '+' . $normalized,
+        ];
+
+        $appointment = [
+            'id' => 0,
+            'start_datetime' => (new DateTime('tomorrow 14:30', new DateTimeZone('Europe/Bucharest')))
+                ->format('Y-m-d H:i:s'),
+        ];
+
+        $service = ['name' => 'Test Revclar'];
+        $provider_row = ['timezone' => 'Europe/Bucharest'];
+
+        $lines[] = '';
+
+        $confirmation = $sender->send_confirmation($appointment, $customer, $service, $provider_row);
+        $lines[] = sprintf(
+            '%-13s %-28s %s',
+            'confirmation',
+            $templates['confirmation'] ?? '(not configured)',
+            $this->describe_wa_test_result($confirmation)
+        );
+
+        $reminder = $sender->send_reminder($appointment, $customer, $service, $provider_row);
+        $lines[] = sprintf(
+            '%-13s %-28s %s',
+            'reminder',
+            $templates['reminder'] ?? '(not configured)',
+            $this->describe_wa_test_result($reminder)
+        );
+
+        $lines[] = '';
+        // 'log_only' counts as success in the result array (the caller asked for
+        // no send), so it is excluded explicitly here — otherwise a log-only run
+        // would end by telling the operator to check a phone that was never sent to.
+        $confirmation_sent = !empty($confirmation['success']) && empty($confirmation['log_only']);
+        $reminder_sent = !empty($reminder['success']) && empty($reminder['log_only']);
+
+        $lines[] = $confirmation_sent && $reminder_sent
+            ? 'Both accepted. Check the phone — then set WA_PROVIDER=meta.'
+            : 'Not both accepted. Nothing was changed; the app still sends via its configured provider.';
+
+        response(implode(PHP_EOL, $lines));
+    }
+
+    /**
+     * Render one wa_test_send result as a single line.
+     *
+     * @param array $result Result array from a Whatsapp_flaxxa sender.
+     *
+     * @return string
+     */
+    private function describe_wa_test_result(array $result): string
+    {
+        if (!empty($result['log_only'])) {
+            return 'NOT SENT (log-only)';
+        }
+
+        if (!empty($result['success'])) {
+            return 'accepted by the API';
+        }
+
+        return 'FAILED: ' . ($result['error'] ?? 'unknown error');
+    }
+
+    /**
      * Perform a console installation.
      *
      * Use this method to install Easy!Appointments directly from the terminal.
@@ -546,6 +677,7 @@ class Console extends EA_Controller
             '⇾ php index.php console cleanup        (cleans sessions, logs, cache, and customer data)',
             '⇾ php index.php console send_sms_reminders  (sends ~24h SMS reminders via SMSO.ro)',
             '⇾ php index.php console process_unpaid_deposits  (auto-cancels deposits unpaid after 24h + notifies the customer)',
+            '⇾ php index.php console wa_test_send 40712345678 [meta|flaxxa]  (sends the two appointment templates to one number)',
             '',
             '',
         ];
