@@ -27,6 +27,7 @@ App.Pages.MetaLeads = (function () {
     const ALL_CALL_STATUS = 'toate';
 
     let currentCallStatus = ALL_CALL_STATUS;
+    let currentStatusFilter = null;
     let noteModal = null;
     let leadCache = {};
 
@@ -65,24 +66,41 @@ App.Pages.MetaLeads = (function () {
     }
 
     function onFilterClick(event) {
-        currentCallStatus = $(event.currentTarget).data('call-status') || ALL_CALL_STATUS;
+        const $btn = $(event.currentTarget);
+        const statusFilter = $btn.data('status');
+
+        if (statusFilter) {
+            currentStatusFilter = statusFilter;
+            currentCallStatus = ALL_CALL_STATUS;
+        } else {
+            currentStatusFilter = null;
+            currentCallStatus = $btn.data('call-status') || ALL_CALL_STATUS;
+        }
+
         renderFilterState();
         load();
     }
 
     function renderFilterState() {
         $callFilter.find('button').each(function () {
-            const active = ($(this).data('call-status') || ALL_CALL_STATUS) === currentCallStatus;
-            $(this).toggleClass('btn-primary', active).toggleClass('btn-outline-primary', !active);
+            const $btn = $(this);
+            const statusFilter = $btn.data('status');
+
+            const active = statusFilter
+                ? currentStatusFilter === statusFilter
+                : currentStatusFilter === null && ($btn.data('call-status') || ALL_CALL_STATUS) === currentCallStatus;
+
+            $btn.toggleClass('btn-primary', active).toggleClass('btn-outline-primary', !active);
         });
     }
 
     function load() {
         const keyword = $keyword.val().trim();
-        const callStatus = currentCallStatus === ALL_CALL_STATUS ? null : currentCallStatus;
+        const callStatus =
+            currentStatusFilter === null && currentCallStatus !== ALL_CALL_STATUS ? currentCallStatus : null;
         const formId = $procedureFilter.val() || null;
 
-        App.Http.MetaLeads.searchCalls(callStatus, keyword, 200, 0, formId)
+        App.Http.MetaLeads.searchCalls(callStatus, keyword, 200, 0, formId, currentStatusFilter)
             .done((leads) => render(leads || []))
             .fail(() => render([]));
     }
@@ -169,9 +187,11 @@ App.Pages.MetaLeads = (function () {
     // --- Renderers -----------------------------------------------------------
 
     function renderTableRow(lead) {
+        const rowClass = lead.status === 'converted' ? 'table-success' : '';
+
         return `
-            <tr>
-                <td>${nameAndPhoneHtml(lead)}</td>
+            <tr class="${rowClass}">
+                <td>${nameAndPhoneHtml(lead)}${scheduledBadgeHtml(lead)}</td>
                 <td>${procedureHtml(lead)}</td>
                 <td>${formAnswersHtml(lead)}</td>
                 <td>${relativeTimeHtml(lead.received_at)}</td>
@@ -187,12 +207,14 @@ App.Pages.MetaLeads = (function () {
     }
 
     function renderCard(lead) {
+        const cardClass = lead.status === 'converted' ? ' bg-success-subtle' : '';
+
         return `
-            <div class="card mb-3">
+            <div class="card mb-3${cardClass}">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div>
-                            <div class="fw-bold">${nameHtml(lead)}</div>
+                            <div class="fw-bold">${nameHtml(lead)}${scheduledBadgeHtml(lead)}</div>
                             <div class="text-muted small">${relativeTimeHtml(lead.received_at)}</div>
                             <div class="text-muted small">${lang('meta_leads_procedure')}: ${procedureHtml(lead)}</div>
                         </div>
@@ -214,6 +236,14 @@ App.Pages.MetaLeads = (function () {
                     ${noteDisplayHtml(lead)}
                 </div>
             </div>`;
+    }
+
+    function scheduledBadgeHtml(lead) {
+        if (lead.status !== 'converted') {
+            return '';
+        }
+
+        return ` <span class="badge bg-success ms-1">${lang('meta_leads_scheduled_badge')} ${escapeHtml(formatDate(lead.converted_at))}</span>`;
     }
 
     function procedureHtml(lead) {
@@ -401,6 +431,20 @@ App.Pages.MetaLeads = (function () {
         }
 
         return moment(value).format('DD.MM.YYYY HH:mm');
+    }
+
+    function formatDate(value) {
+        if (!value) {
+            return '—';
+        }
+
+        const parsed = moment(value);
+
+        if (!parsed.isValid()) {
+            return '—';
+        }
+
+        return parsed.format('DD.MM.YYYY');
     }
 
     function escapeHtml(value) {
