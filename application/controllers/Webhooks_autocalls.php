@@ -91,9 +91,32 @@ class Webhooks_autocalls extends EA_Controller
             return;
         }
 
+        // Autocalls' casing isn't guaranteed ('hot', ' Hot', 'HOT' must all match).
         $classification = strtoupper(trim((string) ($data['classification'] ?? '')));
+        $skip_save = false;
 
-        if (!in_array($classification, self::ALLOWED_CLASSIFICATIONS, true)) {
+        if ($classification === '') {
+            // No classification: derive one from call_status (Autocalls' own
+            // lead.status, forwarded under this name) instead of rejecting the
+            // call outright — a completed-but-unclassified call and a call that
+            // never connected are both real, expected outcomes, not malformed
+            // requests.
+            $call_status = strtolower(trim((string) ($data['call_status'] ?? '')));
+
+            if ($call_status === 'completed') {
+                // Call connected, AI produced no classification: nothing to
+                // store, but still a valid, expected delivery.
+                $skip_save = true;
+            } elseif ($call_status === 'no-answer') {
+                $classification = 'NO_ANSWER';
+            } elseif ($call_status === 'failed') {
+                $classification = 'FAILED';
+            } else {
+                json_response(['ok' => false, 'error' => 'invalid_classification'], 400);
+
+                return;
+            }
+        } elseif (!in_array($classification, self::ALLOWED_CLASSIFICATIONS, true)) {
             json_response(['ok' => false, 'error' => 'invalid_classification'], 400);
 
             return;
@@ -122,6 +145,12 @@ class Webhooks_autocalls extends EA_Controller
 
         if ($lead === null) {
             json_response(['ok' => false, 'error' => 'lead_not_found'], 404);
+
+            return;
+        }
+
+        if ($skip_save) {
+            json_response(['ok' => true, 'lead_id' => (int) $lead['id'], 'skipped' => 'no_classification']);
 
             return;
         }
