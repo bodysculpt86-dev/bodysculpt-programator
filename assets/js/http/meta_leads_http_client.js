@@ -85,7 +85,7 @@ App.Http.MetaLeads = (function () {
      *
      * @return {Object}
      */
-    function searchCalls(callStatus = null, keyword = '', limit = 200, offset = 0, formId = null) {
+    function searchCalls(callStatus = null, keyword = '', limit = 200, offset = 0, formId = null, status = null) {
         const url = App.Utils.Url.siteUrl('meta_leads/search_calls');
 
         const data = {
@@ -104,6 +104,10 @@ App.Http.MetaLeads = (function () {
 
         if (formId) {
             data.form_id = formId;
+        }
+
+        if (status) {
+            data.status = status;
         }
 
         return $.post(url, data);
