@@ -77,6 +77,7 @@ $autoload['helper'] = [
     'http',
     'installation',
     'language',
+    'meta_lead_note',
     'password',
     'path',
     'permission',

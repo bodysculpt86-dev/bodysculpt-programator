@@ -162,6 +162,8 @@ class Meta_leads extends EA_Controller
      * Update a lead's internal call workflow fields (call_status / call_note).
      *
      * The first call_status change auto-assigns the lead to the current user.
+     * A submitted note is appended to the lead's note history, attributed to the
+     * current user, and mirrored into call_note as the most recent one.
      */
     public function update_call(): void
     {
@@ -203,7 +205,7 @@ class Meta_leads extends EA_Controller
             }
 
             if ($update !== []) {
-                $this->meta_leads_model->update_call($lead_id, $update);
+                $this->meta_leads_model->update_call($lead_id, $update, (int) session('user_id'));
             }
 
             $updated = $this->meta_leads_model->find($lead_id);

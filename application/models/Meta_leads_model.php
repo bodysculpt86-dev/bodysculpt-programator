@@ -238,7 +238,8 @@ class Meta_leads_model extends EA_Model
      * Search meta leads for the internal call workflow, optionally filtered by
      * call_status, form_id and/or status. Each row is enriched with a
      * has_appointments count (whether the linked customer has any
-     * appointment), the assigned user's name, and procedure (the
+     * appointment), the assigned user's name, the lead's note history (most
+     * recent first), and procedure (the
      * clinic-facing name for the lead's form_id, from
      * META_LEAD_FORM_PROCEDURES, falling back to the raw form_id when it
      * isn't in that mapping).
@@ -309,8 +310,11 @@ class Meta_leads_model extends EA_Model
 
         $leads = $this->db->limit($limit, $offset)->get()->result_array();
 
+        $notes = $this->get_notes_for_leads(array_column($leads, 'id'));
+
         foreach ($leads as &$lead) {
             $lead['procedure'] = META_LEAD_FORM_PROCEDURES[$lead['form_id'] ?? ''] ?? (string) ($lead['form_id'] ?? '');
+            $lead['notes'] = $notes[(int) $lead['id']] ?? [];
         }
 
         return $leads;
@@ -381,14 +385,40 @@ class Meta_leads_model extends EA_Model
      * Only whitelisted fields are written. When call_status is present the
      * call_updated_at timestamp is refreshed.
      *
+     * A submitted note is appended to the lead's note history instead of
+     * replacing it, and call_note keeps mirroring the most recent note so that
+     * anything already reading that column is unaffected. A note that is empty,
+     * or identical to the one already mirrored, is not recorded at all — see
+     * meta_lead_note_is_new().
+     *
      * @param int $lead_id
      * @param array $data Fields to update (call_status, call_note, assigned_to).
+     * @param int|null $user_id Author of the note, null when unknown.
      *
      * @return void
      */
-    public function update_call(int $lead_id, array $data): void
+    public function update_call(int $lead_id, array $data, ?int $user_id = null): void
     {
         $data = array_intersect_key($data, array_flip(['call_status', 'call_note', 'assigned_to']));
+
+        if (array_key_exists('call_note', $data)) {
+            $lead = $this->db->select('call_note')->get_where('meta_leads', ['id' => $lead_id])->row_array();
+
+            if ($lead && meta_lead_note_is_new($lead['call_note'] ?? null, $data['call_note'])) {
+                $note = trim((string) $data['call_note']);
+
+                $this->db->insert('meta_lead_notes', [
+                    'id_meta_leads' => $lead_id,
+                    'note' => $note,
+                    'id_users' => $user_id,
+                    'create_datetime' => date('Y-m-d H:i:s'),
+                ]);
+
+                $data['call_note'] = $note;
+            } else {
+                unset($data['call_note']);
+            }
+        }
 
         if (isset($data['call_status'])) {
             $data['call_updated_at'] = date('Y-m-d H:i:s');
@@ -397,6 +427,68 @@ class Meta_leads_model extends EA_Model
         $data['update_datetime'] = date('Y-m-d H:i:s');
 
         $this->db->where('id', $lead_id)->update('meta_leads', $data);
+    }
+
+    /**
+     * Return the note history of a single lead, most recent first.
+     *
+     * @param int $lead_id
+     *
+     * @return array
+     */
+    public function get_notes(int $lead_id): array
+    {
+        return $this->get_notes_for_leads([$lead_id])[$lead_id] ?? [];
+    }
+
+    /**
+     * Return the note history of several leads at once, grouped by lead ID and
+     * most recent first within each lead.
+     *
+     * The lead list shows the notes of every row it renders, so they are fetched
+     * in a single query rather than one per lead.
+     *
+     * @param array $lead_ids
+     *
+     * @return array<int, array> Notes keyed by lead ID; every requested lead is present.
+     */
+    public function get_notes_for_leads(array $lead_ids): array
+    {
+        $lead_ids = array_values(array_unique(array_filter(array_map('intval', $lead_ids))));
+
+        $grouped = array_fill_keys($lead_ids, []);
+
+        if (!$lead_ids) {
+            return $grouped;
+        }
+
+        $rows = $this->db
+            ->select(
+                'n.id, n.id_meta_leads, n.note, n.id_users, n.create_datetime, ' .
+                    "CONCAT_WS(' ', u.first_name, u.last_name) AS author_name",
+                false,
+            )
+            ->from('meta_lead_notes n')
+            ->join('users u', 'u.id = n.id_users', 'left')
+            ->where_in('n.id_meta_leads', $lead_ids)
+            ->order_by('n.create_datetime', 'DESC')
+            ->order_by('n.id', 'DESC')
+            ->get()
+            ->result_array();
+
+        foreach ($rows as $row) {
+            $author_name = trim((string) ($row['author_name'] ?? ''));
+
+            $grouped[(int) $row['id_meta_leads']][] = [
+                'id' => (int) $row['id'],
+                'note' => (string) $row['note'],
+                'id_users' => $row['id_users'] === null ? null : (int) $row['id_users'],
+                'author_name' => $author_name !== '' ? $author_name : null,
+                'create_datetime' => $row['create_datetime'],
+            ];
+        }
+
+        return $grouped;
     }
 
     /**

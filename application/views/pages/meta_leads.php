@@ -94,11 +94,22 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <textarea id="meta-lead-note-textarea" class="form-control" rows="6"></textarea>
+                <div class="mb-3">
+                    <div class="form-label small text-muted mb-1">
+                        <?= lang('meta_leads_note_history') ?>
+                    </div>
+                    <div id="meta-lead-note-history" class="border rounded p-2 small"
+                         style="max-height: 14rem; overflow-y: auto;"></div>
+                </div>
+
+                <label for="meta-lead-note-textarea" class="form-label small text-muted mb-1">
+                    <?= lang('meta_leads_note_new') ?>
+                </label>
+                <textarea id="meta-lead-note-textarea" class="form-control" rows="3"></textarea>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?= lang('cancel') ?></button>
-                <button type="button" class="btn btn-primary" id="meta-lead-note-save"><?= lang('save') ?></button>
+                <button type="button" class="btn btn-primary" id="meta-lead-note-save"><?= lang('add_note') ?></button>
             </div>
         </div>
     </div>

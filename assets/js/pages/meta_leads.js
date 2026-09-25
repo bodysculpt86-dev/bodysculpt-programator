@@ -179,7 +179,8 @@ App.Pages.MetaLeads = (function () {
         const name = [(lead.first_name || ''), (lead.last_name || '')].filter(Boolean).join(' ');
 
         $('#meta-lead-note-title').text(`${lang('call_note')} — ${name || '—'}`);
-        $('#meta-lead-note-textarea').val(lead.call_note || '');
+        $('#meta-lead-note-history').html(noteHistoryHtml(lead.notes));
+        $('#meta-lead-note-textarea').val('');
         $('#meta-lead-note-save').data('id', leadId);
 
         noteModal.show();
@@ -187,7 +188,14 @@ App.Pages.MetaLeads = (function () {
 
     function onNoteModalSave() {
         const leadId = $('#meta-lead-note-save').data('id');
-        const note = $('#meta-lead-note-textarea').val();
+        const note = String($('#meta-lead-note-textarea').val() || '').trim();
+
+        // Notes are added, never rewritten, so an empty box means there is nothing to record.
+        if (!note) {
+            noteModal.hide();
+
+            return;
+        }
 
         App.Http.MetaLeads.updateCall(leadId, { call_note: note })
             .done(() => {
@@ -231,7 +239,7 @@ App.Pages.MetaLeads = (function () {
                 <td>${relativeTimeHtml(lead.received_at)}</td>
                 <td>${statusSelectHtml(lead)}</td>
                 <td>${assignedToHtml(lead)} ${appointmentBadgeHtml(lead)}</td>
-                <td>${noteDisplayHtml(lead)}</td>
+                <td>${noteDisplayHtml(lead, true)}</td>
                 <td class="text-center">
                     <button type="button" class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${lead.id}" title="${lang('meta_leads_delete')}">
                         <i class="fas fa-trash"></i>
@@ -387,23 +395,71 @@ App.Pages.MetaLeads = (function () {
         return `<select class="form-select form-select-sm meta-leads-call-status" data-id="${lead.id}">${options}</select>`;
     }
 
-    function noteDisplayHtml(lead) {
-        const note = String(lead.call_note || '').trim();
+    /**
+     * Render a lead's notes, most recent first, followed by the button that adds a new one.
+     *
+     * @param {Object} lead
+     * @param {Boolean} [scrollable] - Cap the list height, so desktop table rows stay uniform.
+     *
+     * @returns {String}
+     */
+    function noteDisplayHtml(lead, scrollable) {
+        const notes = Array.isArray(lead.notes) ? lead.notes : [];
+        const buttonClass = notes.length
+            ? 'btn btn-link btn-sm p-0 text-decoration-none'
+            : 'btn btn-outline-secondary btn-sm';
 
-        if (!note) {
-            return `
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="open-note" data-id="${lead.id}">
-                    <i class="fas fa-plus me-1"></i>${lang('add_note')}
-                </button>`;
+        const addButton = `
+            <button type="button" class="${buttonClass}" data-action="open-note" data-id="${lead.id}">
+                <i class="fas fa-plus me-1"></i>${lang('add_note')}
+            </button>`;
+
+        if (!notes.length) {
+            return addButton;
         }
 
-        const firstLine = note.split('\n')[0].trim();
-        const preview = firstLine.length > 40 ? firstLine.slice(0, 40).trimEnd() + '…' : firstLine;
+        const style = scrollable ? ' style="max-height: 7rem; overflow-y: auto;"' : '';
 
-        return `
-            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-start" data-action="open-note" data-id="${lead.id}" title="${lang('edit_note')}">
-                ${escapeHtml(preview)}
-            </button>`;
+        return `<div class="mb-1"${style}>${noteLinesHtml(notes)}</div>${addButton}`;
+    }
+
+    /**
+     * Render the full history for the note modal.
+     *
+     * @param {Array} notes
+     *
+     * @returns {String}
+     */
+    function noteHistoryHtml(notes) {
+        const list = Array.isArray(notes) ? notes : [];
+
+        if (!list.length) {
+            return `<span class="text-muted">${lang('meta_leads_no_notes')}</span>`;
+        }
+
+        return noteLinesHtml(list);
+    }
+
+    function noteLinesHtml(notes) {
+        return notes.map(noteLineHtml).join('');
+    }
+
+    /**
+     * Render one history entry, e.g. "25.09, 14:32 · Ana: revine joi".
+     *
+     * The entry carried over from the old call_note column has no author, so its author segment is
+     * left out rather than filled with a placeholder.
+     *
+     * @param {Object} note
+     *
+     * @returns {String}
+     */
+    function noteLineHtml(note) {
+        const time = note.create_datetime ? moment(note.create_datetime).format('DD.MM, HH:mm') : '—';
+        const author = String(note.author_name || '').trim();
+        const authorPart = author ? `${escapeHtml(author)}: ` : '';
+
+        return `<div style="white-space: pre-wrap;">${escapeHtml(time)} · ${authorPart}${escapeHtml(note.note)}</div>`;
     }
 
     function assignedToHtml(lead) {
