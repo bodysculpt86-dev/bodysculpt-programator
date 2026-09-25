@@ -144,11 +144,17 @@ class Meta_leads_model extends EA_Model
 
     /**
      * Search meta leads for the internal call workflow, optionally filtered by
-     * call_status and/or form_id. Each row is enriched with a has_appointments
-     * count (whether the linked customer has any appointment), the assigned
-     * user's name, and procedure (the clinic-facing name for the lead's
-     * form_id, from META_LEAD_FORM_PROCEDURES, falling back to the raw
-     * form_id when it isn't in that mapping).
+     * call_status, form_id and/or status. Each row is enriched with a
+     * has_appointments count (whether the linked customer has any
+     * appointment), the assigned user's name, and procedure (the
+     * clinic-facing name for the lead's form_id, from
+     * META_LEAD_FORM_PROCEDURES, falling back to the raw form_id when it
+     * isn't in that mapping).
+     *
+     * The status filter is independent of call_status: it selects on the
+     * lead's lifecycle column ('new'/'converted'), not the internal call
+     * workflow column, so it can be combined with keyword/form_id or used on
+     * its own for the "Programați" (scheduled) tab.
      *
      * Leads are ordered strictly newest-first (received_at DESC), with no
      * call_status prioritization.
@@ -158,6 +164,7 @@ class Meta_leads_model extends EA_Model
      * @param int $limit
      * @param int $offset
      * @param string|null $form_id Only leads from this form_id, null for all.
+     * @param string|null $status Only 'new' or 'converted', null for all.
      *
      * @return array
      */
@@ -167,6 +174,7 @@ class Meta_leads_model extends EA_Model
         int $limit = 200,
         int $offset = 0,
         ?string $form_id = null,
+        ?string $status = null,
     ): array {
         $this->db
             ->select(
@@ -198,6 +206,10 @@ class Meta_leads_model extends EA_Model
 
         if ($form_id !== null && $form_id !== '') {
             $this->db->where('ml.form_id', $form_id);
+        }
+
+        if ($status !== null && in_array($status, ['new', 'converted'], true)) {
+            $this->db->where('ml.status', $status);
         }
 
         $this->db->group_by('ml.id');
