@@ -242,5 +242,9 @@ $route['webhooks/meta']['post'] = 'webhooks_meta/receive';
 // verified, CSRF-excluded). Forwards Meta Lead Ads leads into meta_leads.
 $route['webhooks/make']['post'] = 'webhooks_make/receive';
 
+// Public Autocalls (AI caller) webhook receiver (POST only, shared-secret
+// header verified, CSRF-excluded). Stores AI call results for meta_leads.
+$route['webhooks/autocalls']['post'] = 'webhooks_autocalls/receive';
+
 /* End of file routes.php */
 /* Location: ./application/config/routes.php */
