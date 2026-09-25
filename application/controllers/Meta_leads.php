@@ -124,7 +124,12 @@ class Meta_leads extends EA_Controller
             $limit = (int) request('limit', 200);
             $offset = (int) request('offset', 0);
 
-            json_response(array_values($this->meta_leads_model->search_calls($call_status, $keyword, $limit, $offset)));
+            $form_id = trim((string) request('form_id', ''));
+            $form_id = $form_id !== '' ? $form_id : null;
+
+            json_response(
+                array_values($this->meta_leads_model->search_calls($call_status, $keyword, $limit, $offset, $form_id)),
+            );
         } catch (Throwable $e) {
             json_exception($e);
         }
