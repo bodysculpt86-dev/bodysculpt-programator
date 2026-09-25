@@ -36,6 +36,15 @@
             </div>
         </div>
 
+        <div class="col-12 col-md-auto">
+            <select id="meta-leads-procedure-filter" class="form-select">
+                <option value=""><?= lang('meta_leads_all_procedures') ?></option>
+                <?php foreach (META_LEAD_FORM_PROCEDURES as $form_id => $procedure): ?>
+                    <option value="<?= html_escape($form_id) ?>"><?= html_escape($procedure) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
         <div class="col-12 col-md-4 ms-md-auto">
             <div class="input-group">
                 <input type="text" id="meta-leads-keyword" class="form-control"
@@ -52,11 +61,12 @@
         <table class="table table-sm table-hover align-middle">
             <thead>
                 <tr>
-                    <th style="width: 15%"><?= lang('meta_leads_name') ?></th>
-                    <th style="width: 28%"><?= lang('meta_leads_form_answers') ?></th>
-                    <th style="width: 10%"><?= lang('meta_leads_received_at') ?></th>
-                    <th style="width: 12%"><?= lang('call_status') ?></th>
-                    <th style="width: 13%"><?= lang('assigned_to') ?></th>
+                    <th style="width: 14%"><?= lang('meta_leads_name') ?></th>
+                    <th style="width: 10%"><?= lang('meta_leads_procedure') ?></th>
+                    <th style="width: 22%"><?= lang('meta_leads_form_answers') ?></th>
+                    <th style="width: 9%"><?= lang('meta_leads_received_at') ?></th>
+                    <th style="width: 11%"><?= lang('call_status') ?></th>
+                    <th style="width: 12%"><?= lang('assigned_to') ?></th>
                     <th style="width: 16%"><?= lang('call_note') ?></th>
                     <th style="width: 6%"><?= lang('meta_leads_actions') ?></th>
                 </tr>
