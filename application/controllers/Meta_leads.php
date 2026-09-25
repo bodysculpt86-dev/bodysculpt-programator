@@ -142,8 +142,16 @@ class Meta_leads extends EA_Controller
             $form_id = trim((string) request('form_id', ''));
             $form_id = $form_id !== '' ? $form_id : null;
 
+            $status = request('status');
+
+            if (!in_array($status, ['new', 'converted'], true)) {
+                $status = null;
+            }
+
             json_response(
-                array_values($this->meta_leads_model->search_calls($call_status, $keyword, $limit, $offset, $form_id)),
+                array_values(
+                    $this->meta_leads_model->search_calls($call_status, $keyword, $limit, $offset, $form_id, $status),
+                ),
             );
         } catch (Throwable $e) {
             json_exception($e);
