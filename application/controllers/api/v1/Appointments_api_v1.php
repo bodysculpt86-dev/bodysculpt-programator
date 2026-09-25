@@ -220,6 +220,10 @@ class Appointments_api_v1 extends EA_Controller
                 $appointment['end_datetime'] = $this->appointments_model->calculate_end_datetime($appointment);
             }
 
+            // Token authentication leaves no session user, so without this the model
+            // would record the appointment as if it came from the public booking form.
+            $appointment['created_via'] = 'api';
+
             $appointment_id = $this->appointments_model->save($appointment);
 
             $created_appointment = $this->appointments_model->find($appointment_id);

@@ -386,6 +386,12 @@ class Calendar extends EA_Controller
 
                 $this->appointments_model->optional($appointment, $this->optional_appointment_fields);
 
+                // A Meta Lead import is created in the calendar by the logged-in user, but
+                // the appointment should say where it came from.
+                if ($meta_lead_id && empty($appointment['id'])) {
+                    $appointment['created_via'] = 'meta_leads';
+                }
+
                 $appointment['id'] = $this->appointments_model->save($appointment);
             }
             unset($appointment);
@@ -682,6 +688,55 @@ class Calendar extends EA_Controller
     }
 
     /**
+     * Attach the "created by" suffix to each appointment of a calendar response.
+     *
+     * The suffix is resolved here rather than in JavaScript because it depends on the translation
+     * layer, and the creator names are fetched in a single query instead of one per appointment.
+     *
+     * @param array $appointments Appointments of the response, modified in place.
+     */
+    private function attach_creator_suffixes(array &$appointments): void
+    {
+        $creator_ids = array_values(
+            array_unique(array_filter(array_column($appointments, 'created_by'), fn($id) => !empty($id))),
+        );
+
+        $creator_names = [];
+
+        if ($creator_ids) {
+            $users = $this->db
+                ->select('id, first_name, last_name')
+                ->from('users')
+                ->where_in('id', $creator_ids)
+                ->get()
+                ->result_array();
+
+            foreach ($users as $user) {
+                $creator_names[(int) $user['id']] = trim($user['first_name'] . ' ' . $user['last_name']);
+            }
+        }
+
+        $labels = [
+            'meta_leads' => lang('appointment_creator_meta_leads'),
+            'online' => lang('appointment_creator_online'),
+            'api' => lang('appointment_creator_api'),
+            'by' => lang('appointment_creator_by'),
+        ];
+
+        foreach ($appointments as &$appointment) {
+            $creator_id = $appointment['created_by'] ?? null;
+
+            $appointment['creator_suffix'] = appointment_creator_suffix(
+                $creator_id ? $creator_names[(int) $creator_id] ?? null : null,
+                $appointment['created_via'] ?? null,
+                $labels,
+            );
+        }
+
+        unset($appointment);
+    }
+
+    /**
      * Get Calendar Events
      *
      * This method will return all the calendar events within a specified period.
@@ -722,6 +777,8 @@ class Calendar extends EA_Controller
             }
 
             unset($appointment);
+
+            $this->attach_creator_suffixes($response['appointments']);
 
             // All roles see all appointments/unavailabilities in the calendar.
 
@@ -835,6 +892,8 @@ class Calendar extends EA_Controller
             }
 
             unset($appointment);
+
+            $this->attach_creator_suffixes($response['appointments']);
 
             // Get unavailability periods (only for provider).
             $response['unavailabilities'] = [];

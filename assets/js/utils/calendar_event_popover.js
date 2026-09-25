@@ -313,6 +313,7 @@ App.Utils.CalendarEventPopover = (function () {
                 ...createPopoverRow('start', formatDateTime(info.event.start)),
                 ...createPopoverRow('end', formatDateTime(info.event.end)),
                 ...createPopoverRow('timezone', vars('timezones')[vars('default_timezone')]),
+                ...createCreatedAtPopoverRow(data),
                 $('<strong/>', {class: 'd-inline-block me-2', text: lang('status')}),
                 $('<span/>', {class: getPopoverStatusClass(data.status), text: data.status || '-'}),
                 $('<br/>'),
@@ -342,6 +343,24 @@ App.Utils.CalendarEventPopover = (function () {
                 createPopoverButtons(displayEdit, displayDelete),
             ],
         });
+    }
+
+    /**
+     * Create the row that reports when and by whom the appointment was created.
+     *
+     * The creator suffix is composed by the backend, where the translations and the creator names
+     * are available. Appointments that predate creator tracking carry an em dash there rather than
+     * a guessed name.
+     *
+     * @param {Object} data - Appointment data.
+     * @returns {Array<jQuery>} Array of jQuery elements (empty when the booking date is unknown).
+     */
+    function createCreatedAtPopoverRow(data) {
+        if (!data.book_datetime) {
+            return [];
+        }
+
+        return createPopoverRow('appointment_created_at', formatDateTime(data.book_datetime) + (data.creator_suffix || ''));
     }
 
     /**

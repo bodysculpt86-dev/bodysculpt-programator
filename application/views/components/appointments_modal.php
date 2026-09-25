@@ -394,6 +394,13 @@
                                     </div>
                                 </div>
 
+                                <div id="appointment-created-at-wrapper" class="mb-3 d-none">
+                                    <small class="text-muted">
+                                        <?= lang('appointment_created_at') ?>:
+                                        <span id="appointment-created-at">-</span>
+                                    </small>
+                                </div>
+
                                 <div class="mb-3">
                                     <label for="appointment-notes" class="form-label">
                                         <?= lang('notes') ?>

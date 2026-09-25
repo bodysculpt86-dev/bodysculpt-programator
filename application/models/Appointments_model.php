@@ -362,6 +362,12 @@ class Appointments_model extends EA_Model
         $appointment['update_datetime'] = date('Y-m-d H:i:s');
         $appointment['hash'] = random_string('alnum', 12);
 
+        // Creator attribution. The public booking form has no session user, so its
+        // appointments are recorded as coming from online. Callers that know a more
+        // specific source (the Meta Leads import, the REST API) set created_via first.
+        $appointment['created_by'] = session('user_id') ?: null;
+        $appointment['created_via'] = $appointment['created_via'] ?? ($appointment['created_by'] ? 'admin' : 'online');
+
         do {
             $appointment['confirmation_token'] = $this->generate_confirmation_token();
             $existing = $this->db->get_where('appointments', [

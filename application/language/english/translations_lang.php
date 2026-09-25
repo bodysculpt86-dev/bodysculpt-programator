@@ -746,6 +746,11 @@ $lang['customers_import_failed'] = 'customers failed';
 $lang['appointment_confirmed_by_client_message'] = 'Thank you! Your appointment has been confirmed. We look forward to seeing you at Body Sculpt Clinique.';
 $lang['appointment_cancelled_by_client_message'] = 'Your appointment has been cancelled. We look forward to welcoming you next time!';
 $lang['appointment_link_invalid'] = 'The appointment link is invalid or has expired.';
+$lang['appointment_created_at'] = 'Created';
+$lang['appointment_creator_by'] = 'by';
+$lang['appointment_creator_online'] = 'Online';
+$lang['appointment_creator_api'] = 'API';
+$lang['appointment_creator_meta_leads'] = 'from Meta Leads';
 
 
 $lang['provider_order'] = 'Provider Order';

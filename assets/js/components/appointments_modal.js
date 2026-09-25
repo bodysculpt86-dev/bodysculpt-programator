@@ -44,6 +44,8 @@ App.Components.AppointmentsModal = (function () {
     const $appointmentCloseStatus = $('#appointment-close-status');
     const $appointmentColor = $('#appointment-color');
     const $appointmentNotes = $('#appointment-notes');
+    const $appointmentCreatedAtWrapper = $('#appointment-created-at-wrapper');
+    const $appointmentCreatedAt = $('#appointment-created-at');
     const $reloadAppointments = $('#reload-appointments');
     const $selectFilterItem = $('#select-filter-item');
     const $selectServiceCategory = $('#select-service-category');
@@ -1214,6 +1216,34 @@ App.Components.AppointmentsModal = (function () {
     }
 
     /**
+     * Display when the appointment was created and, when it is known, by whom.
+     *
+     * The creator suffix is resolved by the backend, which has both the translation layer and the
+     * creator names. Appointments that predate creator tracking carry an em dash there instead of a
+     * guessed name.
+     *
+     * @param {Object} appointment - Appointment data.
+     */
+    function showCreatedAt(appointment) {
+        if (!appointment.book_datetime) {
+            $appointmentCreatedAtWrapper.addClass('d-none');
+
+            return;
+        }
+
+        const createdAt = App.Utils.Date.format(
+            moment(appointment.book_datetime).toDate(),
+            vars('date_format'),
+            vars('time_format'),
+            true,
+        );
+
+        $appointmentCreatedAt.text(createdAt + (appointment.creator_suffix || ''));
+
+        $appointmentCreatedAtWrapper.removeClass('d-none');
+    }
+
+    /**
      * Open the appointments modal to edit an existing appointment.
      *
      * @param {Object} appointment
@@ -1259,6 +1289,7 @@ App.Components.AppointmentsModal = (function () {
         $appointmentCloseStatus.val(appointment.status);
         $appointmentPrice.val(appointment.price ?? '').trigger('input');
         $appointmentNotes.val(appointment.notes);
+        showCreatedAt(appointment);
         App.Components.ColorSelection.setColor($appointmentColor, appointment.color);
 
         $selectAppointmentType.val(appointment.id_customer_packages ? 'package' : 'service').trigger('change');
@@ -1287,6 +1318,8 @@ App.Components.AppointmentsModal = (function () {
     function resetModal() {
         // Empty form fields.
         $appointmentsModal.find('input, textarea').val('');
+        $appointmentCreatedAtWrapper.addClass('d-none');
+        $appointmentCreatedAt.text('');
         $phonePrefix.val(App.Utils.Phone.DEFAULT_PREFIX);
         $appointmentsModal.find('.modal-message').addClass('.d-none');
         $appointmentsModal.find('.is-invalid').removeClass('is-invalid');
