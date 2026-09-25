@@ -22,6 +22,18 @@ App.Pages.MetaLeads = (function () {
 
     const CALL_STATUSES = ['de sunat', 'nu a raspuns', 'revine', 'nu e interesat'];
 
+    // AI call classification (from Autocalls, via webhooks/autocalls) -> badge
+    // class/label. Purely display; never read by the receptionist call-status
+    // workflow above.
+    const AI_CLASSIFICATION_META = {
+        HOT: { cls: 'meta-lead-badge-hot', langKey: 'meta_leads_ai_hot' },
+        WARM: { cls: 'meta-lead-badge-warm', langKey: 'meta_leads_ai_warm' },
+        COLD: { cls: 'meta-lead-badge-cold', langKey: 'meta_leads_ai_cold' },
+        CALLBACK: { cls: 'meta-lead-badge-callback', langKey: 'meta_leads_ai_callback' },
+        NO_ANSWER: { cls: 'meta-lead-badge-no-answer', langKey: 'meta_leads_ai_no_answer' },
+        FAILED: { cls: 'meta-lead-badge-failed', langKey: 'meta_leads_ai_failed' },
+    };
+
     // "toate" is the sentinel for the "All" filter: it maps to call_status = null
     // on the backend (no WHERE clause), unlike the empty string which is falsy.
     const ALL_CALL_STATUS = 'toate';
@@ -123,6 +135,28 @@ App.Pages.MetaLeads = (function () {
             $tableBody.append(renderTableRow(lead));
             $cards.append(renderCard(lead));
         });
+
+        initAiBadgePopovers();
+    }
+
+    /**
+     * (Re-)initialize the AI call badge popovers after a render. Rows/cards are
+     * fully rebuilt on every render(), so any previous popover instances are
+     * disposed first to avoid leaking one per stale DOM node.
+     */
+    function initAiBadgePopovers() {
+        $tableBody
+            .add($cards)
+            .find('[data-bs-toggle="popover"]')
+            .each(function () {
+                const existing = bootstrap.Popover.getInstance(this);
+
+                if (existing) {
+                    existing.dispose();
+                }
+
+                new bootstrap.Popover(this, { sanitize: true });
+            });
     }
 
     function onStatusChange(event) {
@@ -191,7 +225,7 @@ App.Pages.MetaLeads = (function () {
 
         return `
             <tr class="${rowClass}">
-                <td>${nameAndPhoneHtml(lead)}${scheduledBadgeHtml(lead)}</td>
+                <td>${nameAndPhoneHtml(lead)}${scheduledBadgeHtml(lead)}${aiCallBadgeHtml(lead)}</td>
                 <td>${procedureHtml(lead)}</td>
                 <td>${formAnswersHtml(lead)}</td>
                 <td>${relativeTimeHtml(lead.received_at)}</td>
@@ -214,7 +248,7 @@ App.Pages.MetaLeads = (function () {
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div>
-                            <div class="fw-bold">${nameHtml(lead)}${scheduledBadgeHtml(lead)}</div>
+                            <div class="fw-bold">${nameHtml(lead)}${scheduledBadgeHtml(lead)}${aiCallBadgeHtml(lead)}</div>
                             <div class="text-muted small">${relativeTimeHtml(lead.received_at)}</div>
                             <div class="text-muted small">${lang('meta_leads_procedure')}: ${procedureHtml(lead)}</div>
                         </div>
@@ -243,7 +277,47 @@ App.Pages.MetaLeads = (function () {
             return '';
         }
 
-        return ` <span class="badge bg-success ms-1">${lang('meta_leads_scheduled_badge')} ${escapeHtml(formatDate(lead.converted_at))}</span>`;
+        return ` <span class="meta-lead-badge meta-lead-badge-scheduled ms-1">${lang('meta_leads_scheduled_badge')} ${escapeHtml(formatDate(lead.converted_at))}</span>`;
+    }
+
+    /**
+     * AI call classification badge (from Autocalls). Hidden once the lead is
+     * converted — PROGRAMAT alone is shown then (scheduledBadgeHtml above); the
+     * summary/desired-procedure data is not deleted, just no longer surfaced
+     * as a badge, since PROGRAMAT is the operationally relevant state at that
+     * point.
+     */
+    function aiCallBadgeHtml(lead) {
+        if (lead.status === 'converted') {
+            return '';
+        }
+
+        const meta = AI_CLASSIFICATION_META[lead.ai_call_classification];
+
+        if (!meta) {
+            return '';
+        }
+
+        const summary = String(lead.ai_call_summary || '').trim() || lang('meta_leads_ai_no_summary');
+        const desiredProcedure = String(lead.ai_call_desired_procedure || '').trim();
+        const attempt = lead.ai_call_attempt_number
+            ? `${lang('meta_leads_ai_attempt_label')} ${Number(lead.ai_call_attempt_number)} — ${formatDatetime(lead.ai_call_at)}`
+            : '';
+
+        const contentParts = [`${lang('meta_leads_ai_summary_label')}: ${summary}`];
+
+        if (desiredProcedure) {
+            contentParts.push(`${lang('meta_leads_ai_desired_procedure_label')}: ${desiredProcedure}`);
+        }
+
+        if (attempt) {
+            contentParts.push(attempt);
+        }
+
+        const content = contentParts.join(' • ');
+        const label = lang(meta.langKey);
+
+        return ` <span class="meta-lead-badge meta-lead-badge-ai ${meta.cls} ms-1" tabindex="0" data-bs-toggle="popover" data-bs-trigger="focus" title="${escapeHtml(label)}" data-bs-content="${escapeHtml(content)}"><i class="fas fa-robot me-1"></i>${escapeHtml(label)}</span>`;
     }
 
     function procedureHtml(lead) {
