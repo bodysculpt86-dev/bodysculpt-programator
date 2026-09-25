@@ -137,6 +137,22 @@ const LDAP_DEFAULT_FIELD_MAPPING = [
 
 /*
 |--------------------------------------------------------------------------
+| Meta Lead Ads Form -> Procedure Mapping
+|--------------------------------------------------------------------------
+|
+| Meta's Instant Form names are internal and unclear, so the Meta Leads
+| admin page shows a clinic-controlled procedure name instead. A form_id
+| not present here falls back to displaying the raw form_id.
+|
+*/
+const META_LEAD_FORM_PROCEDURES = [
+    '2552388718563534' => 'Micropigmentare',
+    '33734214119557107' => 'Masaj',
+    '708851772252922' => 'Criolipoliza + HIFU',
+];
+
+/*
+|--------------------------------------------------------------------------
 | Webhook Actions
 |--------------------------------------------------------------------------
 |
