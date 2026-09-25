@@ -21,6 +21,13 @@
 class Meta_leads_model extends EA_Model
 {
     /**
+     * AI call classifications that represent a real, engaged conversation
+     * (the lead answered and said something). Used by save_call_result() to
+     * decide whether a later call is allowed to overwrite an earlier one.
+     */
+    private const PROTECTED_AI_CLASSIFICATIONS = ['HOT', 'WARM', 'COLD', 'CALLBACK'];
+
+    /**
      * @var array
      */
     protected array $casts = [
@@ -104,6 +111,91 @@ class Meta_leads_model extends EA_Model
         $this->cast($lead);
 
         return $lead;
+    }
+
+    /**
+     * Find the most recently received meta lead by normalized phone number.
+     *
+     * Used as the identification fallback in Webhooks_autocalls when leadgen_id
+     * isn't available or doesn't match any lead. Multiple leads can share a
+     * phone number over time; the most recently received one is the one an AI
+     * call result almost certainly belongs to.
+     *
+     * @param string $normalized_phone Digits from normalize_international_phone(), with or without a leading '+'.
+     *
+     * @return array|null
+     */
+    public function find_by_phone(string $normalized_phone): ?array
+    {
+        $phone = '+' . ltrim($normalized_phone, '+');
+
+        $lead = $this->db
+            ->where('phone_number', $phone)
+            ->order_by('received_at', 'DESC')
+            ->limit(1)
+            ->get('meta_leads')
+            ->row_array();
+
+        if (!$lead) {
+            return null;
+        }
+
+        $this->cast($lead);
+
+        return $lead;
+    }
+
+    /**
+     * Save the outcome of an AI call (from Autocalls) for a lead.
+     *
+     * Idempotent and order-aware:
+     * - A call_at older than the one already stored is ignored entirely (an
+     *   out-of-order or duplicate delivery changes nothing).
+     * - A classification in PROTECTED_AI_CLASSIFICATIONS is never overwritten
+     *   by a later call that only reaches NO_ANSWER/FAILED — a HOT/WARM/COLD/
+     *   CALLBACK lead doesn't get silently demoted by a follow-up
+     *   verification call nobody picked up. When that overwrite is blocked,
+     *   only the attempt number and call time move; classification, summary,
+     *   desired_procedure and recording_url are left as they were.
+     *
+     * @param array $lead Current lead row (from find()/find_by_leadgen_id()/find_by_phone()).
+     * @param array $call {
+     *     @var string $classification One of HOT|WARM|COLD|CALLBACK|NO_ANSWER|FAILED.
+     *     @var string|null $summary
+     *     @var string|null $desired_procedure
+     *     @var int|null $attempt_number
+     *     @var string $call_at Datetime (Y-m-d H:i:s).
+     *     @var string|null $recording_url
+     * }
+     *
+     * @return void
+     */
+    public function save_call_result(array $lead, array $call): void
+    {
+        $call_at = $call['call_at'];
+        $stored_call_at = $lead['ai_call_at'] ?? null;
+
+        if ($stored_call_at !== null && strtotime($call_at) < strtotime($stored_call_at)) {
+            return;
+        }
+
+        $stored_is_protected = in_array($lead['ai_call_classification'] ?? null, self::PROTECTED_AI_CLASSIFICATIONS, true);
+        $incoming_is_protected = in_array($call['classification'], self::PROTECTED_AI_CLASSIFICATIONS, true);
+
+        $data = [
+            'ai_call_attempt_number' => $call['attempt_number'] ?? null,
+            'ai_call_at' => $call_at,
+            'ai_call_updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        if (!$stored_is_protected || $incoming_is_protected) {
+            $data['ai_call_classification'] = $call['classification'];
+            $data['ai_call_summary'] = $call['summary'] ?? null;
+            $data['ai_call_desired_procedure'] = $call['desired_procedure'] ?? null;
+            $data['ai_call_recording_url'] = $call['recording_url'] ?? null;
+        }
+
+        $this->db->where('id', $lead['id'])->update('meta_leads', $data);
     }
 
     /**
