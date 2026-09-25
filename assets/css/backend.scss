@@ -271,6 +271,24 @@ body .modal.full-screen .modal-push {
     --bs-table-hover-color: var(--bs-body-color);
 }
 
+/* Meta Leads: "converted" row highlight, dark-theme-safe.
+ * .table-success bakes fixed light RGB values at build time and this
+ * Bootstrap build has no [data-bs-theme=dark] override for it, so on this
+ * always-dark backend it would render as a bright, low-contrast band
+ * instead of a subtle highlight. Override it with the dark-aware
+ * success-subtle token (the same one .bg-success-subtle already uses on the
+ * mobile card), so desktop and mobile match and inner text stays legible.
+ */
+#meta-leads-page .table-success {
+    --bs-table-bg: var(--bs-success-bg-subtle);
+    --bs-table-hover-bg: var(--bs-success-bg-subtle);
+    --bs-table-active-bg: var(--bs-success-bg-subtle);
+    --bs-table-color: var(--bs-body-color);
+    --bs-table-striped-color: var(--bs-body-color);
+    --bs-table-active-color: var(--bs-body-color);
+    --bs-table-hover-color: var(--bs-body-color);
+}
+
 /* CRUD List/Form Toggle Layout */
 .backend-page .record-details {
     display: none;
