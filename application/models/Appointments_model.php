@@ -28,6 +28,7 @@ class Appointments_model extends EA_Model
         'id_users_customer' => 'integer',
         'id_services' => 'integer',
         'id_customer_packages' => 'integer',
+        'reminder_attempts' => 'integer',
     ];
 
     /**
@@ -396,7 +397,10 @@ class Appointments_model extends EA_Model
             if (!empty($existing) && $existing['start_datetime'] !== $appointment['start_datetime']) {
                 $appointment['sms_reminder_sent_at'] = null;
                 $appointment['sms_reminder_error'] = null;
+                $appointment['wa_reminder_sent_at'] = null;
+                $appointment['wa_reminder_error'] = null;
                 $appointment['reminder_sent_at'] = null;
+                $appointment['reminder_attempts'] = 0;
             }
         }
 
@@ -424,7 +428,12 @@ class Appointments_model extends EA_Model
             ->where('is_unavailability', false)
             ->where('start_datetime >=', $from)
             ->where('start_datetime <=', $until)
-            ->where('reminder_sent_at IS NULL', null, false);
+            ->where('reminder_sent_at IS NULL', null, false)
+            // Once an appointment has failed this many attempts, send_sms_reminders()
+            // has already raised its one alert for it (see alert_reminder_problems());
+            // retrying it every run for the rest of the day would just repeat a
+            // failure nothing here can fix without a human looking at it.
+            ->where('reminder_attempts <', REMINDER_MAX_ATTEMPTS);
 
         if (!empty($exclude_statuses)) {
             $this->db->where_not_in('status', $exclude_statuses);

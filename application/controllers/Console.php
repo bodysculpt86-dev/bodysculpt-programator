@@ -40,6 +40,7 @@ class Console extends EA_Controller
         $this->load->library('cleanup');
         $this->load->library('sms_smso');
         $this->load->library('whatsapp_flaxxa');
+        $this->load->library('telegram');
 
         $this->load->model('admins_model');
         $this->load->model('appointments_model');
@@ -179,6 +180,40 @@ class Console extends EA_Controller
         }
 
         return 'FAILED: ' . ($result['error'] ?? 'unknown error');
+    }
+
+    /**
+     * Send one alert through the Telegram channel, to prove it arrives.
+     *
+     * The reminder alert is only worth having if the channel behind it is known to
+     * work — the same reason wa_test_send exists for WhatsApp, and the same failure
+     * it guards against: a notifier that is silently unconfigured looks exactly
+     * like a run in which nothing went wrong. The notifier's own verdict is printed
+     * rather than a generic success, so a missing variable is visible here.
+     *
+     * Usage:
+     *
+     * php index.php console telegram_test
+     *
+     * @return void
+     */
+    public function telegram_test(): void
+    {
+        try {
+            $result = $this->telegram->send('[BodySculpt] test alertă — canalul Telegram funcționează.');
+        } catch (Throwable $e) {
+            response('Telegram library could not be used: ' . $e->getMessage());
+
+            return;
+        }
+
+        if (!empty($result['sent'])) {
+            response('Sent. Check the Telegram chat.');
+
+            return;
+        }
+
+        response('NOT sent (' . ($result['reason'] ?? 'unknown') . '): ' . ($result['detail'] ?? ''));
     }
 
     /**
@@ -324,19 +359,37 @@ class Console extends EA_Controller
     }
 
     /**
-     * Send SMS and WhatsApp reminders for all appointments scheduled tomorrow.
+     * Send ~24h appointment reminders via SMS + WhatsApp.
      *
-     * Use this method in a cronjob to automatically remind customers about upcoming
-     * appointments via SMSO.ro and Flaxxa WAPI. Runs once per day (ideally at 18:00
-     * Europe/Bucharest); selects every appointment whose start_datetime falls in the
-     * next calendar day in the provider timezone and has not been reminded yet.
+     * Runs once per day (ideally at 18:00 Europe/Bucharest); selects every
+     * appointment whose start_datetime falls in the next calendar day in the
+     * provider timezone and has not yet delivered on either channel.
      *
      * Usage:
      *
      * php index.php console send_sms_reminders
+     * php index.php console send_sms_reminders --dry-run
+     *
+     * --dry-run selects and prints exactly what a real run would process — the
+     * appointment group, its recipient, and its current attempt count — without
+     * sending anything, writing to the database, or raising a Telegram alert. Use
+     * it to check this command against production data before trusting it to
+     * actually retry / give up / alert.
+     *
+     * @param string $mode '--dry-run', or empty for a real run.
+     *
+     * @return void
      */
-    public function send_sms_reminders(): void
+    public function send_sms_reminders(string $mode = ''): void
     {
+        if ($mode !== '' && $mode !== '--dry-run') {
+            response('Usage: php index.php console send_sms_reminders [--dry-run]');
+
+            return;
+        }
+
+        $dry_run = $mode === '--dry-run';
+
         // Use the provider/business timezone so "tomorrow" is a real calendar day
         // for the clinic, not a UTC day. Europe/Bucharest is the current production
         // timezone; falling back to the PHP default keeps local dev working.
@@ -372,6 +425,19 @@ class Console extends EA_Controller
             same_day_group_excluded_statuses(),
         );
 
+        if ($dry_run) {
+            $this->dry_run_reminder_groups($groups);
+
+            return;
+        }
+
+        // Appointments that end the run without having received anything after
+        // hitting REMINDER_MAX_ATTEMPTS: either every channel failed on every
+        // attempt, or the customer never had a usable phone. Collected so the run
+        // raises one alert per appointment — on the attempt that gives up on it,
+        // not on every attempt leading up to that.
+        $problems = [];
+
         foreach ($groups as $group) {
             $appointment = $group[0];
             $group_count = count($group);
@@ -399,7 +465,18 @@ class Console extends EA_Controller
 
             if (empty($customer['phone_number'])) {
                 log_message('debug', '[SMSO] Reminder skipped: no phone for customer #' . $customer['id']);
-                $this->mark_reminder_attempted_for_group($group, 'no phone');
+
+                // No channel can be attempted, so the appointment must not be marked
+                // as reminded — it would hide a customer nobody can reach. The
+                // reason is written to both channel columns so it stays findable,
+                // and the run reports it, but it is a data problem rather than a
+                // send failure and is counted separately in the alert.
+                $attempts = $this->mark_reminder_undeliverable_for_group($group, 'no_phone');
+
+                if ($attempts >= REMINDER_MAX_ATTEMPTS) {
+                    $problems[] = ['kind' => 'no_phone', 'id' => (int) $appointment['id']];
+                }
+
                 continue;
             }
 
@@ -444,61 +521,299 @@ class Console extends EA_Controller
             // Single and grouped SMS reminders both mention the procedure(s).
             $sms_service = $service;
 
-            $sms_error = null;
+            // Both libraries isolate their own failures and return a result array, so
+            // these catches should never fire. They are kept because the alternative
+            // is that an unexpected Throwable takes down the rest of the run, and
+            // because a leg that produced no result at all must not be read as one
+            // that succeeded.
             try {
-                $this->sms_smso->send_reminder($appointment, $customer, $provider, $sms_service);
+                $sms_result = $this->sms_smso->send_reminder($appointment, $customer, $provider, $sms_service);
             } catch (Throwable $e) {
-                $sms_error = $e->getMessage();
-                log_message('error', '[SMSO] Reminder exception for appointment #' . $appointment['id'] . ': ' . $sms_error);
+                log_message('error', '[SMSO] Reminder exception for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
+                $sms_result = ['success' => false, 'error' => $e->getMessage()];
             }
 
             try {
-                $this->whatsapp_flaxxa->send_reminder($appointment, $customer, $service, $provider);
+                $wa_result = $this->whatsapp_flaxxa->send_reminder($appointment, $customer, $service, $provider);
             } catch (Throwable $e) {
                 log_message('error', '[wa-flaxxa] Reminder exception for appointment #' . $appointment['id'] . ': ' . $e->getMessage());
+                $wa_result = ['success' => false, 'error' => $e->getMessage()];
             }
 
             if ($group_count > 1) {
                 log_message('debug', '[wa-flaxxa] Grouped reminder for customer ' . ($customer['id'] ?? 'N/A') . ' — ' . $group_count . ' appointments');
             }
 
-            $this->mark_reminder_attempted_for_group($group, $sms_error);
+            $outcome = $this->mark_reminder_attempted_for_group($group, $sms_result, $wa_result);
+
+            if (!$outcome['delivered'] && $outcome['attempts'] >= REMINDER_MAX_ATTEMPTS) {
+                $problems[] = [
+                    'kind' => 'failed',
+                    'id' => (int) $appointment['id'],
+                    'sms' => $sms_result['error'] ?? null,
+                    'wa' => $wa_result['error'] ?? null,
+                ];
+            }
+        }
+
+        if ($problems !== []) {
+            $this->alert_reminder_problems($problems, count($appointments));
         }
 
         log_message('debug', '[SMSO] Reminder run finished. Checked ' . count($appointments) . ' appointment(s).');
     }
 
     /**
-     * Mark an appointment as having received (or attempted) an SMS reminder.
+     * Whether a channel really delivered a reminder.
      *
-     * @param int $appointmentId Appointment ID.
-     * @param string|null $error Optional error message if the reminder failed.
+     * 'log_only' counts as success inside the sender libraries, because the caller
+     * asked for no send — the same exclusion wa_test_send makes when it reports.
+     * Here it has to be excluded: a log-only leg put nothing in front of anybody.
+     *
+     * @param array $result Result array from one of the sender libraries.
+     *
+     * @return bool
      */
-    private function markReminderAttempted(int $appointmentId, ?string $error = null): void
+    private function reminder_delivered(array $result): bool
     {
-        $data = [
-            'reminder_sent_at' => date('Y-m-d H:i:s'),
-        ];
-
-        if ($error !== null) {
-            $data['sms_reminder_error'] = substr($error, 0, 512);
-        }
-
-        $this->db->update('appointments', $data, ['id' => $appointmentId]);
+        return !empty($result['success']) && empty($result['log_only']);
     }
 
     /**
-     * Mark every appointment in a reminder group as attempted.
+     * The error text to store for a channel that did not deliver.
      *
-     * Prevents a grouped reminder from being re-sent for each member on a later run.
+     * @param array $result Result array from one of the sender libraries.
      *
-     * @param array $group Group of appointments (need an 'id' key each).
-     * @param string|null $error Optional error message if the reminder failed.
+     * @return string
      */
-    private function mark_reminder_attempted_for_group(array $group, ?string $error = null): void
+    private function reminder_error_text(array $result): string
     {
+        // Log-only is not a failure, but it is not a delivery either. Storing it as
+        // "unknown error" would send the next reader hunting for a fault that is
+        // really a configuration choice — and LOG_ONLY is exactly how the reminder
+        // path gets dry-run before it is trusted.
+        if (!empty($result['log_only'])) {
+            return 'log_only';
+        }
+
+        $error = $result['error'] ?? null;
+
+        if ($error === null || $error === '') {
+            // A leg that failed without saying why must not be stored as an empty
+            // string: NULL reads as "no error" to every later query.
+            $error = 'unknown error';
+        }
+
+        return substr((string) $error, 0, 512);
+    }
+
+    /**
+     * Record the outcome of both reminder channels for every member of a group.
+     *
+     * `reminder_sent_at` is what stops get_pending_sms_reminders() handing the
+     * appointment to a later run, so it is written only when a channel actually
+     * delivered. It used to be written unconditionally, which meant a WhatsApp
+     * outage left every appointment stamped as reminded — never retried, and with
+     * nothing in the database to say the message had not gone out.
+     *
+     * `reminder_attempts` is incremented for every member regardless of the
+     * outcome; get_pending_sms_reminders() reads it back to cap retries at
+     * REMINDER_MAX_ATTEMPTS.
+     *
+     * @param array $group Group of appointments (need 'id' and 'reminder_attempts' keys each).
+     * @param array $sms_result Result array from Sms_smso::send_reminder().
+     * @param array $wa_result Result array from Whatsapp_flaxxa::send_reminder().
+     *
+     * @return array{delivered: bool, attempts: int} Whether at least one channel
+     *   delivered, and the leading appointment's new attempt count.
+     */
+    private function mark_reminder_attempted_for_group(array $group, array $sms_result, array $wa_result): array
+    {
+        $sms_sent = $this->reminder_delivered($sms_result);
+        $wa_sent = $this->reminder_delivered($wa_result);
+        $delivered = $sms_sent || $wa_sent;
+
+        $leading_attempts = (int) ($group[0]['reminder_attempts'] ?? 0) + 1;
+
         foreach ($group as $appointment) {
-            $this->markReminderAttempted((int) $appointment['id'], $error);
+            $data = [
+                'sms_reminder_sent_at' => $sms_sent ? date('Y-m-d H:i:s') : null,
+                'sms_reminder_error' => $sms_sent ? null : $this->reminder_error_text($sms_result),
+                'wa_reminder_sent_at' => $wa_sent ? date('Y-m-d H:i:s') : null,
+                'wa_reminder_error' => $wa_sent ? null : $this->reminder_error_text($wa_result),
+                'reminder_attempts' => (int) ($appointment['reminder_attempts'] ?? 0) + 1,
+            ];
+
+            if ($delivered) {
+                $data['reminder_sent_at'] = date('Y-m-d H:i:s');
+            }
+
+            $this->db->update('appointments', $data, ['id' => (int) $appointment['id']]);
+        }
+
+        return ['delivered' => $delivered, 'attempts' => $leading_attempts];
+    }
+
+    /**
+     * Record that nothing could be attempted for a group, without marking it as reminded.
+     *
+     * `reminder_sent_at` is deliberately left alone so the appointment stays in the
+     * pending set (until reminder_attempts hits the cap): it is only in the window
+     * while it is still "tomorrow", and a phone number fixed within that window
+     * should still produce a reminder.
+     *
+     * @param array $group Group of appointments (need 'id' and 'reminder_attempts' keys each).
+     * @param string $reason Reason code stored on both channel columns.
+     *
+     * @return int The leading appointment's new attempt count.
+     */
+    private function mark_reminder_undeliverable_for_group(array $group, string $reason): int
+    {
+        $leading_attempts = (int) ($group[0]['reminder_attempts'] ?? 0) + 1;
+
+        foreach ($group as $appointment) {
+            $data = [
+                'sms_reminder_sent_at' => null,
+                'sms_reminder_error' => substr($reason, 0, 512),
+                'wa_reminder_sent_at' => null,
+                'wa_reminder_error' => substr($reason, 0, 512),
+                'reminder_attempts' => (int) ($appointment['reminder_attempts'] ?? 0) + 1,
+            ];
+
+            $this->db->update('appointments', $data, ['id' => (int) $appointment['id']]);
+        }
+
+        return $leading_attempts;
+    }
+
+    /**
+     * Print exactly what a real send_sms_reminders() run would process, without
+     * sending anything, writing to the database, or raising a Telegram alert.
+     *
+     * @param array $groups Groups from group_appointments_same_day_chain().
+     */
+    private function dry_run_reminder_groups(array $groups): void
+    {
+        if ($groups === []) {
+            response('[DRY RUN] No appointments pending a reminder.');
+
+            return;
+        }
+
+        foreach ($groups as $group) {
+            $appointment = $group[0];
+            $attempts = (int) ($appointment['reminder_attempts'] ?? 0);
+
+            try {
+                $customer = $this->customers_model->find($appointment['id_users_customer']);
+                $phone = $customer['phone_number'] ?? '(no phone)';
+                $name = trim(($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? ''));
+            } catch (Throwable $e) {
+                $phone = '(customer not found)';
+                $name = '';
+            }
+
+            $ids = implode(', ', array_map(static fn (array $a): string => '#' . $a['id'], $group));
+
+            response(sprintf(
+                '[DRY RUN] %s (%s) — appointment(s) %s — attempt %d/%d would be sent',
+                $name !== '' ? $name : '(no name)',
+                $phone,
+                $ids,
+                $attempts + 1,
+                REMINDER_MAX_ATTEMPTS,
+            ));
+        }
+
+        response('[DRY RUN] ' . count($groups) . ' group(s). Nothing sent, no database writes, no Telegram alert.');
+    }
+
+    /**
+     * Raise one Telegram alert describing the appointments a reminder run gave up on.
+     *
+     * Callers only add an appointment to $problems once it has reached
+     * REMINDER_MAX_ATTEMPTS without delivering, so each appointment can appear
+     * here at most once, ever — the alert for it fires on the attempt that gives
+     * up, not on every attempt leading up to that. Multiple appointments hitting
+     * the cap in the same run still batch into one Telegram message, not one per
+     * appointment, so a shared provider outage doesn't burst-fire the channel.
+     *
+     * @param array $problems Entries with 'kind' ('failed'|'no_phone') and 'id'.
+     * @param int $checked How many appointments the run looked at.
+     */
+    private function alert_reminder_problems(array $problems, int $checked): void
+    {
+        $failed = [];
+        $no_phone = 0;
+
+        foreach ($problems as $problem) {
+            if (($problem['kind'] ?? '') === 'no_phone') {
+                $no_phone++;
+            } else {
+                $failed[] = $problem;
+            }
+        }
+
+        $ids = array_map(static fn (array $problem): string => '#' . $problem['id'], $failed);
+
+        $lines = [
+            '[BodySculpt] ' . count($problems) . ' programare(i) NU au primit reminderul după ' . REMINDER_MAX_ATTEMPTS . ' încercări',
+            'Rulă: ' . date('Y-m-d H:i') . ' — verificate: ' . $checked,
+        ];
+
+        if ($ids !== []) {
+            $shown = array_slice($ids, 0, 20);
+            $rest = count($ids) - count($shown);
+
+            $lines[] = 'Programări: ' . implode(', ', $shown) . ($rest > 0 ? ' … +' . $rest : '');
+        }
+
+        // Distinct reasons only: a run that fails 30 times usually fails the same way.
+        $reasons = [];
+
+        foreach ($failed as $problem) {
+            foreach (['sms' => 'SMS', 'wa' => 'WhatsApp'] as $key => $label) {
+                $error = $problem[$key] ?? null;
+
+                if ($error !== null && $error !== '') {
+                    $reasons[$label . ': ' . $error] = true;
+                }
+            }
+        }
+
+        if ($reasons !== []) {
+            $lines[] = '';
+
+            foreach (array_slice(array_keys($reasons), 0, 3) as $reason) {
+                $lines[] = '• ' . substr($reason, 0, 200);
+            }
+        }
+
+        if ($no_phone > 0) {
+            $lines[] = '';
+            $lines[] = 'Fără telefon (niciun canal nu a putut fi încercat): ' . $no_phone;
+        }
+
+        $lines[] = '';
+        $lines[] = 'Nu au fost marcate ca trimise. Nu vor mai fi reîncercate automat — necesită verificare manuală.';
+
+        try {
+            $result = $this->telegram->send(implode(PHP_EOL, $lines));
+
+            if (!empty($result['sent'])) {
+                log_message('debug', '[telegram] Reminder alert sent (' . count($problems) . ' problem(s)).');
+
+                return;
+            }
+
+            log_message(
+                'error',
+                '[telegram] Reminder alert NOT sent (' . ($result['reason'] ?? 'unknown') . '): ' . ($result['detail'] ?? '')
+            );
+        } catch (Throwable $e) {
+            // An alert channel that can abort the run it is reporting on would be
+            // worse than no alert channel at all.
+            log_message('error', '[telegram] Reminder alert threw: ' . $e->getMessage());
         }
     }
 
@@ -675,9 +990,10 @@ class Console extends EA_Controller
             '⇾ php index.php console backup',
             '⇾ php index.php console sync',
             '⇾ php index.php console cleanup        (cleans sessions, logs, cache, and customer data)',
-            '⇾ php index.php console send_sms_reminders  (sends ~24h SMS reminders via SMSO.ro)',
+            '⇾ php index.php console send_sms_reminders [--dry-run]  (sends ~24h SMS + WhatsApp reminders, capped at ' . REMINDER_MAX_ATTEMPTS . ' attempts; alerts on Telegram once an appointment gives up)',
             '⇾ php index.php console process_unpaid_deposits  (auto-cancels deposits unpaid after 24h + notifies the customer)',
             '⇾ php index.php console wa_test_send 40712345678 [meta|flaxxa]  (sends the two appointment templates to one number)',
+            '⇾ php index.php console telegram_test  (sends one alert to the configured Telegram chat)',
             '',
             '',
         ];

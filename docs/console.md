@@ -86,17 +86,35 @@ This command removes expired sessions, old logs and cache files, and deletes old
 
 **Tip:** Add this command to a [cron job](https://en.wikipedia.org/wiki/Cron) so cleanup runs automatically.
 
-### Send SMS Reminders
+### Send Reminders
 
-Sends SMS reminders to customers with appointments approximately 24 hours away:
+Sends reminders to customers whose appointment is scheduled for tomorrow (in the business timezone):
 
 ```
 php index.php console send_sms_reminders
 ```
 
-The command selects appointments between 23 and 25 hours from now that have not yet received a reminder, and sends each customer an SMS via SMSO.ro. Appointments that are cancelled or still in draft status are skipped.
+Each customer is reminded on two channels — SMS via SMSO.ro and WhatsApp via Flaxxa WAPI or the Graph API, whichever `WA_PROVIDER` selects. Appointments that are cancelled, draft or no-show are skipped.
 
-**Tip:** Run this command every hour as a cron job. On Railway, set the `RAILWAY_CRON_COMMAND` environment variable to `php /var/www/html/index.php console send_sms_reminders` and configure a cron schedule (for example, `0 * * * *`).
+The two channels are recorded separately, in `sms_reminder_sent_at` / `sms_reminder_error` and `wa_reminder_sent_at` / `wa_reminder_error`. An appointment is only flagged as reminded (`reminder_sent_at`) when at least one channel actually delivered, so a provider outage leaves it in the pending set to be retried by the next run instead of being silently marked as reminded.
+
+Retries are capped at `REMINDER_MAX_ATTEMPTS` (3, in `application/config/constants.php`), tracked per appointment in `reminder_attempts`. Once an appointment has failed that many attempts on both channels, it drops out of the pending set for good — it will not be retried automatically, and it posts a single Telegram alert (on the attempt that hits the cap, not on every attempt) listing the appointment IDs and the distinct failure reasons; from there it needs manual follow-up. That needs `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`; without them the alert is written to the application log instead.
+
+Add `--dry-run` to preview exactly what a run would process — the recipients, appointment IDs and their current attempt count — without sending anything, writing to the database, or posting a Telegram alert:
+
+```
+php index.php console send_sms_reminders --dry-run
+```
+
+**Tip:** Run this command on a cron schedule. On Railway, set the `RAILWAY_CRON_COMMAND` environment variable to `php /var/www/html/index.php console send_sms_reminders` and configure a cron schedule.
+
+### Telegram Test
+
+Sends one alert through the Telegram channel, to prove the alerting above actually arrives:
+
+```
+php index.php console telegram_test
+```
 
 ### Help
 

@@ -210,16 +210,24 @@ class Sms_smso
     /**
      * Send a reminder SMS ~24 hours before an appointment.
      *
-     * Reuses the same failure isolation as send_confirmation.
+     * Returns the outcome rather than only logging it. The reminder job has to know
+     * whether a channel actually delivered before it can mark the appointment as
+     * reminded, and "never configured" is a different answer from "the API accepted
+     * it" — a distinction this method used to erase by returning void.
+     *
+     * Failure is still isolated from the caller: nothing here throws, and the shape
+     * of the result matches Whatsapp_flaxxa's senders.
      *
      * @param array $appointment Appointment data (must contain start_datetime).
      * @param array $customer Customer data (must contain phone_number and id).
      * @param array|null $provider Provider data (must contain timezone). When provided,
      *                            the appointment date/time is formatted in this timezone.
+     * @param array|null $service Service data (must contain name), when the reminder
+     *                            should mention the procedure(s).
      *
-     * @return void
+     * @return array ['success' => bool, 'error' => string|null, 'log_only' => bool?]
      */
-    public function send_reminder(array $appointment, array $customer, ?array $provider = null, ?array $service = null): void
+    public function send_reminder(array $appointment, array $customer, ?array $provider = null, ?array $service = null): array
     {
         try {
             $rawPhone = $customer['phone_number'] ?? null;
@@ -231,7 +239,8 @@ class Sms_smso
                 $this->log(
                     'Reminder SMS skipped: invalid phone for customer #' . ($customerId ?? 'N/A') . ': ' . ($rawPhone ?: '(empty)')
                 );
-                return;
+
+                return ['success' => false, 'error' => 'invalid_phone'];
             }
 
             $message = $this->buildReminderMessage($appointment, $provider, $service);
@@ -240,19 +249,25 @@ class Sms_smso
                 $this->log(
                     'LOG_ONLY reminder SMS would send to ' . $normalizedPhone . ': ' . $message
                 );
-                return;
+
+                return ['success' => true, 'error' => null, 'log_only' => true];
             }
 
             if (empty($this->apiKey) || empty($this->senderId)) {
                 $this->log('Reminder SMS skipped: SMSO_API_KEY or SMSO_SENDER_ID not configured.');
-                return;
+
+                return ['success' => false, 'error' => 'not_configured'];
             }
 
             $this->send($normalizedPhone, $message);
+
+            return ['success' => true, 'error' => null];
         } catch (Throwable $e) {
             $this->log(
                 'Reminder SMS failed for customer #' . ($customer['id'] ?? 'N/A') . ': ' . $e->getMessage()
             );
+
+            return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 

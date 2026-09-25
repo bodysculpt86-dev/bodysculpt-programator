@@ -153,6 +153,20 @@ const META_LEAD_FORM_PROCEDURES = [
 
 /*
 |--------------------------------------------------------------------------
+| Reminder Retry Cap
+|--------------------------------------------------------------------------
+|
+| How many times send_sms_reminders() retries an appointment (across SMS +
+| WhatsApp, combined) before giving up on it. Once an appointment reaches
+| this many attempts without delivering on either channel, it drops out of
+| get_pending_sms_reminders() for good and the run's Telegram alert fires
+| for it exactly once, on the attempt that hit the cap.
+|
+*/
+const REMINDER_MAX_ATTEMPTS = 3;
+
+/*
+|--------------------------------------------------------------------------
 | Webhook Actions
 |--------------------------------------------------------------------------
 |
