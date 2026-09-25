@@ -39,7 +39,7 @@
         <div class="col-12 col-md-auto">
             <select id="meta-leads-procedure-filter" class="form-select">
                 <option value=""><?= lang('meta_leads_all_procedures') ?></option>
-                <?php foreach (META_LEAD_FORM_PROCEDURES as $form_id => $procedure): ?>
+                <?php foreach (vars('procedure_options') as $form_id => $procedure): ?>
                     <option value="<?= html_escape($form_id) ?>"><?= html_escape($procedure) ?></option>
                 <?php endforeach; ?>
             </select>

@@ -63,10 +63,25 @@ class Meta_leads extends EA_Controller
             return;
         }
 
+        // Start from the known form_id -> procedure mapping, then add any
+        // form_id seen in the data that isn't mapped yet (labelled with its
+        // raw form_id), so a brand-new form is filterable immediately,
+        // before anyone adds it to META_LEAD_FORM_PROCEDURES. Built with a
+        // loop rather than array_merge() because the mapping's numeric-string
+        // keys are cast to int by PHP, and array_merge() would renumber them.
+        $procedure_options = META_LEAD_FORM_PROCEDURES;
+
+        foreach ($this->meta_leads_model->get_distinct_form_ids() as $form_id) {
+            if (!isset($procedure_options[$form_id])) {
+                $procedure_options[$form_id] = $form_id;
+            }
+        }
+
         html_vars([
             'page_title' => lang('meta_leads'),
             'active_menu' => 'meta_leads',
             'user_display_name' => $this->accounts->get_user_display_name(session('user_id')),
+            'procedure_options' => $procedure_options,
         ]);
 
         $this->load->view('pages/meta_leads');

@@ -213,6 +213,29 @@ class Meta_leads_model extends EA_Model
     }
 
     /**
+     * Return every distinct non-empty form_id present in meta_leads.
+     *
+     * Used to populate the procedure filter with forms that have received
+     * leads but aren't (yet) in META_LEAD_FORM_PROCEDURES, so a brand-new
+     * form is filterable immediately, before anyone adds it to the mapping.
+     *
+     * @return string[]
+     */
+    public function get_distinct_form_ids(): array
+    {
+        $rows = $this->db
+            ->select('form_id')
+            ->distinct()
+            ->from('meta_leads')
+            ->where('form_id IS NOT NULL', null, false)
+            ->where('form_id !=', '')
+            ->get()
+            ->result_array();
+
+        return array_column($rows, 'form_id');
+    }
+
+    /**
      * Mark a lead as converted and link it to the created/reused customer.
      *
      * @param int $lead_id
