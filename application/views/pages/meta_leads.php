@@ -33,6 +33,9 @@
                 <button type="button" class="btn btn-outline-primary" data-call-status="toate">
                     <?= lang('meta_leads_all') ?>
                 </button>
+                <button type="button" class="btn btn-outline-primary" data-status="converted">
+                    <?= lang('meta_leads_scheduled_tab') ?>
+                </button>
             </div>
         </div>
 
