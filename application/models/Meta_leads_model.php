@@ -144,8 +144,11 @@ class Meta_leads_model extends EA_Model
 
     /**
      * Search meta leads for the internal call workflow, optionally filtered by
-     * call_status. Each row is enriched with a has_appointments count (whether
-     * the linked customer has any appointment) and the assigned user's name.
+     * call_status and/or form_id. Each row is enriched with a has_appointments
+     * count (whether the linked customer has any appointment), the assigned
+     * user's name, and procedure (the clinic-facing name for the lead's
+     * form_id, from META_LEAD_FORM_PROCEDURES, falling back to the raw
+     * form_id when it isn't in that mapping).
      *
      * Leads are ordered strictly newest-first (received_at DESC), with no
      * call_status prioritization.
@@ -154,11 +157,17 @@ class Meta_leads_model extends EA_Model
      * @param string $keyword
      * @param int $limit
      * @param int $offset
+     * @param string|null $form_id Only leads from this form_id, null for all.
      *
      * @return array
      */
-    public function search_calls(?string $call_status = null, string $keyword = '', int $limit = 200, int $offset = 0): array
-    {
+    public function search_calls(
+        ?string $call_status = null,
+        string $keyword = '',
+        int $limit = 200,
+        int $offset = 0,
+        ?string $form_id = null,
+    ): array {
         $this->db
             ->select(
                 "ml.*, " .
@@ -187,10 +196,20 @@ class Meta_leads_model extends EA_Model
             $this->db->where('ml.call_status', $call_status);
         }
 
+        if ($form_id !== null && $form_id !== '') {
+            $this->db->where('ml.form_id', $form_id);
+        }
+
         $this->db->group_by('ml.id');
         $this->db->order_by('ml.received_at', 'DESC');
 
-        return $this->db->limit($limit, $offset)->get()->result_array();
+        $leads = $this->db->limit($limit, $offset)->get()->result_array();
+
+        foreach ($leads as &$lead) {
+            $lead['procedure'] = META_LEAD_FORM_PROCEDURES[$lead['form_id'] ?? ''] ?? (string) ($lead['form_id'] ?? '');
+        }
+
+        return $leads;
     }
 
     /**
