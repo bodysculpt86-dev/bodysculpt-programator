@@ -18,6 +18,7 @@ App.Pages.MetaLeads = (function () {
     const $tableBody = $('#meta-leads-table-body');
     const $cards = $('#meta-leads-cards');
     const $empty = $('#meta-leads-empty');
+    const $procedureFilter = $('#meta-leads-procedure-filter');
 
     const CALL_STATUSES = ['de sunat', 'nu a raspuns', 'revine', 'nu e interesat'];
 
@@ -51,6 +52,8 @@ App.Pages.MetaLeads = (function () {
             }
         });
 
+        $procedureFilter.on('change', load);
+
         $tableBody.on('change', '.meta-leads-call-status', onStatusChange);
         $cards.on('change', '.meta-leads-call-status', onStatusChange);
 
@@ -77,8 +80,9 @@ App.Pages.MetaLeads = (function () {
     function load() {
         const keyword = $keyword.val().trim();
         const callStatus = currentCallStatus === ALL_CALL_STATUS ? null : currentCallStatus;
+        const formId = $procedureFilter.val() || null;
 
-        App.Http.MetaLeads.searchCalls(callStatus, keyword, 200, 0)
+        App.Http.MetaLeads.searchCalls(callStatus, keyword, 200, 0, formId)
             .done((leads) => render(leads || []))
             .fail(() => render([]));
     }
@@ -168,6 +172,7 @@ App.Pages.MetaLeads = (function () {
         return `
             <tr>
                 <td>${nameAndPhoneHtml(lead)}</td>
+                <td>${procedureHtml(lead)}</td>
                 <td>${formAnswersHtml(lead)}</td>
                 <td>${relativeTimeHtml(lead.received_at)}</td>
                 <td>${statusSelectHtml(lead)}</td>
@@ -189,6 +194,7 @@ App.Pages.MetaLeads = (function () {
                         <div>
                             <div class="fw-bold">${nameHtml(lead)}</div>
                             <div class="text-muted small">${relativeTimeHtml(lead.received_at)}</div>
+                            <div class="text-muted small">${lang('meta_leads_procedure')}: ${procedureHtml(lead)}</div>
                         </div>
                         <button type="button" class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${lead.id}">
                             <i class="fas fa-trash"></i>
@@ -208,6 +214,10 @@ App.Pages.MetaLeads = (function () {
                     ${noteDisplayHtml(lead)}
                 </div>
             </div>`;
+    }
+
+    function procedureHtml(lead) {
+        return escapeHtml(lead.procedure || lead.form_id || '—');
     }
 
     function nameHtml(lead) {

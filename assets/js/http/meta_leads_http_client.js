@@ -85,7 +85,7 @@ App.Http.MetaLeads = (function () {
      *
      * @return {Object}
      */
-    function searchCalls(callStatus = null, keyword = '', limit = 200, offset = 0) {
+    function searchCalls(callStatus = null, keyword = '', limit = 200, offset = 0, formId = null) {
         const url = App.Utils.Url.siteUrl('meta_leads/search_calls');
 
         const data = {
@@ -100,6 +100,10 @@ App.Http.MetaLeads = (function () {
         // undefined to an empty string; omitting the key is unambiguous.
         if (callStatus) {
             data.call_status = callStatus;
+        }
+
+        if (formId) {
+            data.form_id = formId;
         }
 
         return $.post(url, data);
